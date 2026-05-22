@@ -116,4 +116,24 @@ class CategoryController extends Controller
             ->route('admin.categories.index', $params)
             ->with('success', 'Category deleted successfully.');
     }
+
+    public function toggleStatus(Request $request, string $id)
+    {
+        try {
+            $category = Category::findOrFail($id);
+            $category->status = !$category->status;
+            $category->save();
+
+            return response()->json([
+                'success' => true,
+                'status' => $category->status,
+                'message' => 'Category status updated successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

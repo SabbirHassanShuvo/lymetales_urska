@@ -22,15 +22,22 @@ class CouponController extends Controller
      */
     public function store(Request $request)
     {
+        $isFreeShipping = $request->input('type') === 'free_shipping';
+
         $validated = $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code',
-            'type' => 'required|string|in:fixed,percent',
-            'value' => 'required|numeric|min:0',
+            'code'        => 'required|string|max:50|unique:coupons,code',
+            'type'        => 'required|string|in:fixed,percent,free_shipping',
+            'value'       => $isFreeShipping ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'description' => 'nullable|string',
             'expiry_date' => 'nullable|date',
             'usage_limit' => 'nullable|integer|min:1',
-            'status' => 'boolean',
+            'status'      => 'boolean',
         ]);
+
+        // For free_shipping, value is 0
+        if ($isFreeShipping) {
+            $validated['value'] = 0;
+        }
 
         $validated['status'] = $request->boolean('status');
 
@@ -45,16 +52,21 @@ class CouponController extends Controller
     public function update(Request $request, string $id)
     {
         $coupon = Coupon::findOrFail($id);
+        $isFreeShipping = $request->input('type') === 'free_shipping';
 
         $validated = $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code,' . $coupon->id,
-            'type' => 'required|string|in:fixed,percent',
-            'value' => 'required|numeric|min:0',
+            'code'        => 'required|string|max:50|unique:coupons,code,' . $coupon->id,
+            'type'        => 'required|string|in:fixed,percent,free_shipping',
+            'value'       => $isFreeShipping ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
             'description' => 'nullable|string',
             'expiry_date' => 'nullable|date',
             'usage_limit' => 'nullable|integer|min:1',
-            'status' => 'boolean',
+            'status'      => 'boolean',
         ]);
+
+        if ($isFreeShipping) {
+            $validated['value'] = 0;
+        }
 
         $validated['status'] = $request->boolean('status');
 
@@ -72,5 +84,28 @@ class CouponController extends Controller
         $coupon->delete();
 
         return redirect()->route('admin.coupons.index')->with('success', __('admin.coupon_deleted_success'));
+    }
+
+    /**
+     * Toggle the status of the specified coupon.
+     */
+    public function toggleStatus(Request $request, string $id)
+    {
+        try {
+            $coupon = Coupon::findOrFail($id);
+            $coupon->status = !$coupon->status;
+            $coupon->save();
+
+            return response()->json([
+                'success' => true,
+                'status'  => $coupon->status,
+                'message' => 'Coupon status updated successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

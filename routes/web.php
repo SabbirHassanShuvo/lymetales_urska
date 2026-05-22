@@ -170,8 +170,11 @@ Route::prefix('admin')->group(function () {
         Route::delete('/users-request/{id}', [\App\Http\Controllers\Admin\UserRequestController::class, 'destroy'])->name('admin.users.destroy');
 
         // Products, Categories & Coupons
+        Route::patch('products/{product}/status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('admin.products.status');
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->names('admin.products');
+        Route::patch('categories/{category}/status', [\App\Http\Controllers\Admin\CategoryController::class, 'toggleStatus'])->name('admin.categories.status');
         Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)->names('admin.categories');
+        Route::patch('coupons/{coupon}/status', [\App\Http\Controllers\Admin\CouponController::class, 'toggleStatus'])->name('admin.coupons.status');
         Route::resource('coupons', \App\Http\Controllers\Admin\CouponController::class)->names('admin.coupons');
     });
 });

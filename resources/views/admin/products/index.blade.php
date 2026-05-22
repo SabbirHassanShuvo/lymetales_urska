@@ -59,12 +59,18 @@
             <h2 class="text-2xl font-bold text-gray-800">Books & Personalised Products</h2>
             <p class="text-sm text-gray-500">Create, edit, update, preview and manage personalised book offerings.</p>
         </div>
-        <button onclick="openCreateProductModal()" class="inline-flex items-center px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 hover:-translate-y-0.5">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Add New Book
-        </button>
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search books..." class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <button onclick="openCreateProductModal()" class="inline-flex items-center px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add New Book
+            </button>
+        </div>
     </div>
 
     <!-- Products Table -->
@@ -82,9 +88,9 @@
                         <th class="px-6 py-4 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
+                <tbody class="divide-y divide-gray-100 text-sm text-gray-700" id="productTableBody">
                     @forelse($products as $product)
-                        <tr class="hover:bg-gray-50/50 transition-colors">
+                        <tr class="hover:bg-gray-50/50 transition-colors product-row" data-title="{{ strtolower($product->title) }}" data-category="{{ strtolower($product->category ? $product->category->name : '') }}">
                             <!-- Title & Main Image -->
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-4">
@@ -140,15 +146,9 @@
                             </td>
                             <!-- Status -->
                             <td class="px-6 py-4">
-                                @if($product->status)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">
-                                        Active
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">
-                                        Inactive
-                                    </span>
-                                @endif
+                                <button onclick="toggleProductStatus({{ $product->id }}, {{ $product->status ? 'true' : 'false' }})" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold transition-colors {{ $product->status ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100' }}">
+                                    {{ $product->status ? 'Active' : 'Inactive' }}
+                                </button>
                             </td>
                             <!-- Actions -->
                             <td class="px-6 py-4 text-right space-x-2">
@@ -216,16 +216,26 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Category (Subcategory) *</label>
-                                <select name="category_id" id="prodCategoryId" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
+                                <select id="prodParentCategory" onchange="handleCategoryChange()" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                     <option value="">-- Select Category --</option>
-                                    @foreach($subcategories as $sub)
-                                        <option value="{{ $sub->id }}">{{ $sub->parent->name ?? 'Category' }} &gt; {{ $sub->name }}</option>
-                                    @endforeach
                                     @foreach($categories as $cat)
                                         @if($cat->subcategories->count() == 0)
-                                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                            <option value="{{ $cat->id }}" data-has-sub="false">{{ $cat->name }}</option>
+                                        @else
+                                            <option value="{{ $cat->id }}" data-has-sub="true">{{ $cat->name }}</option>
                                         @endif
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="category_id" id="prodCategoryId">
+                            </div>
+                            <!-- Subcategory (shown only when parent has sub) -->
+                            <div id="subCategoryContainer" class="hidden">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory *</label>
+                                <select id="prodSubCategory" onchange="handleSubCategoryChange()" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                    <option value="">-- Select Subcategory --</option>
+                                    @foreach($subcategories as $sub)
+                                        <option value="{{ $sub->id }}" data-parent="{{ $sub->parent_id }}">{{ $sub->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -295,8 +305,13 @@
                             <!-- Main Image Upload -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Main Cover Image</label>
-                                <div class="flex space-x-2">
-                                    <input type="file" name="image" id="prodImageFile" class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 flex-1 border border-gray-200 p-1.5 rounded-xl bg-gray-50">
+                                <input type="file" name="image" id="prodImageFile" accept="image/*" onchange="previewMainImage(event)" class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 w-full border border-gray-200 p-1.5 rounded-xl bg-gray-50">
+                                <!-- Main image preview -->
+                                <div id="mainImagePreview" class="hidden mt-2 relative w-20 h-24 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                                    <img id="mainImagePreviewImg" src="" class="w-full h-full object-cover">
+                                    <button type="button" onclick="clearMainImage()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center" title="Remove">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
                                 </div>
                                 <input type="text" name="image_url" id="prodImageUrl" placeholder="Or enter Image URL (e.g. https://images.unsplash.com/...)" class="w-full px-4 py-2 mt-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
                             </div>
@@ -304,9 +319,11 @@
                             <!-- Gallery Upload -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Gallery Thumbnails</label>
-                                <input type="file" name="gallery_files[]" id="prodGalleryFiles" multiple class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 w-full border border-gray-200 p-1.5 rounded-xl bg-gray-50">
-                                <input type="text" name="gallery_urls" id="prodGalleryUrls" placeholder="Or enter comma-separated Image URLs..." class="w-full px-4 py-2 mt-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
-                                
+                                <input type="file" name="gallery_files[]" id="prodGalleryFiles" multiple accept="image/*" onchange="previewGalleryImages(event)" class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 w-full border border-gray-200 p-1.5 rounded-xl bg-gray-50">
+                                <div id="galleryPreviewContainer" class="flex flex-wrap gap-2 mt-3"></div>
+                                <div id="existingGalleryContainer" class="flex flex-wrap gap-2 mt-2 hidden"></div>
+                                <input type="hidden" name="deleted_gallery_images" id="deletedGalleryImages" value="[]">
+                                <input type="text" name="gallery_urls" id="prodGalleryUrls" placeholder="Or enter comma-separated Image URLs..." class="w-full px-4 py-2 mt-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
                                 <!-- Replace Gallery checkbox for editing -->
                                 <label id="replaceGalleryGroup" class="hidden items-center space-x-2 mt-2 cursor-pointer">
                                     <input type="checkbox" name="replace_gallery" value="1" class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
@@ -531,6 +548,9 @@
         
         document.getElementById('prodTitle').value = "";
         document.getElementById('prodCategoryId').value = "";
+        document.getElementById('prodParentCategory').value = "";
+        document.getElementById('prodSubCategory').value = "";
+        document.getElementById('subCategoryContainer').classList.add('hidden');
         document.getElementById('prodPrice').value = "";
         document.getElementById('prodPages').value = "";
         document.getElementById('prodAgeRange').value = "";
@@ -545,11 +565,19 @@
         document.getElementById('prodGalleryUrls').value = "";
         document.getElementById('prodImageFile').value = "";
         document.getElementById('prodGalleryFiles').value = "";
+
+        // Clear image previews
+        document.getElementById('mainImagePreview').classList.add('hidden');
+        document.getElementById('mainImagePreviewImg').src = "";
+        document.getElementById('galleryPreviewContainer').innerHTML = "";
+        selectedGalleryFiles = [];
+        document.getElementById('existingGalleryContainer').innerHTML = "";
+        document.getElementById('existingGalleryContainer').classList.add('hidden');
+        document.getElementById('deletedGalleryImages').value = "[]";
         
         document.getElementById('prodIsBestseller').checked = false;
         document.getElementById('prodIsRecommended').checked = false;
         document.getElementById('prodStatus').checked = true;
-
         document.getElementById('replaceGalleryGroup').classList.add('hidden');
     }
 
@@ -564,7 +592,40 @@
         document.getElementById('modalTitle').textContent = "Edit Book";
 
         document.getElementById('prodTitle').value = product.title;
-        document.getElementById('prodCategoryId').value = product.category_id || "";
+        
+        // Category Logic update for Edit
+        const parentSelect = document.getElementById('prodParentCategory');
+        const subSelect = document.getElementById('prodSubCategory');
+        const catIdInput = document.getElementById('prodCategoryId');
+        const subContainer = document.getElementById('subCategoryContainer');
+        
+        // Reset category state
+        parentSelect.value = "";
+        subSelect.value = "";
+        catIdInput.value = product.category_id || "";
+        subContainer.classList.add('hidden');
+
+        if (product.category_id) {
+            // Find if it's a parent or subcategory
+            let isSub = false;
+            let parentId = null;
+            Array.from(subSelect.options).forEach(opt => {
+                if (opt.value == product.category_id) {
+                    isSub = true;
+                    parentId = opt.getAttribute('data-parent');
+                }
+            });
+
+            if (isSub) {
+                parentSelect.value = parentId;
+                handleCategoryChange(); // Trigger the filter
+                subSelect.value = product.category_id;
+            } else {
+                parentSelect.value = product.category_id;
+                handleCategoryChange();
+            }
+        }
+
         document.getElementById('prodPrice').value = product.price;
         document.getElementById('prodPages').value = product.pages || "";
         document.getElementById('prodAgeRange').value = product.age_range || "";
@@ -591,9 +652,32 @@
         if (product.gallery && Array.isArray(product.gallery)) {
             const urls = product.gallery.filter(g => g.startsWith('http://') || g.startsWith('https://'));
             document.getElementById('prodGalleryUrls').value = urls.join(', ');
+            
+            // Render existing non-url gallery items to delete
+            const existingContainer = document.getElementById('existingGalleryContainer');
+            existingContainer.innerHTML = '';
+            existingContainer.classList.remove('hidden');
+            
+            product.gallery.forEach(imgUrl => {
+                if (!imgUrl.startsWith('http://') && !imgUrl.startsWith('https://')) {
+                    const div = document.createElement('div');
+                    div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group';
+                    div.innerHTML = `
+                        <img src="${imgUrl}" class="w-full h-full object-cover">
+                        <button type="button" onclick="markExistingGalleryDeleted('${imgUrl}', this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    `;
+                    existingContainer.appendChild(div);
+                }
+            });
         } else {
             document.getElementById('prodGalleryUrls').value = "";
+            document.getElementById('existingGalleryContainer').innerHTML = '';
+            document.getElementById('existingGalleryContainer').classList.add('hidden');
         }
+
+        document.getElementById('deletedGalleryImages').value = "[]";
 
         document.getElementById('prodIsBestseller').checked = product.is_bestseller === true || product.is_bestseller === 1;
         document.getElementById('prodIsRecommended').checked = product.is_recommended === true || product.is_recommended === 1;
@@ -699,6 +783,191 @@
                 const form = document.getElementById('deleteForm');
                 form.action = deleteUrl;
                 form.submit();
+            }
+        });
+    }
+
+    // --- Search Filter ---
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('.product-row');
+        rows.forEach(row => {
+            const title = row.getAttribute('data-title');
+            const category = row.getAttribute('data-category');
+            if (title.includes(query) || category.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // --- Category Logic ---
+    function handleCategoryChange() {
+        const parentSelect = document.getElementById('prodParentCategory');
+        const selectedOption = parentSelect.options[parentSelect.selectedIndex];
+        const hasSub = selectedOption ? selectedOption.getAttribute('data-has-sub') === 'true' : false;
+        const parentId = parentSelect.value;
+        const subContainer = document.getElementById('subCategoryContainer');
+        const subSelect = document.getElementById('prodSubCategory');
+        const catIdInput = document.getElementById('prodCategoryId');
+
+        if (!parentId) {
+            subContainer.classList.add('hidden');
+            subSelect.required = false;
+            catIdInput.value = '';
+            return;
+        }
+
+        if (hasSub) {
+            subContainer.classList.remove('hidden');
+            subSelect.required = true;
+            // Show only subcategories of selected parent
+            Array.from(subSelect.options).forEach(opt => {
+                if (opt.value === '') {
+                    opt.style.display = '';
+                } else if (opt.getAttribute('data-parent') == parentId) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+            subSelect.value = '';
+            catIdInput.value = ''; // Wait for subcategory selection
+        } else {
+            subContainer.classList.add('hidden');
+            subSelect.required = false;
+            subSelect.value = '';
+            catIdInput.value = parentId; // Use parent as category_id
+        }
+    }
+
+    function handleSubCategoryChange() {
+        const subSelect = document.getElementById('prodSubCategory');
+        const catIdInput = document.getElementById('prodCategoryId');
+        if (subSelect.value) {
+            catIdInput.value = subSelect.value;
+        } else {
+            catIdInput.value = "";
+        }
+    }
+
+    // --- Main Image Preview ---
+    function previewMainImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('mainImagePreviewImg').src = e.target.result;
+            document.getElementById('mainImagePreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearMainImage() {
+        document.getElementById('prodImageFile').value = '';
+        document.getElementById('mainImagePreviewImg').src = '';
+        document.getElementById('mainImagePreview').classList.add('hidden');
+    }
+
+    // --- Multi-Image Gallery Preview & Delete ---
+    let selectedGalleryFiles = [];
+
+    function previewGalleryImages(event) {
+        const files = Array.from(event.target.files);
+        files.forEach(file => selectedGalleryFiles.push(file));
+        renderGalleryPreview();
+        // Reset the input so user can add more files later
+        event.target.value = '';
+    }
+
+    function renderGalleryPreview() {
+        const container = document.getElementById('galleryPreviewContainer');
+        container.innerHTML = '';
+        selectedGalleryFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group';
+                div.setAttribute('data-index', index);
+                div.innerHTML = `
+                    <img src="${e.target.result}" class="w-full h-full object-cover">
+                    <button type="button" onclick="removeGalleryImage(${index})" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function removeGalleryImage(index) {
+        selectedGalleryFiles.splice(index, 1);
+        renderGalleryPreview();
+        // Rebuild the FileList for the input using DataTransfer
+        const dt = new DataTransfer();
+        selectedGalleryFiles.forEach(f => dt.items.add(f));
+        document.getElementById('prodGalleryFiles').files = dt.files;
+    }
+
+    function markExistingGalleryDeleted(url, element) {
+        let deleted = JSON.parse(document.getElementById('deletedGalleryImages').value || "[]");
+        deleted.push(url);
+        document.getElementById('deletedGalleryImages').value = JSON.stringify(deleted);
+        element.closest('div').remove();
+    }
+
+    // --- Status Toggle SweetAlert ---
+    function toggleProductStatus(productId, currentStatus) {
+        const actionText = currentStatus ? "deactivate" : "activate";
+        const url = `/admin/products/${productId}/status`;
+
+        Swal.fire({
+            title: `Want to ${actionText}?`,
+            text: `This will ${actionText} the book listing.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: 'Yes, do it!',
+            background: '#ffffff',
+            borderRadius: '1rem',
+            customClass: {
+                popup: 'rounded-2xl border border-gray-100 shadow-xl',
+                confirmButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105',
+                cancelButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        Swal.fire({
+                            title: 'Updated!',
+                            text: data.message,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: { popup: 'rounded-2xl shadow-xl' }
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                });
             }
         });
     }

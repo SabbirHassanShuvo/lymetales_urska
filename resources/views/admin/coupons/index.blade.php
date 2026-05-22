@@ -47,12 +47,18 @@
             <h2 class="text-2xl font-bold text-gray-800">{{ __('admin.coupons_management') ?? 'Coupon Codes & Discounts' }}</h2>
             <p class="text-sm text-gray-500">Manage campaign coupon codes, discount rates, and active usage statistics.</p>
         </div>
-        <button onclick="toggleModal('couponModal')" class="inline-flex items-center px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 hover:-translate-y-0.5">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            {{ __('admin.add_new_coupon') ?? 'Add Coupon' }}
-        </button>
+        <div class="flex items-center space-x-3">
+            <div class="relative">
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search coupons..." class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+            <button onclick="toggleModal('couponModal')" class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                {{ __('admin.add_new_coupon') ?? 'Add Coupon' }}
+            </button>
+        </div>
     </div>
 
     <!-- Coupons Table -->
@@ -72,7 +78,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                     @forelse($coupons as $coupon)
-                        <tr class="hover:bg-gray-50/50 transition-colors">
+                        <tr class="hover:bg-gray-50/50 transition-colors coupon-row" data-code="{{ strtolower($coupon->code) }}" data-type="{{ strtolower($coupon->type) }}">
                             <td class="px-6 py-4 font-semibold text-gray-900">
                                 <span
                                     onclick="copyCoupon('{{ $coupon->code }}')"
@@ -90,12 +96,23 @@
                             <td class="px-6 py-4">
                                 @if($coupon->type === 'percent')
                                     <span class="bg-purple-100 text-purple-700 text-xs px-2.5 py-1 rounded-md font-bold uppercase">Percentage</span>
+                                @elseif($coupon->type === 'free_shipping')
+                                    <span class="bg-teal-100 text-teal-700 text-xs px-2.5 py-1 rounded-md font-bold uppercase flex items-center gap-1 w-fit">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l2 7a2 2 0 002 2h6a2 2 0 002-2l2-7"></path></svg>
+                                        Free Shipping
+                                    </span>
                                 @else
                                     <span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-md font-bold uppercase">Fixed Amount</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 font-bold text-gray-800 text-base">
-                                {{ $coupon->type === 'percent' ? number_format($coupon->value, 0) . '%' : '$' . number_format($coupon->value, 2) }}
+                                @if($coupon->type === 'free_shipping')
+                                    <span class="text-teal-600 text-sm font-semibold">—</span>
+                                @elseif($coupon->type === 'percent')
+                                    {{ number_format($coupon->value, 0) }}%
+                                @else
+                                    ${{ number_format($coupon->value, 2) }}
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-col space-y-1.5">
@@ -132,15 +149,10 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-col space-y-1">
-                                    @if($coupon->status)
-                                        <span class="inline-flex items-center text-xs font-bold text-green-700">
-                                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>Enabled
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center text-xs font-bold text-gray-400">
-                                            <span class="w-1.5 h-1.5 bg-gray-300 rounded-full mr-1.5"></span>Disabled
-                                        </span>
-                                    @endif
+                                    <button onclick="toggleCouponStatus({{ $coupon->id }}, {{ $coupon->status ? 'true' : 'false' }})" class="inline-flex items-center text-xs font-bold transition-colors w-fit px-2 py-1 rounded-lg {{ $coupon->status ? 'text-green-700 bg-green-50 hover:bg-green-100' : 'text-gray-400 bg-gray-100 hover:bg-gray-200' }}">
+                                        <span class="w-1.5 h-1.5 {{ $coupon->status ? 'bg-green-500' : 'bg-gray-300' }} rounded-full mr-1.5"></span>
+                                        {{ $coupon->status ? 'Enabled' : 'Disabled' }}
+                                    </button>
                                     @if(!$coupon->isValid())
                                         <span class="text-[10px] text-red-500 font-semibold uppercase">
                                             @if(!$coupon->status) (Disabled)
@@ -226,15 +238,16 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">{{ __('admin.discount_type') ?? 'Discount Type' }} *</label>
-                            <select name="type" id="coupType" required
+                            <select name="type" id="coupType" required onchange="handleCouponTypeChange()"
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
                                 <option value="fixed">Fixed Amount ($)</option>
                                 <option value="percent">Percentage (%)</option>
+                                <option value="free_shipping">🚚 Free Shipping</option>
                             </select>
                         </div>
-                        <div>
+                        <div id="coupValueGroup">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Discount Value *</label>
-                            <input type="number" step="0.01" name="value" id="coupValue" required placeholder="50.00"
+                            <input type="number" step="0.01" name="value" id="coupValue" placeholder="50.00"
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold text-sm">
                         </div>
                     </div>
@@ -304,10 +317,29 @@
         document.getElementById('coupCode').value = '';
         document.getElementById('coupType').value = 'fixed';
         document.getElementById('coupValue').value = '';
+        document.getElementById('coupValue').required = true;
+        document.getElementById('coupValueGroup').classList.remove('opacity-50');
         document.getElementById('coupLimit').value = '';
         document.getElementById('coupExpiry').value = '';
         document.getElementById('coupDesc').value = '';
         document.getElementById('coupStatus').checked = true;
+    }
+
+    function handleCouponTypeChange() {
+        const type = document.getElementById('coupType').value;
+        const valueGroup = document.getElementById('coupValueGroup');
+        const valueInput = document.getElementById('coupValue');
+        if (type === 'free_shipping') {
+            valueInput.required = false;
+            valueInput.value = '0';
+            valueGroup.classList.add('opacity-50');
+            valueInput.setAttribute('disabled', true);
+        } else {
+            valueInput.required = true;
+            valueInput.value = '';
+            valueGroup.classList.remove('opacity-50');
+            valueInput.removeAttribute('disabled');
+        }
     }
 
     function generateCouponCode() {
@@ -326,7 +358,6 @@
 
         document.getElementById('coupCode').value    = coupon.code;
         document.getElementById('coupType').value    = coupon.type;
-        document.getElementById('coupValue').value   = coupon.value;
         document.getElementById('coupLimit').value   = coupon.usage_limit || '';
         document.getElementById('coupDesc').value    = coupon.description || '';
         document.getElementById('coupStatus').checked = coupon.status == 1;
@@ -335,6 +366,12 @@
             document.getElementById('coupExpiry').value = coupon.expiry_date.split('T')[0];
         } else {
             document.getElementById('coupExpiry').value = '';
+        }
+
+        // Handle free_shipping type
+        handleCouponTypeChange();
+        if (coupon.type !== 'free_shipping') {
+            document.getElementById('coupValue').value = coupon.value;
         }
 
         toggleModal('couponModal');
@@ -360,6 +397,68 @@
                 const form = document.getElementById('deleteForm');
                 form.action = deleteUrl;
                 form.submit();
+            }
+        });
+    }
+
+    function toggleCouponStatus(couponId, currentStatus) {
+        const actionText = currentStatus ? "disable" : "enable";
+        const url = `/admin/coupons/${couponId}/status`;
+
+        Swal.fire({
+            title: `Want to ${actionText} coupon?`,
+            text: `This will ${actionText} the coupon code.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: 'Yes, do it!',
+            background: '#ffffff',
+            customClass: {
+                popup: 'rounded-2xl border border-gray-100 shadow-xl',
+                confirmButton: 'px-5 py-2.5 rounded-xl text-white font-semibold',
+                cancelButton: 'px-5 py-2.5 rounded-xl text-white font-semibold'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Updated!',
+                            text: data.message,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: { popup: 'rounded-2xl shadow-xl' }
+                        }).then(() => window.location.reload());
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(() => Swal.fire('Error', 'An unexpected error occurred.', 'error'));
+            }
+        });
+    }
+
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.querySelectorAll('.coupon-row');
+        rows.forEach(row => {
+            const code = row.getAttribute('data-code');
+            const type = row.getAttribute('data-type');
+            if (code.includes(query) || type.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
             }
         });
     }

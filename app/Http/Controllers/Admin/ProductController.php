@@ -8,6 +8,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -59,8 +60,10 @@ class ProductController extends Controller
 
         // Handle Main Image upload or URL
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $validated['image'] = '/storage/' . $path;
+            $file = $request->file('image');
+            $filename = 'img_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('storage/products'), $filename);
+            $validated['image'] = '/storage/products/' . $filename;
         } elseif ($request->filled('image_url')) {
             $validated['image'] = $request->image_url;
         }
@@ -81,12 +84,18 @@ class ProductController extends Controller
         // Add uploaded gallery files
         if ($request->hasFile('gallery_files')) {
             foreach ($request->file('gallery_files') as $file) {
-                $path = $file->store('products', 'public');
-                $gallery[] = '/storage/' . $path;
+                $filename = 'gal_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('storage/products'), $filename);
+                $gallery[] = '/storage/products/' . $filename;
             }
         }
 
         $validated['gallery'] = $gallery;
+
+        // Determine correct category_id based on frontend changes
+        if ($request->filled('category_id')) {
+            $validated['category_id'] = $request->category_id;
+        }
 
         Product::create($validated);
 
@@ -130,18 +139,50 @@ class ProductController extends Controller
 
         // Handle Main Image upload or URL
         if ($request->hasFile('image')) {
-            // Delete old local file if exists
-            if ($product->image && str_starts_with($product->image, '/storage/')) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $product->image));
+            // Delete old file if it was a local upload
+            if ($product->image && str_starts_with($product->image, '/storage/products/')) {
+                $oldPath = public_path(ltrim($product->image, '/'));
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
             }
-            $path = $request->file('image')->store('products', 'public');
-            $validated['image'] = '/storage/' . $path;
+            $file = $request->file('image');
+            $filename = 'img_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('storage/products'), $filename);
+            $validated['image'] = '/storage/products/' . $filename;
         } elseif ($request->filled('image_url')) {
             $validated['image'] = $request->image_url;
+        } else {
+            // Keep existing image
+            $validated['image'] = $product->image;
         }
 
-        // Handle Gallery images
+        // Handle Gallery images — load existing gallery first
         $gallery = $product->gallery ?? [];
+
+        // Remove deleted gallery images
+        if ($request->filled('deleted_gallery_images')) {
+            $deletedImages = json_decode($request->deleted_gallery_images, true);
+            if (is_array($deletedImages)) {
+                foreach ($deletedImages as $delImg) {
+                    // Remove from gallery array
+                    $key = array_search($delImg, $gallery);
+                    if ($key !== false) {
+                        unset($gallery[$key]);
+                        // Delete local file
+                        if (str_starts_with($delImg, '/storage/products/')) {
+                            $filePath = public_path(ltrim($delImg, '/'));
+                            if (file_exists($filePath)) {
+                                @unlink($filePath);
+                            }
+                        } elseif (str_starts_with($delImg, '/storage/')) {
+                            Storage::disk('public')->delete(str_replace('/storage/', '', $delImg));
+                        }
+                    }
+                }
+                $gallery = array_values($gallery); // Re-index array
+            }
+        }
 
         // Check if user wants to reset/replace gallery
         if ($request->hasFile('gallery_files') || $request->filled('gallery_urls')) {
@@ -167,13 +208,19 @@ class ProductController extends Controller
 
             if ($request->hasFile('gallery_files')) {
                 foreach ($request->file('gallery_files') as $file) {
-                    $path = $file->store('products', 'public');
-                    $gallery[] = '/storage/' . $path;
+                    $filename = 'gal_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('storage/products'), $filename);
+                    $gallery[] = '/storage/products/' . $filename;
                 }
             }
         }
 
         $validated['gallery'] = $gallery;
+
+        // Determine correct category_id based on frontend changes
+        if ($request->filled('category_id')) {
+            $validated['category_id'] = $request->category_id;
+        }
 
         $product->update($validated);
 
@@ -188,14 +235,23 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
 
         // Delete main image file if local
-        if ($product->image && str_starts_with($product->image, '/storage/')) {
-            Storage::disk('public')->delete(str_replace('/storage/', '', $product->image));
+        if ($product->image) {
+            if (str_starts_with($product->image, '/storage/products/')) {
+                $filePath = public_path(ltrim($product->image, '/'));
+                if (file_exists($filePath)) @unlink($filePath);
+            } elseif (str_starts_with($product->image, '/storage/')) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $product->image));
+            }
         }
 
         // Delete gallery files if local
         if ($product->gallery && is_array($product->gallery)) {
             foreach ($product->gallery as $img) {
-                if ($img && str_starts_with($img, '/storage/')) {
+                if (!$img) continue;
+                if (str_starts_with($img, '/storage/products/')) {
+                    $filePath = public_path(ltrim($img, '/'));
+                    if (file_exists($filePath)) @unlink($filePath);
+                } elseif (str_starts_with($img, '/storage/')) {
                     Storage::disk('public')->delete(str_replace('/storage/', '', $img));
                 }
             }
@@ -204,5 +260,28 @@ class ProductController extends Controller
         $product->delete();
 
         return redirect()->route('admin.products.index')->with('success', 'Book deleted successfully.');
+    }
+
+    /**
+     * Toggle the status of the specified product.
+     */
+    public function toggleStatus(Request $request, string $id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+            $product->status = !$product->status;
+            $product->save();
+
+            return response()->json([
+                'success' => true,
+                'status' => $product->status,
+                'message' => 'Product status updated successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

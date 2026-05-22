@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers\API;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Services\StripeGateway;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Stripe\Exception\SignatureVerificationException;
+
+class WebhookController extends Controller
+{
+    public function __construct(private StripeGateway $stripe) {}
+
+    /**
+     * POST /api/stripe/webhook
+     */
+    public function handle(Request $request): Response
+    {
+        $payload   = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature', '');
+
+        try {
+            $event = $this->stripe->constructWebhookEvent($payload, $sigHeader);
+        } catch (SignatureVerificationException $e) {
+            return response('Invalid signature.', 400);
+        }
+
+        $intentId = $event->data->object->id ?? null;
+
+        switch ($event->type) {
+            case 'payment_intent.succeeded':
+                if ($intentId) {
+                    Order::where('stripe_payment_intent_id', $intentId)
+                        ->where('status', '!=', 'paid')
+                        ->update(['status' => 'paid']);
+                }
+                break;
+
+            case 'payment_intent.payment_failed':
+                if ($intentId) {
+                    Order::where('stripe_payment_intent_id', $intentId)
+                        ->where('status', '!=', 'failed')
+                        ->update(['status' => 'failed']);
+                }
+                break;
+        }
+
+        return response('OK', 200);
+    }
+}

@@ -59,21 +59,27 @@
                     {{ __('admin.subcategories') ?? 'Subcategories' }}
                 </button>
             </div>
-            <div class="flex items-center space-x-2">
-                <button onclick="openParentModal()"
-                    class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all duration-200">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add Parent Category
-                </button>
-                <button onclick="openSubCreateModal()"
-                    class="inline-flex items-center px-4 py-2.5 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all duration-200">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add Subcategories
-                </button>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search categories..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openParentModal()"
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all duration-200">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Parent
+                    </button>
+                    <button onclick="openSubCreateModal()"
+                        class="inline-flex items-center px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all duration-200">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Subcategories
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -93,7 +99,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                         @forelse($parentCategories as $parent)
-                            <tr class="hover:bg-gray-50/55 transition-colors">
+                            <tr class="hover:bg-gray-50/55 transition-colors category-row" data-name="{{ strtolower($parent->name) }}">
                                 <td class="px-6 py-4 font-semibold text-gray-800">{{ $parent->name }}</td>
                                 <td class="px-6 py-4 text-xs font-mono text-gray-500">{{ $parent->slug }}</td>
                                 <td class="px-6 py-4 text-xs text-gray-500 max-w-xs truncate">
@@ -107,11 +113,9 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
-                                    @if($parent->status)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">Active</span>
-                                    @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">Inactive</span>
-                                    @endif
+                                    <button onclick="toggleCategoryStatus({{ $parent->id }}, {{ $parent->status ? 'true' : 'false' }})" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors {{ $parent->status ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100' }}">
+                                        {{ $parent->status ? 'Active' : 'Inactive' }}
+                                    </button>
                                 </td>
                                 <td class="px-6 py-4 text-right space-x-2">
                                     <button onclick="openEditModal({{ json_encode($parent) }}, 'parent')"
@@ -150,7 +154,7 @@
                         @foreach($parentCategories as $parent)
                             @foreach($parent->subcategories as $sub)
                                 @php $hasSub = true; @endphp
-                                <tr class="hover:bg-gray-50/55 transition-colors">
+                                <tr class="hover:bg-gray-50/55 transition-colors category-row" data-name="{{ strtolower($sub->name) }} {{ strtolower($parent->name) }}">
                                     <td class="px-6 py-4 font-semibold text-gray-800">{{ $sub->name }}</td>
                                     <td class="px-6 py-4">
                                         <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg">{{ $parent->name }}</span>
@@ -167,11 +171,9 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4">
-                                        @if($sub->status)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">Active</span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">Inactive</span>
-                                        @endif
+                                        <button onclick="toggleCategoryStatus({{ $sub->id }}, {{ $sub->status ? 'true' : 'false' }})" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors {{ $sub->status ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100' }}">
+                                            {{ $sub->status ? 'Active' : 'Inactive' }}
+                                        </button>
                                     </td>
                                     <td class="px-6 py-4 text-right space-x-2">
                                         <button onclick="openEditModal({{ json_encode($sub) }}, 'sub')"
@@ -565,6 +567,75 @@
                 const form = document.getElementById('deleteForm');
                 form.action = deleteUrl;
                 form.submit();
+            }
+        });
+    }
+
+    // ── Status Toggle ────────────────────────────────────────────────────────
+    function toggleCategoryStatus(categoryId, currentStatus) {
+        const actionText = currentStatus ? "deactivate" : "activate";
+        const url = `/admin/categories/${categoryId}/status`;
+
+        Swal.fire({
+            title: `Want to ${actionText}?`,
+            text: `This will ${actionText} the category.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: 'Yes, do it!',
+            background: '#ffffff',
+            borderRadius: '1rem',
+            customClass: {
+                popup: 'rounded-2xl border border-gray-100 shadow-xl',
+                confirmButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105',
+                cancelButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        Swal.fire({
+                            title: 'Updated!',
+                            text: data.message,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: { popup: 'rounded-2xl shadow-xl' }
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                });
+            }
+        });
+    }
+
+    // ── Search Filter ────────────────────────────────────────────────────────
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        // Since we have two tables, filter both
+        const rows = document.querySelectorAll('.category-row');
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name');
+            if (name.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
             }
         });
     }
