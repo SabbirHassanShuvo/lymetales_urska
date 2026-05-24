@@ -24,11 +24,9 @@ class CheckoutRequest extends FormRequest
             'phone'          => ['required', 'regex:/^[+\d\s\-]{1,20}$/'],
             'payment_method' => ['required', Rule::in(['cod', 'stripe'])],
             'fast_production' => ['sometimes', 'boolean'],
-            'stripe_payment_intent_id' => [
-                Rule::requiredIf(fn () => $this->input('payment_method') === 'stripe'),
-                'nullable',
-                'string',
-            ],
+            // stripe_payment_intent_id is only needed for direct PaymentIntent flow,
+            // NOT for Stripe Checkout Session (link-based) flow.
+            // 'stripe_payment_intent_id' => ['sometimes', 'nullable', 'string'],
         ];
     }
 

@@ -10,30 +10,27 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Guest Shop API Routes
 |--------------------------------------------------------------------------
-| All routes are stateful (session-based) so the cart persists across
-| requests. No authentication required.
-|
 | Base URL: /api/shop/...
+|
+| POST /api/shop/checkout with payment_method=cod    → COD order
+| POST /api/shop/checkout with payment_method=stripe → Stripe checkout link
 */
 
 Route::prefix('shop')->group(function () {
 
     // Cart
-    Route::get('/cart',           [CartController::class, 'index']);
-    Route::post('/cart/add',      [CartController::class, 'add']);
-    Route::patch('/cart/update',  [CartController::class, 'update']);
-    Route::delete('/cart/remove', [CartController::class, 'remove']);
+    Route::get('/cart',          [CartController::class, 'index']);
+    Route::post('/cart/add',     [CartController::class, 'add']);
+    Route::post('/cart/update',  [CartController::class, 'update']);
+    Route::post('/cart/remove',  [CartController::class, 'remove']);
 
-    // Checkout
+    // Checkout (COD + Stripe — single endpoint)
     Route::get('/checkout',  [CheckoutController::class, 'index']);
     Route::post('/checkout', [CheckoutController::class, 'store']);
 
     // Coupon
-    Route::post('/coupon/apply',    [CheckoutController::class, 'applyCoupon']);
-    Route::delete('/coupon/remove', [CheckoutController::class, 'removeCoupon']);
-
-    // Stripe PaymentIntent
-    Route::post('/payment/intent', [CheckoutController::class, 'createPaymentIntent']);
+    Route::post('/coupon/apply',  [CheckoutController::class, 'applyCoupon']);
+    Route::post('/coupon/remove', [CheckoutController::class, 'removeCoupon']);
 
     // Order Confirmation
     Route::get('/confirmation/{orderNumber}', [ConfirmationController::class, 'show']);

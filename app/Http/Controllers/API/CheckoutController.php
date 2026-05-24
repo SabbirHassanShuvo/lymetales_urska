@@ -23,19 +23,12 @@ class CheckoutController extends Controller
         private StripeGateway   $stripe,
     ) {}
 
-    /**
-     * GET /api/shop/checkout
-     */
-    public function index(): JsonResponse
-    {
-        if ($this->cart->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your cart is empty.',
-            ], 422);
-        }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helper: calculate order totals
+    // ─────────────────────────────────────────────────────────────────────────
 
-        $symbol      = config('shop.currency_symbol', '€');
+    private function calculateTotals(bool $fastProduction = false): array
+    {
         $shippingFee = (float) config('shop.shipping_fee', 5.95);
         $fastFee     = (float) config('shop.fast_production_fee', 9.95);
         $subtotal    = $this->cart->subtotal();
@@ -43,62 +36,172 @@ class CheckoutController extends Controller
         $discount    = $coupon ? (float) ($coupon['discount'] ?? 0) : 0.0;
         $freeShip    = $coupon && ($coupon['free_shipping'] ?? false);
         $shipping    = $freeShip ? 0.0 : $shippingFee;
-        $total       = $subtotal - $discount + $shipping;
+        $fastProdFee = $fastProduction ? $fastFee : 0.0;
+        $total       = round($subtotal - $discount + $shipping + $fastProdFee, 2);
+
+        return compact(
+            'subtotal', 'shippingFee', 'fastFee',
+            'discount', 'freeShip', 'shipping',
+            'fastProdFee', 'total', 'coupon'
+        );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/shop/checkout — summary for checkout page
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public function index(): JsonResponse
+    {
+        if ($this->cart->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Your cart is empty.'], 422);
+        }
+
+        $t      = $this->calculateTotals();
+        $symbol = config('shop.currency_symbol', '€');
 
         return response()->json([
             'items'               => $this->cart->items(),
-            'subtotal'            => $symbol . number_format($subtotal, 2),
-            'shipping_fee'        => $freeShip ? 'Free' : $symbol . number_format($shippingFee, 2),
-            'fast_production_fee' => $symbol . number_format($fastFee, 2),
-            'discount'            => $discount > 0 ? $symbol . number_format($discount, 2) : null,
-            'coupon'              => $coupon,
-            'total'               => $symbol . number_format($total, 2),
+            'subtotal'            => $symbol . number_format($t['subtotal'], 2),
+            'shipping_fee'        => $t['freeShip'] ? 'Free' : $symbol . number_format($t['shippingFee'], 2),
+            'fast_production_fee' => $symbol . number_format($t['fastFee'], 2),
+            'discount'            => $t['discount'] > 0 ? $symbol . number_format($t['discount'], 2) : null,
+            'coupon'              => $t['coupon'],
+            'total'               => $symbol . number_format($t['total'], 2),
             'cities'              => config('shop.cities', []),
         ]);
     }
 
-    /**
-     * POST /api/shop/checkout
-     * Place a COD order.
-     */
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/shop/checkout
+    //
+    // payment_method = cod    → creates order, returns success
+    // payment_method = stripe → creates order + Stripe Checkout link
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function store(CheckoutRequest $request): JsonResponse
     {
         if ($this->cart->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your cart is empty.',
-            ], 422);
+            return response()->json(['success' => false, 'message' => 'Your cart is empty.'], 422);
         }
 
-        $coupon = session(config('shop.coupon_session_key'));
+        $coupon   = session(config('shop.coupon_session_key'));
+        $fastProd = $request->boolean('fast_production');
+        $t        = $this->calculateTotals($fastProd);
+
+        // ── COD ──────────────────────────────────────────────────────────────
+        if ($request->input('payment_method') === 'cod') {
+            try {
+                $order = $this->orderGenerator->create(
+                    $request->validated(),
+                    $this->cart->items(),
+                    $coupon
+                );
+            } catch (OrderException $e) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            $this->cart->clear();
+            session()->forget(config('shop.coupon_session_key'));
+
+            return response()->json([
+                'success'        => true,
+                'payment_method' => 'cod',
+                'order_number'   => $order->order_number,
+                'message'        => 'Order placed successfully.',
+            ]);
+        }
+
+        // ── Stripe ───────────────────────────────────────────────────────────
+        $currency = config('shop.currency', 'eur');
+
+        // 1. Create pending order (stripe_payment_intent_id filled later by webhook)
+        $checkoutData = array_merge($request->validated(), [
+            'payment_method'           => 'stripe',
+            'fast_production'          => $fastProd,
+            'stripe_payment_intent_id' => null,
+        ]);
 
         try {
-            $order = $this->orderGenerator->create(
-                $request->validated(),
-                $this->cart->items(),
-                $coupon
-            );
+            $order = $this->orderGenerator->create($checkoutData, $this->cart->items(), $coupon);
         } catch (OrderException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
+        // 2. Build Stripe line_items
+        $lineItems = [];
+
+        foreach ($this->cart->items() as $item) {
+            $lineItems[] = [
+                'price_data' => [
+                    'currency'     => $currency,
+                    'unit_amount'  => (int) round($item['unit_price'] * 100),
+                    'product_data' => ['name' => $item['title']],
+                ],
+                'quantity' => $item['quantity'],
+            ];
+        }
+
+        if ($t['shipping'] > 0) {
+            $lineItems[] = [
+                'price_data' => [
+                    'currency'     => $currency,
+                    'unit_amount'  => (int) round($t['shipping'] * 100),
+                    'product_data' => ['name' => 'Shipping'],
+                ],
+                'quantity' => 1,
+            ];
+        }
+
+        if ($t['fastProdFee'] > 0) {
+            $lineItems[] = [
+                'price_data' => [
+                    'currency'     => $currency,
+                    'unit_amount'  => (int) round($t['fastProdFee'] * 100),
+                    'product_data' => ['name' => 'Fast Production'],
+                ],
+                'quantity' => 1,
+            ];
+        }
+
+        // 3. Redirect URLs (Next.js pages)
+        $frontendUrl = rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/');
+        $successUrl  = $frontendUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}&order=' . $order->order_number;
+        $cancelUrl   = $frontendUrl . '/payment/cancel?order=' . $order->order_number;
+
+        // 4. Create Stripe Checkout Session
+        try {
+            $result = $this->stripe->createCheckoutSession(
+                $lineItems,
+                $currency,
+                $successUrl,
+                $cancelUrl,
+                ['order_number' => $order->order_number]
+            );
+        } catch (StripeException $e) {
+            $order->delete(); // rollback
+            return response()->json([
+                'success' => false,
+                'error'   => 'Payment service unavailable: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        // 5. Clear cart
         $this->cart->clear();
         session()->forget(config('shop.coupon_session_key'));
 
         return response()->json([
-            'success'      => true,
-            'order_number' => $order->order_number,
-            'redirect'     => url('/api/shop/confirmation/' . $order->order_number),
+            'success'        => true,
+            'payment_method' => 'stripe',
+            'order_number'   => $order->order_number,
+            'checkout_url'   => $result['checkout_url'],
+            'session_id'     => $result['session_id'],
         ]);
     }
 
-    /**
-     * POST /api/shop/coupon/apply
-     * Body: { "code": "SUMMER20" }
-     */
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/shop/coupon/apply
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function applyCoupon(Request $request): JsonResponse
     {
         $request->validate(['code' => ['required', 'string']]);
@@ -118,10 +221,7 @@ class CheckoutController extends Controller
                 $this->cart->subtotal()
             );
         } catch (CouponException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
         session()->put($couponKey, [
@@ -141,42 +241,14 @@ class CheckoutController extends Controller
         ]);
     }
 
-    /**
-     * DELETE /api/shop/coupon/remove
-     */
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/shop/coupon/remove
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function removeCoupon(): JsonResponse
     {
         session()->forget(config('shop.coupon_session_key'));
 
-        return response()->json(['success' => true]);
-    }
-
-    /**
-     * POST /api/shop/payment/intent
-     * Body: { "fast_production": true }
-     */
-    public function createPaymentIntent(Request $request): JsonResponse
-    {
-        $shippingFee = (float) config('shop.shipping_fee', 5.95);
-        $fastFee     = (float) config('shop.fast_production_fee', 9.95);
-        $subtotal    = $this->cart->subtotal();
-        $coupon      = session(config('shop.coupon_session_key'));
-        $discount    = $coupon ? (float) ($coupon['discount'] ?? 0) : 0.0;
-        $freeShip    = $coupon && ($coupon['free_shipping'] ?? false);
-        $shipping    = $freeShip ? 0.0 : $shippingFee;
-        $fastProd    = $request->boolean('fast_production') ? $fastFee : 0.0;
-        $total       = $subtotal - $discount + $shipping + $fastProd;
-        $amountCents = (int) round($total * 100);
-        $currency    = config('shop.currency', 'eur');
-
-        try {
-            $clientSecret = $this->stripe->createPaymentIntent($amountCents, $currency);
-        } catch (StripeException $e) {
-            return response()->json([
-                'error' => 'Payment service unavailable. Please try again.',
-            ], 500);
-        }
-
-        return response()->json(['client_secret' => $clientSecret]);
+        return response()->json(['success' => true, 'message' => 'Coupon removed.']);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Exceptions\CartException;
 use App\Http\Controllers\Controller;
 use App\Services\CartManager;
+use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,17 +19,61 @@ class CartController extends Controller
     public function index(): JsonResponse
     {
         $symbol      = config('shop.currency_symbol', '€');
-        $shippingFee = (float) config('shop.shipping_fee', 5.95);
-        $fastFee     = (float) config('shop.fast_production_fee', 9.95);
+        $shippingFee = (float) Setting::getVal('shipping_charge', config('shop.shipping_fee', 5.95));
+        $fastFee     = (float) Setting::getVal('fast_production_fee', config('shop.fast_production_fee', 9.95));
         $subtotal    = $this->cart->subtotal();
+
+        // Global discount
+        $discountType  = Setting::getVal('global_discount_type', 'fixed');
+        $discountValue = (float) Setting::getVal('global_discount_value', 0);
+        $globalDiscount = 0;
+        if ($discountValue > 0) {
+            if ($discountType === 'percentage') {
+                $globalDiscount = $subtotal * ($discountValue / 100);
+            } else {
+                $globalDiscount = $discountValue;
+            }
+        }
+        if ($globalDiscount > $subtotal) {
+            $globalDiscount = $subtotal;
+        }
+
+        // Coupon discount
+        $coupon         = session(config('shop.coupon_session_key'));
+        $couponDiscount = 0.0;
+        $freeShip       = false;
+        if ($coupon) {
+            $freeShip = (bool) ($coupon['free_shipping'] ?? false);
+            if ($freeShip) {
+                $couponDiscount = $shippingFee; // shipping becomes free = deduct shipping cost
+            } elseif ($coupon['type'] === 'percent') {
+                $couponValue    = (float) \App\Models\Coupon::where('code', $coupon['code'])->value('value');
+                $couponDiscount = round(($couponValue / 100) * $subtotal, 2);
+            } else {
+                $couponDiscount = (float) ($coupon['discount'] ?? 0);
+            }
+        }
+
+        $totalDiscount = $globalDiscount + $couponDiscount;
+        if ($totalDiscount > $subtotal + $shippingFee) {
+            $totalDiscount = $subtotal + $shippingFee;
+        }
+
+        $isFastProd    = session('shop.cart_fast_production', false);
+        $appliedFastFee = $isFastProd ? $fastFee : 0.0;
+        $total          = $subtotal - $totalDiscount + $shippingFee + $appliedFastFee;
 
         return response()->json([
             'items'               => $this->cart->items(),
             'count'               => $this->cart->count(),
             'subtotal'            => $symbol . number_format($subtotal, 2),
-            'shipping_fee'        => $symbol . number_format($shippingFee, 2),
+            'global_discount'     => $globalDiscount > 0 ? '-' . $symbol . number_format($globalDiscount, 2) : null,
+            'coupon_discount'     => $couponDiscount > 0 ? '-' . $symbol . number_format($couponDiscount, 2) : null,
+            'coupon'              => $coupon ? ['code' => $coupon['code'], 'type' => $coupon['type'], 'free_shipping' => $freeShip] : null,
+            'shipping_fee'        => $freeShip ? 'Free' : $symbol . number_format($shippingFee, 2),
             'fast_production_fee' => $symbol . number_format($fastFee, 2),
-            'total'               => $symbol . number_format($subtotal + $shippingFee, 2),
+            'is_fast_production'  => $isFastProd,
+            'total'               => $symbol . number_format($total, 2),
             'is_empty'            => $this->cart->isEmpty(),
         ]);
     }
@@ -80,8 +125,30 @@ class CartController extends Controller
         );
 
         $symbol      = config('shop.currency_symbol', '€');
-        $shippingFee = (float) config('shop.shipping_fee', 5.95);
+        $shippingFee = (float) Setting::getVal('shipping_charge', config('shop.shipping_fee', 5.95));
         $subtotal    = $this->cart->subtotal();
+
+        $discountType = Setting::getVal('global_discount_type', 'fixed');
+        $discountValue = (float) Setting::getVal('global_discount_value', 0);
+        $discountAmount = 0;
+
+        if ($discountValue > 0) {
+            if ($discountType === 'percentage') {
+                $discountAmount = $subtotal * ($discountValue / 100);
+            } else {
+                $discountAmount = $discountValue;
+            }
+        }
+
+        if ($discountAmount > $subtotal) {
+            $discountAmount = $subtotal;
+        }
+
+        $fastFee    = (float) Setting::getVal('fast_production_fee', config('shop.fast_production_fee', 9.95));
+        $isFastProd = session('shop.cart_fast_production', false);
+        $appliedFastFee = $isFastProd ? $fastFee : 0.0;
+
+        $total = $subtotal - $discountAmount + $shippingFee + $appliedFastFee;
 
         $items     = $this->cart->items();
         $productId = (int) $request->input('product_id');
@@ -94,11 +161,12 @@ class CartController extends Controller
         }
 
         return response()->json([
-            'success'    => true,
-            'item_total' => $itemTotal,
-            'subtotal'   => $symbol . number_format($subtotal, 2),
-            'total'      => $symbol . number_format($subtotal + $shippingFee, 2),
-            'cart_count' => $this->cart->count(),
+            'success'         => true,
+            'item_total'      => $itemTotal,
+            'subtotal'        => $symbol . number_format($subtotal, 2),
+            'global_discount' => '-' . $symbol . number_format($discountAmount, 2),
+            'total'           => $symbol . number_format($total, 2),
+            'cart_count'      => $this->cart->count(),
         ]);
     }
 
@@ -115,14 +183,52 @@ class CartController extends Controller
         $this->cart->remove((int) $request->input('product_id'));
 
         $symbol      = config('shop.currency_symbol', '€');
-        $shippingFee = (float) config('shop.shipping_fee', 5.95);
+        $shippingFee = (float) Setting::getVal('shipping_charge', config('shop.shipping_fee', 5.95));
         $subtotal    = $this->cart->subtotal();
 
+        $discountType = Setting::getVal('global_discount_type', 'fixed');
+        $discountValue = (float) Setting::getVal('global_discount_value', 0);
+        $discountAmount = 0;
+
+        if ($discountValue > 0) {
+            if ($discountType === 'percentage') {
+                $discountAmount = $subtotal * ($discountValue / 100);
+            } else {
+                $discountAmount = $discountValue;
+            }
+        }
+
+        if ($discountAmount > $subtotal) {
+            $discountAmount = $subtotal;
+        }
+
+        $fastFee    = (float) Setting::getVal('fast_production_fee', config('shop.fast_production_fee', 9.95));
+        $isFastProd = session('shop.cart_fast_production', false);
+        $appliedFastFee = $isFastProd ? $fastFee : 0.0;
+
+        $total = $subtotal - $discountAmount + $shippingFee + $appliedFastFee;
+
         return response()->json([
-            'success'    => true,
-            'subtotal'   => $symbol . number_format($subtotal, 2),
-            'total'      => $symbol . number_format($subtotal + $shippingFee, 2),
-            'cart_count' => $this->cart->count(),
+            'success'         => true,
+            'subtotal'        => $symbol . number_format($subtotal, 2),
+            'global_discount' => '-' . $symbol . number_format($discountAmount, 2),
+            'total'           => $symbol . number_format($total, 2),
+            'cart_count'      => $this->cart->count(),
         ]);
+    }
+
+    /**
+     * POST /api/shop/cart/fast-production
+     * Body: { "fast_production": true }
+     */
+    public function toggleFastProduction(Request $request): JsonResponse
+    {
+        $request->validate([
+            'fast_production' => ['required', 'boolean'],
+        ]);
+
+        session()->put('shop.cart_fast_production', $request->boolean('fast_production'));
+
+        return $this->index();
     }
 }

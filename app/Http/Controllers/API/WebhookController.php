@@ -15,6 +15,11 @@ class WebhookController extends Controller
 
     /**
      * POST /api/stripe/webhook
+     *
+     * Handles:
+     *   - checkout.session.completed  → order status = 'paid'
+     *   - payment_intent.succeeded    → order status = 'paid'  (fallback)
+     *   - payment_intent.payment_failed → order status = 'failed'
      */
     public function handle(Request $request): Response
     {
@@ -27,10 +32,26 @@ class WebhookController extends Controller
             return response('Invalid signature.', 400);
         }
 
-        $intentId = $event->data->object->id ?? null;
-
         switch ($event->type) {
+
+            // Primary: Stripe Checkout Session completed
+            case 'checkout.session.completed':
+                $session     = $event->data->object;
+                $orderNumber = $session->metadata->order_number ?? null;
+
+                if ($orderNumber) {
+                    Order::where('order_number', $orderNumber)
+                        ->where('status', '!=', 'paid')
+                        ->update([
+                            'status'                   => 'paid',
+                            'stripe_payment_intent_id' => $session->payment_intent,
+                        ]);
+                }
+                break;
+
+            // Fallback: PaymentIntent succeeded (direct integration)
             case 'payment_intent.succeeded':
+                $intentId = $event->data->object->id ?? null;
                 if ($intentId) {
                     Order::where('stripe_payment_intent_id', $intentId)
                         ->where('status', '!=', 'paid')
@@ -38,7 +59,9 @@ class WebhookController extends Controller
                 }
                 break;
 
+            // Payment failed
             case 'payment_intent.payment_failed':
+                $intentId = $event->data->object->id ?? null;
                 if ($intentId) {
                     Order::where('stripe_payment_intent_id', $intentId)
                         ->where('status', '!=', 'failed')
