@@ -20,7 +20,7 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
 
 ## Tasks
 
-- [ ] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - Stripe Order Created With `paid` Status
   - **CRITICAL**: This test MUST FAIL on unfixed code — failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -35,7 +35,7 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.1, 2.1_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Non-Status Fields Unchanged by Fix
   - **IMPORTANT**: Follow observation-first methodology
   - Observe: `OrderGenerator::create()` with `payment_method = 'cod'` and random cart items produces correct subtotal, shipping_fee, fast_production_fee, discount, total, coupon_code, stripe_payment_intent_id, and items snapshot on unfixed code
@@ -49,9 +49,9 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.3, 3.4, 3.5_
 
-- [ ] 3. Fix for premature `paid` status and missing order/payment status separation
+- [x] 3. Fix for premature `paid` status and missing order/payment status separation
 
-  - [ ] 3.1 Add migration for `order_status` and `payment_status` columns
+  - [x] 3.1 Add migration for `order_status` and `payment_status` columns
     - Create `database/migrations/2026_06_10_000001_add_order_payment_status_to_orders_table.php`
     - Add `order_status` string(20) column with default `'pending'` after `status` — allowed values: `pending`, `processing`, `shipped`, `delivered`, `cancelled`
     - Add `payment_status` string(20) column with default `'pending'` after `order_status` — allowed values: `pending`, `paid`, `failed`
@@ -63,13 +63,13 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
     - _Preservation: existing rows keep their old status value; no data migration needed_
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 3.2 Update `Order` model
+  - [x] 3.2 Update `Order` model
     - File: `app/Models/Order.php`
     - Add `order_status` and `payment_status` to `$fillable`
     - Remove `status` from `$fillable` (deprecated — no new code should write to it)
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ] 3.3 Fix `OrderGenerator::create()` — remove premature `paid` assignment
+  - [x] 3.3 Fix `OrderGenerator::create()` — remove premature `paid` assignment
     - File: `app/Services/OrderGenerator.php`
     - Remove the line: `'status' => $checkoutData['payment_method'] === 'stripe' ? 'paid' : 'pending'`
     - Replace with: `'order_status' => 'pending'` and `'payment_status' => 'pending'`
@@ -79,7 +79,7 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
     - _Preservation: coupon used_count increment, all financial calculations, stripe_payment_intent_id storage, and items snapshot remain unchanged_
     - _Requirements: 2.1, 2.2, 3.1, 3.3, 3.4_
 
-  - [ ] 3.4 Fix `WebhookController::handle()` — write to `payment_status` only
+  - [x] 3.4 Fix `WebhookController::handle()` — write to `payment_status` only
     - File: `app/Http/Controllers/API/WebhookController.php`
     - `checkout.session.completed` branch: change `'status' => 'paid'` to `'payment_status' => 'paid'`; change guard from `where('status', '!=', 'paid')` to `where('payment_status', '!=', 'paid')`
     - `payment_intent.succeeded` branch: same substitution as above
@@ -90,7 +90,7 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
     - _Preservation: stripe_payment_intent_id still stored on checkout.session.completed; signature validation still returns 400 on invalid signature_
     - _Requirements: 2.3, 2.4, 3.2, 3.5_
 
-  - [ ] 3.5 Create `OrderController` for admin status management
+  - [x] 3.5 Create `OrderController` for admin status management
     - File: `app/Http/Controllers/Admin/OrderController.php`
     - Implement `updateOrderStatus(Request $request, Order $order): JsonResponse`
       - Validates `order_status` against allowed values: `pending`, `processing`, `shipped`, `delivered`, `cancelled`
@@ -103,14 +103,14 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
       - Returns `{ success: true, payment_status: '...' }`
     - _Requirements: 2.5, 2.6, 2.7, 3.6_
 
-  - [ ] 3.6 Register admin routes
+  - [x] 3.6 Register admin routes
     - File: `routes/api.php`
     - Add a new `admin` prefix group with `auth:sanctum` (or `auth` if using session-based web guard) and `admin` middleware
     - Register `PATCH /admin/orders/{order}/order-status` → `OrderController@updateOrderStatus`
     - Register `PATCH /admin/orders/{order}/payment-status` → `OrderController@updatePaymentStatus`
     - _Requirements: 2.5, 2.6, 2.7_
 
-  - [ ] 3.7 Verify bug condition exploration test now passes
+  - [x] 3.7 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - Stripe Order Created With `pending` Statuses
     - **IMPORTANT**: Re-run the SAME test from task 1 — do NOT write a new test
     - The test from task 1 encodes the expected behavior: `order_status = 'pending'` AND `payment_status = 'pending'` for Stripe orders
@@ -119,7 +119,7 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
     - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 3.8 Verify preservation tests still pass
+  - [x] 3.8 Verify preservation tests still pass
     - **Property 2: Preservation** - Non-Status Fields Unchanged by Fix
     - **IMPORTANT**: Re-run the SAME tests from task 2 — do NOT write new tests
     - Run all preservation property tests from step 2
@@ -133,10 +133,3 @@ Tasks 1 and 2 are independent and can be written in parallel. Task 3 depends on 
   - Verify webhook tests pass — `checkout.session.completed` sets `payment_status = 'paid'` without touching `order_status`; `payment_intent.payment_failed` sets `payment_status = 'failed'` without touching `order_status`
   - Verify admin endpoint tests pass — `updateOrderStatus` works for both COD and Stripe orders; `updatePaymentStatus` works for COD and returns 422 for Stripe
   - Ensure all tests pass; ask the user if questions arise
-
-## Notes
-
-- The legacy `status` column is retained but deprecated (made nullable). Do not drop it in this fix — a separate cleanup migration can remove it later once all consumers are confirmed migrated.
-- If the admin panel uses session-based auth (web guard) rather than Sanctum tokens, replace `auth:sanctum` with `auth` in the admin route group.
-- Property-based tests for preservation can use a library like [eris/eris](https://github.com/giorgiosironi/eris) for PHP, or be approximated with data providers covering edge cases (zero discount, free shipping coupon, fast production fee enabled/disabled).
-- Run `php artisan migrate` after completing task 3.1 before running any other tasks in the 3.x group.

@@ -41,9 +41,9 @@ class WebhookController extends Controller
 
                 if ($orderNumber) {
                     Order::where('order_number', $orderNumber)
-                        ->where('status', '!=', 'paid')
+                        ->where('payment_status', '!=', 'paid')
                         ->update([
-                            'status'                   => 'paid',
+                            'payment_status'           => 'paid',
                             'stripe_payment_intent_id' => $session->payment_intent,
                         ]);
                 }
@@ -54,8 +54,8 @@ class WebhookController extends Controller
                 $intentId = $event->data->object->id ?? null;
                 if ($intentId) {
                     Order::where('stripe_payment_intent_id', $intentId)
-                        ->where('status', '!=', 'paid')
-                        ->update(['status' => 'paid']);
+                        ->where('payment_status', '!=', 'paid')
+                        ->update(['payment_status' => 'paid']);
                 }
                 break;
 
@@ -64,8 +64,8 @@ class WebhookController extends Controller
                 $intentId = $event->data->object->id ?? null;
                 if ($intentId) {
                     Order::where('stripe_payment_intent_id', $intentId)
-                        ->where('status', '!=', 'failed')
-                        ->update(['status' => 'failed']);
+                        ->where('payment_status', '!=', 'failed')
+                        ->update(['payment_status' => 'failed']);
                 }
                 break;
         }

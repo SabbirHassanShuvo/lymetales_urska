@@ -25,22 +25,19 @@ class Product extends Model
         'paper_type',
         'rating',
         'reviews_count',
-        'image',
-        'gallery',
         'is_bestseller',
         'is_recommended',
         'status',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'rating' => 'decimal:1',
-        'reviews_count' => 'integer',
-        'pages' => 'integer',
-        'is_bestseller' => 'boolean',
+        'price'          => 'decimal:2',
+        'rating'         => 'decimal:1',
+        'reviews_count'  => 'integer',
+        'pages'          => 'integer',
+        'is_bestseller'  => 'boolean',
         'is_recommended' => 'boolean',
-        'status' => 'boolean',
-        'gallery' => 'array',
+        'status'         => 'boolean',
     ];
 
     /**
@@ -57,11 +54,42 @@ class Product extends Model
         });
     }
 
-    /**
-     * Get the category associated with the product.
-     */
+    // ── Relationships ──────────────────────────────────────────────────────
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    /** All images ordered by sort_order */
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    /** Primary (cover) image */
+    public function primaryImage()
+    {
+        return $this->hasOne(ProductImage::class)->where('is_main', true);
+    }
+
+    /** Gallery images (non-primary) */
+    public function galleryImages()
+    {
+        return $this->hasMany(ProductImage::class)
+            ->where('is_main', false)
+            ->orderBy('sort_order');
+    }
+
+    // ── Convenience accessors ──────────────────────────────────────────────
+
+    /** Returns the URL of the primary image, or null */
+    public function getImageUrlAttribute(): ?string
+    {
+        $img = $this->relationLoaded('primaryImage')
+            ? $this->primaryImage
+            : $this->primaryImage()->first();
+
+        return $img?->url;
     }
 }

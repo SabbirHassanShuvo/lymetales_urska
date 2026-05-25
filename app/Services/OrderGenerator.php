@@ -72,7 +72,8 @@ class OrderGenerator
             ) {
                 $order = Order::create([
                     'order_number'             => $orderNumber,
-                    'status'                   => $checkoutData['payment_method'] === 'stripe' ? 'paid' : 'pending',
+                    'order_status'             => 'pending',
+                    'payment_status'           => 'pending',
                     'email'                    => $checkoutData['email'],
                     'full_name'                => $checkoutData['full_name'],
                     'address'                  => $checkoutData['address'],

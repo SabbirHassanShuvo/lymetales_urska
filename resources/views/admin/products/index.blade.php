@@ -95,7 +95,7 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center space-x-4">
                                     <div class="w-14 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0">
-                                        <img src="{{ $product->image ?: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=120' }}" alt="{{ $product->title }}" class="w-full h-full object-cover">
+                                        <img src="{{ $product->imageUrl ?: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=120' }}" alt="{{ $product->title }}" class="w-full h-full object-cover">
                                     </div>
                                     <div>
                                         <h4 class="font-bold text-gray-800 text-sm hover:text-indigo-600 transition-colors">
@@ -153,10 +153,10 @@
                             <!-- Actions -->
                             <td class="px-6 py-4 text-right space-x-2">
                                 <div class="flex items-center justify-end space-x-1.5">
-                                    <button onclick="previewProduct({{ json_encode($product) }})" class="px-2.5 py-1.5 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-150 rounded-lg text-xs font-bold transition-all" title="Customer Preview">
+                                    <button onclick="previewProduct({{ json_encode($product->load('images')) }})" class="px-2.5 py-1.5 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-150 rounded-lg text-xs font-bold transition-all" title="Customer Preview">
                                         Preview
                                     </button>
-                                    <button onclick="editProduct({{ json_encode($product) }})" class="px-2.5 py-1.5 bg-gray-50 hover:bg-indigo-55 hover:text-indigo-600 border border-gray-150 rounded-lg text-xs font-bold transition-all" title="Edit Book">
+                                    <button onclick="editProduct({{ json_encode($product->load('images')) }})" class="px-2.5 py-1.5 bg-gray-50 hover:bg-indigo-55 hover:text-indigo-600 border border-gray-150 rounded-lg text-xs font-bold transition-all" title="Edit Book">
                                         Edit
                                     </button>
                                     <button onclick="confirmDelete('{{ route('admin.products.destroy', $product->id) }}', 'This book and its files will be permanently deleted.')" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete Book">
@@ -206,6 +206,17 @@
                             </svg>
                         </button>
                     </div>
+
+                    @if($errors->any())
+                    <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                        <p class="text-sm font-semibold text-red-700 mb-1">Please fix the following errors:</p>
+                        <ul class="list-disc list-inside text-sm text-red-600 space-y-0.5">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    @endif
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Left Fields -->
@@ -322,7 +333,7 @@
                                 <input type="file" name="gallery_files[]" id="prodGalleryFiles" multiple accept="image/*" onchange="previewGalleryImages(event)" class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 w-full border border-gray-200 p-1.5 rounded-xl bg-gray-50">
                                 <div id="galleryPreviewContainer" class="flex flex-wrap gap-2 mt-3"></div>
                                 <div id="existingGalleryContainer" class="flex flex-wrap gap-2 mt-2 hidden"></div>
-                                <input type="hidden" name="deleted_gallery_images" id="deletedGalleryImages" value="[]">
+                                <input type="hidden" name="deleted_image_ids" id="deletedImageIds" value="[]">
                                 <input type="text" name="gallery_urls" id="prodGalleryUrls" placeholder="Or enter comma-separated Image URLs..." class="w-full px-4 py-2 mt-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
                                 <!-- Replace Gallery checkbox for editing -->
                                 <label id="replaceGalleryGroup" class="hidden items-center space-x-2 mt-2 cursor-pointer">
@@ -573,7 +584,7 @@
         selectedGalleryFiles = [];
         document.getElementById('existingGalleryContainer').innerHTML = "";
         document.getElementById('existingGalleryContainer').classList.add('hidden');
-        document.getElementById('deletedGalleryImages').value = "[]";
+        document.getElementById('deletedImageIds').value = "[]";
         
         document.getElementById('prodIsBestseller').checked = false;
         document.getElementById('prodIsRecommended').checked = false;
@@ -637,10 +648,33 @@
         document.getElementById('prodRating').value = product.rating || "";
         document.getElementById('prodReviewsCount').value = product.reviews_count || "";
         
-        // Handle images (if it's a URL, populate URL input, otherwise empty it)
-        if (product.image && (product.image.startsWith('http://') || product.image.startsWith('https://'))) {
-            document.getElementById('prodImageUrl').value = product.image;
+        // Handle images — populate from product.images relation
+        const primaryImg = product.images ? product.images.find(i => i.is_main) : null;
+        const galleryImgs = product.images ? product.images.filter(i => !i.is_main) : [];
+
+        // Primary image — show preview and populate URL field
+        const mainPreviewDiv = document.getElementById('mainImagePreview');
+        const mainPreviewImg = document.getElementById('mainImagePreviewImg');
+        document.getElementById('prodImageFile').value = "";
+
+        if (primaryImg && primaryImg.image_path) {
+            // Use the 'url' accessor if available, otherwise build from image_path
+            const imgUrl = primaryImg.url
+                ? primaryImg.url
+                : (primaryImg.image_path.startsWith('http') ? primaryImg.image_path : window.location.origin + '/' + primaryImg.image_path.replace(/^\//, ''));
+
+            mainPreviewImg.src = imgUrl;
+            mainPreviewDiv.classList.remove('hidden');
+
+            // Only populate the URL text field for external URLs
+            if (primaryImg.image_path.startsWith('http://') || primaryImg.image_path.startsWith('https://')) {
+                document.getElementById('prodImageUrl').value = primaryImg.image_path;
+            } else {
+                document.getElementById('prodImageUrl').value = "";
+            }
         } else {
+            mainPreviewImg.src = "";
+            mainPreviewDiv.classList.add('hidden');
             document.getElementById('prodImageUrl').value = "";
         }
 
@@ -648,36 +682,34 @@
         document.getElementById('replaceGalleryGroup').classList.remove('hidden');
         document.getElementById('replaceGalleryGroup').classList.add('flex');
 
-        // Populate gallery url inputs if any
-        if (product.gallery && Array.isArray(product.gallery)) {
-            const urls = product.gallery.filter(g => g.startsWith('http://') || g.startsWith('https://'));
-            document.getElementById('prodGalleryUrls').value = urls.join(', ');
-            
-            // Render existing non-url gallery items to delete
-            const existingContainer = document.getElementById('existingGalleryContainer');
-            existingContainer.innerHTML = '';
+        // Render existing gallery images with delete buttons
+        const existingContainer = document.getElementById('existingGalleryContainer');
+        existingContainer.innerHTML = '';
+        document.getElementById('deletedImageIds').value = "[]";
+
+        if (galleryImgs.length > 0) {
             existingContainer.classList.remove('hidden');
-            
-            product.gallery.forEach(imgUrl => {
-                if (!imgUrl.startsWith('http://') && !imgUrl.startsWith('https://')) {
-                    const div = document.createElement('div');
-                    div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group';
-                    div.innerHTML = `
-                        <img src="${imgUrl}" class="w-full h-full object-cover">
-                        <button type="button" onclick="markExistingGalleryDeleted('${imgUrl}', this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    `;
-                    existingContainer.appendChild(div);
-                }
+            galleryImgs.forEach(img => {
+                // Use url accessor if available, otherwise build from image_path
+                const imgUrl = img.url
+                    ? img.url
+                    : (img.image_path.startsWith('http') ? img.image_path : window.location.origin + '/' + img.image_path.replace(/^\//, ''));
+                const div = document.createElement('div');
+                div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group';
+                div.dataset.imageId = img.id;
+                div.innerHTML = `
+                    <img src="${imgUrl}" class="w-full h-full object-cover">
+                    <button type="button" onclick="markImageDeleted(${img.id}, this.closest('div'))" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                existingContainer.appendChild(div);
             });
         } else {
-            document.getElementById('prodGalleryUrls').value = "";
-            document.getElementById('existingGalleryContainer').innerHTML = '';
-            document.getElementById('existingGalleryContainer').classList.add('hidden');
+            existingContainer.classList.add('hidden');
         }
 
-        document.getElementById('deletedGalleryImages').value = "[]";
+        document.getElementById('prodGalleryUrls').value = "";
 
         document.getElementById('prodIsBestseller').checked = product.is_bestseller === true || product.is_bestseller === 1;
         document.getElementById('prodIsRecommended').checked = product.is_recommended === true || product.is_recommended === 1;
@@ -688,10 +720,19 @@
 
     function previewProduct(product) {
         const fallBackImg = "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400";
+
+        // Resolve images from product.images relation
+        const primaryImg = product.images ? product.images.find(i => i.is_main) : null;
+        const galleryImgs = product.images ? product.images.filter(i => !i.is_main) : [];
+        // Use url accessor if available, otherwise build from image_path
+        const resolveUrl = (img) => img.url
+            ? img.url
+            : (img.image_path.startsWith('http') ? img.image_path : window.location.origin + '/' + img.image_path.replace(/^\//, ''));
+        const primaryUrl = primaryImg ? resolveUrl(primaryImg) : null;
         
         // Ingest texts
         document.getElementById('prevTitle').textContent = product.title;
-        document.getElementById('prevImg').src = product.image || fallBackImg;
+        document.getElementById('prevImg').src = primaryUrl || fallBackImg;
         document.getElementById('prevPrice').textContent = "$" + parseFloat(product.price).toFixed(2);
         document.getElementById('prevDescription').textContent = product.description || "No description provided for this book yet.";
         document.getElementById('prevRatingScore').textContent = parseFloat(product.rating || 5.0).toFixed(1) + " / 5.0";
@@ -733,30 +774,29 @@
         // Add main cover as first thumbnail
         const mainThumb = document.createElement('div');
         mainThumb.className = "w-16 h-20 bg-gray-50 rounded-lg overflow-hidden border border-indigo-400 cursor-pointer flex-shrink-0";
-        mainThumb.innerHTML = `<img src="${product.image || fallBackImg}" class="w-full h-full object-cover">`;
+        mainThumb.innerHTML = `<img src="${primaryUrl || fallBackImg}" class="w-full h-full object-cover">`;
         mainThumb.onclick = () => {
             document.querySelectorAll('#prevGallery > div').forEach(d => d.classList.remove('border-indigo-400'));
             mainThumb.classList.add('border-indigo-400');
-            document.getElementById('prevImg').src = product.image || fallBackImg;
+            document.getElementById('prevImg').src = primaryUrl || fallBackImg;
         };
         prevGallery.appendChild(mainThumb);
 
-        // Add actual gallery images
-        if (product.gallery && Array.isArray(product.gallery)) {
-            product.gallery.forEach(imgUrl => {
-                if (imgUrl) {
-                    const thumb = document.createElement('div');
-                    thumb.className = "w-16 h-20 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 hover:border-indigo-300 cursor-pointer flex-shrink-0 transition-all";
-                    thumb.innerHTML = `<img src="${imgUrl}" class="w-full h-full object-cover">`;
-                    thumb.onclick = () => {
-                        document.querySelectorAll('#prevGallery > div').forEach(d => d.classList.remove('border-indigo-400'));
-                        thumb.classList.add('border-indigo-400');
-                        document.getElementById('prevImg').src = imgUrl;
-                    };
-                    prevGallery.appendChild(thumb);
-                }
-            });
-        }
+        // Add gallery images
+        galleryImgs.forEach(img => {
+            if (img.image_path) {
+                const galleryUrl = resolveUrl(img);
+                const thumb = document.createElement('div');
+                thumb.className = "w-16 h-20 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 hover:border-indigo-300 cursor-pointer flex-shrink-0 transition-all";
+                thumb.innerHTML = `<img src="${galleryUrl}" class="w-full h-full object-cover">`;
+                thumb.onclick = () => {
+                    document.querySelectorAll('#prevGallery > div').forEach(d => d.classList.remove('border-indigo-400'));
+                    thumb.classList.add('border-indigo-400');
+                    document.getElementById('prevImg').src = galleryUrl;
+                };
+                prevGallery.appendChild(thumb);
+            }
+        });
 
         toggleModal('previewModal');
     }
@@ -877,7 +917,11 @@
         const files = Array.from(event.target.files);
         files.forEach(file => selectedGalleryFiles.push(file));
         renderGalleryPreview();
-        // Reset the input so user can add more files later
+        // Rebuild the input FileList so all selected files are submitted with the form
+        const dt = new DataTransfer();
+        selectedGalleryFiles.forEach(f => dt.items.add(f));
+        document.getElementById('prodGalleryFiles').files = dt.files;
+        // Reset the raw value so the same file can be re-added if needed
         event.target.value = '';
     }
 
@@ -911,11 +955,11 @@
         document.getElementById('prodGalleryFiles').files = dt.files;
     }
 
-    function markExistingGalleryDeleted(url, element) {
-        let deleted = JSON.parse(document.getElementById('deletedGalleryImages').value || "[]");
-        deleted.push(url);
-        document.getElementById('deletedGalleryImages').value = JSON.stringify(deleted);
-        element.closest('div').remove();
+    function markImageDeleted(imageId, element) {
+        let deleted = JSON.parse(document.getElementById('deletedImageIds').value || "[]");
+        deleted.push(imageId);
+        document.getElementById('deletedImageIds').value = JSON.stringify(deleted);
+        element.remove();
     }
 
     // --- Status Toggle SweetAlert ---
@@ -982,4 +1026,13 @@
         animation: fadeIn 0.25s ease-out forwards;
     }
 </style>
+
+@if($errors->any())
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('productModal').classList.remove('hidden');
+    });
+</script>
+@endif
+
 @endsection
