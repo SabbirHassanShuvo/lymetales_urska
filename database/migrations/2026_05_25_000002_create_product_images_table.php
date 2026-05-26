@@ -13,8 +13,8 @@ return new class extends Migration
             Schema::create('product_images', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('product_id')->index();
-                $table->string('path');
-                $table->boolean('is_primary')->default(false);
+                $table->string('image_path');
+                $table->boolean('is_main')->default(false);
                 $table->unsignedSmallInteger('sort_order')->default(0);
                 $table->timestamps();
 
@@ -22,6 +22,12 @@ return new class extends Migration
                     ->references('id')
                     ->on('products')
                     ->onDelete('cascade');
+            });
+        } elseif (Schema::hasColumn('product_images', 'path')) {
+            // Rename legacy columns if they exist
+            Schema::table('product_images', function (Blueprint $table) {
+                $table->renameColumn('path', 'image_path');
+                $table->renameColumn('is_primary', 'is_main');
             });
         }
 

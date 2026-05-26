@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Category;
+use App\Models\Subcategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -15,12 +16,12 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'primaryImage', 'images'])
+        $products = Product::with(['category', 'primaryImage', 'images', 'specialSections'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $categories   = Category::parents()->orderBy('name')->get();
-        $subcategories = Category::whereNotNull('parent_id')->orderBy('name')->get();
+        $categories   = Category::orderBy('name')->get();
+        $subcategories = Subcategory::orderBy('name')->get();
 
         return view('admin.products.index', compact('products', 'categories', 'subcategories'));
     }
@@ -48,12 +49,19 @@ class ProductController extends Controller
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
+            'subcategory_id'     => 'nullable|exists:subcategories,id',
+            'special_sections'             => 'nullable|array',
+            'special_sections.*.title'     => 'nullable|string|max:255',
+            'special_sections.*.subtitle'  => 'nullable|string|max:255',
+            'special_sections.*.description' => 'nullable|string',
+            'special_sections.*.image'     => 'nullable|image|max:4096',
         ]);
 
         DB::transaction(function () use ($request) {
             $product = Product::create([
                 'title'          => $request->title,
                 'category_id'    => $request->filled('category_id') ? $request->category_id : null,
+                'subcategory_id' => $request->filled('subcategory_id') ? $request->subcategory_id : null,
                 'description'    => $request->description,
                 'price'          => $request->price,
                 'pages'          => $request->pages,
@@ -70,6 +78,29 @@ class ProductController extends Controller
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
             ]);
+
+            // Save special sections
+            if ($request->has('special_sections') && is_array($request->special_sections)) {
+                $sort = 0;
+                foreach ($request->special_sections as $index => $section) {
+                    if (empty($section['title']) && empty($section['subtitle']) && empty($section['description']) && !$request->hasFile("special_sections.$index.image")) {
+                        continue;
+                    }
+
+                    $imagePath = null;
+                    if ($request->hasFile("special_sections.$index.image")) {
+                        $imagePath = $this->saveUploadedFile($request->file("special_sections.$index.image"), 'special');
+                    }
+
+                    $product->specialSections()->create([
+                        'title' => $section['title'] ?? null,
+                        'subtitle' => $section['subtitle'] ?? null,
+                        'description' => $section['description'] ?? null,
+                        'image' => $imagePath,
+                        'sort_order' => $sort++,
+                    ]);
+                }
+            }
 
             $sortOrder = 0;
 
@@ -142,12 +173,21 @@ class ProductController extends Controller
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
+            'subcategory_id'     => 'nullable|exists:subcategories,id',
+            'special_sections'             => 'nullable|array',
+            'special_sections.*.id'        => 'nullable|exists:product_special_sections,id',
+            'special_sections.*.title'     => 'nullable|string|max:255',
+            'special_sections.*.subtitle'  => 'nullable|string|max:255',
+            'special_sections.*.description' => 'nullable|string',
+            'special_sections.*.image'     => 'nullable|image|max:4096',
+            'special_sections.*.existing_image' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $product) {
             $product->update([
                 'title'          => $request->title,
                 'category_id'    => $request->filled('category_id') ? $request->category_id : null,
+                'subcategory_id' => $request->filled('subcategory_id') ? $request->subcategory_id : null,
                 'description'    => $request->description,
                 'price'          => $request->price,
                 'pages'          => $request->pages,
@@ -164,6 +204,65 @@ class ProductController extends Controller
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
             ]);
+
+            // Save special sections
+            if ($request->has('special_sections') && is_array($request->special_sections)) {
+                $submittedIds = [];
+                $sort = 0;
+
+                foreach ($request->special_sections as $index => $section) {
+                    $id = $section['id'] ?? null;
+
+                    if (empty($section['title']) && empty($section['subtitle']) && empty($section['description']) && !$request->hasFile("special_sections.$index.image") && empty($section['existing_image'])) {
+                        continue;
+                    }
+
+                    $imagePath = $section['existing_image'] ?? null;
+                    if ($request->hasFile("special_sections.$index.image")) {
+                        $imagePath = $this->saveUploadedFile($request->file("special_sections.$index.image"), 'special');
+                    }
+
+                    if ($id) {
+                        $specialSection = $product->specialSections()->find($id);
+                        if ($specialSection) {
+                            $specialSection->update([
+                                'title' => $section['title'] ?? null,
+                                'subtitle' => $section['subtitle'] ?? null,
+                                'description' => $section['description'] ?? null,
+                                'image' => $imagePath,
+                                'sort_order' => $sort++,
+                            ]);
+                            $submittedIds[] = $specialSection->id;
+                        }
+                    } else {
+                        $newSection = $product->specialSections()->create([
+                            'title' => $section['title'] ?? null,
+                            'subtitle' => $section['subtitle'] ?? null,
+                            'description' => $section['description'] ?? null,
+                            'image' => $imagePath,
+                            'sort_order' => $sort++,
+                        ]);
+                        $submittedIds[] = $newSection->id;
+                    }
+                }
+
+                // Delete removed sections
+                $toDelete = $product->specialSections()->whereNotIn('id', $submittedIds)->get();
+                foreach ($toDelete as $delSec) {
+                    if ($delSec->image) {
+                        $this->deleteFile($delSec->image);
+                    }
+                    $delSec->delete();
+                }
+            } else {
+                $toDelete = $product->specialSections;
+                foreach ($toDelete as $delSec) {
+                    if ($delSec->image) {
+                        $this->deleteFile($delSec->image);
+                    }
+                    $delSec->delete();
+                }
+            }
 
             // Delete images marked for removal
             if ($request->filled('deleted_image_ids')) {
@@ -236,6 +335,12 @@ class ProductController extends Controller
             $this->deleteFile($img->image_path);
         }
 
+        foreach ($product->specialSections as $sec) {
+            if ($sec->image) {
+                $this->deleteFile($sec->image);
+            }
+        }
+
         $product->delete(); // cascade deletes product_images rows
 
         return redirect()->route('admin.products.index')->with('success', 'Book deleted successfully.');
@@ -265,7 +370,7 @@ class ProductController extends Controller
 
     private function saveUploadedFile($file, string $prefix): string
     {
-        $filename = $prefix . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $filename = $prefix . '_' . uniqid('', true) . '_' . \Illuminate\Support\Str::random(5) . '.' . $file->getClientOriginalExtension();
         $dest = public_path('storage/products');
 
         // Ensure directory exists

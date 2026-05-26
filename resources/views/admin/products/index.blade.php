@@ -228,7 +228,7 @@
 
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
-                                <select id="prodParentCategory" onchange="handleCategoryChange()" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                <select name="category_id" id="prodParentCategory" onchange="handleCategoryChange()" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                     <option value="">-- Select Category --</option>
                                     @foreach($categories as $cat)
                                         @if($cat->subcategories->count() == 0)
@@ -238,15 +238,14 @@
                                         @endif
                                     @endforeach
                                 </select>
-                                <input type="hidden" name="category_id" id="prodCategoryId">
                             </div>
                             <!-- Subcategory (shown only when parent has sub) -->
                             <div id="subCategoryContainer" class="hidden">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory *</label>
-                                <select id="prodSubCategory" onchange="handleSubCategoryChange()" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                <select name="subcategory_id" id="prodSubCategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                     <option value="">-- Select Subcategory --</option>
                                     @foreach($subcategories as $sub)
-                                        <option value="{{ $sub->id }}" data-parent="{{ $sub->parent_id }}">{{ $sub->name }}</option>
+                                        <option value="{{ $sub->id }}" data-parent="{{ $sub->category_id }}">{{ $sub->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -350,8 +349,22 @@
                         <textarea name="description" id="prodDesc" rows="3" placeholder="Write a gorgeous description for this personalized story..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"></textarea>
                     </div>
 
+                    <!-- Dynamic "What makes this special" Sections -->
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-md font-bold text-gray-800">"What makes this special" Sections</h4>
+                            <button type="button" onclick="addSpecialSection()" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-all flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add Section
+                            </button>
+                        </div>
+                        <div id="specialSectionsContainer" class="space-y-6">
+                            <!-- Dynamic sections appended here via JS -->
+                        </div>
+                    </div>
+
                     <!-- Status Flags -->
-                    <div class="flex items-center space-x-6 pt-2 border-t border-gray-50">
+                    <div class="flex items-center space-x-6 pt-6 border-t border-gray-50">
                         <label class="flex items-center space-x-3 cursor-pointer">
                             <input type="checkbox" name="is_bestseller" id="prodIsBestseller" value="1" class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
                             <span class="text-sm font-bold text-gray-700">★ Best Seller Badge</span>
@@ -504,28 +517,11 @@
                     </div>
                 </div>
 
-                <!-- Mock Customer Reviews Section -->
+                <!-- Mock Customer Reviews Section (Removed Fake Reviews) -->
                 <div class="mt-12 pt-8 border-t border-gray-150/80">
                     <h3 class="text-lg font-extrabold text-gray-900 tracking-tight mb-6">Customer Reviews</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex text-amber-400 text-xs">★★★★★</div>
-                                <span class="text-2xs text-gray-400 font-semibold">Verified Buyer</span>
-                            </div>
-                            <h5 class="font-bold text-gray-800 text-sm">"Absolutely magical!"</h5>
-                            <p class="text-xs text-gray-500 leading-relaxed">"The illustration is stunning and the personalisation matches perfectly. High-quality cover."</p>
-                            <p class="text-[10px] text-gray-400 font-medium">Reviewed by Sarah M.</p>
-                        </div>
-                        <div class="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex text-amber-400 text-xs">★★★★★</div>
-                                <span class="text-2xs text-gray-400 font-semibold">Verified Buyer</span>
-                            </div>
-                            <h5 class="font-bold text-gray-800 text-sm">"Best gift ever"</h5>
-                            <p class="text-xs text-gray-500 leading-relaxed">"My son loves seeing his name in the story. We read this book every single night now."</p>
-                            <p class="text-[10px] text-gray-400 font-medium">Reviewed by Thomas R.</p>
-                        </div>
+                    <div class="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 text-center">
+                        <p class="text-xs text-gray-500 font-medium">Customer reviews for this product will appear on the storefront. Live review preview is not available in admin.</p>
                     </div>
                 </div>
             </div>
@@ -540,6 +536,8 @@
 </form>
 
 <script>
+    let specialSectionIndex = 0;
+
     function toggleModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal.classList.contains('hidden')) {
@@ -558,7 +556,6 @@
         document.getElementById('modalTitle').textContent = "Create New Book";
         
         document.getElementById('prodTitle').value = "";
-        document.getElementById('prodCategoryId').value = "";
         document.getElementById('prodParentCategory').value = "";
         document.getElementById('prodSubCategory').value = "";
         document.getElementById('subCategoryContainer').classList.add('hidden');
@@ -576,6 +573,10 @@
         document.getElementById('prodGalleryUrls').value = "";
         document.getElementById('prodImageFile').value = "";
         document.getElementById('prodGalleryFiles').value = "";
+        
+        document.getElementById('specialSectionsContainer').innerHTML = "";
+        specialSectionIndex = 0;
+        addSpecialSection(); // Add one blank section by default
 
         // Clear image previews
         document.getElementById('mainImagePreview').classList.add('hidden');
@@ -607,33 +608,18 @@
         // Category Logic update for Edit
         const parentSelect = document.getElementById('prodParentCategory');
         const subSelect = document.getElementById('prodSubCategory');
-        const catIdInput = document.getElementById('prodCategoryId');
         const subContainer = document.getElementById('subCategoryContainer');
         
         // Reset category state
         parentSelect.value = "";
         subSelect.value = "";
-        catIdInput.value = product.category_id || "";
         subContainer.classList.add('hidden');
 
         if (product.category_id) {
-            // Find if it's a parent or subcategory
-            let isSub = false;
-            let parentId = null;
-            Array.from(subSelect.options).forEach(opt => {
-                if (opt.value == product.category_id) {
-                    isSub = true;
-                    parentId = opt.getAttribute('data-parent');
-                }
-            });
-
-            if (isSub) {
-                parentSelect.value = parentId;
-                handleCategoryChange(); // Trigger the filter
-                subSelect.value = product.category_id;
-            } else {
-                parentSelect.value = product.category_id;
-                handleCategoryChange();
+            parentSelect.value = product.category_id;
+            handleCategoryChange();
+            if (product.subcategory_id) {
+                subSelect.value = product.subcategory_id;
             }
         }
 
@@ -647,6 +633,15 @@
         document.getElementById('prodPaperType').value = product.paper_type || "";
         document.getElementById('prodRating').value = product.rating || "";
         document.getElementById('prodReviewsCount').value = product.reviews_count || "";
+        
+        document.getElementById('specialSectionsContainer').innerHTML = "";
+        specialSectionIndex = 0;
+        
+        if (product.special_sections && product.special_sections.length > 0) {
+            product.special_sections.forEach(sec => addSpecialSection(sec));
+        } else {
+            addSpecialSection();
+        }
         
         // Handle images — populate from product.images relation
         const primaryImg = product.images ? product.images.find(i => i.is_main) : null;
@@ -850,12 +845,11 @@
         const parentId = parentSelect.value;
         const subContainer = document.getElementById('subCategoryContainer');
         const subSelect = document.getElementById('prodSubCategory');
-        const catIdInput = document.getElementById('prodCategoryId');
 
         if (!parentId) {
             subContainer.classList.add('hidden');
             subSelect.required = false;
-            catIdInput.value = '';
+            subSelect.value = '';
             return;
         }
 
@@ -873,22 +867,10 @@
                 }
             });
             subSelect.value = '';
-            catIdInput.value = ''; // Wait for subcategory selection
         } else {
             subContainer.classList.add('hidden');
             subSelect.required = false;
             subSelect.value = '';
-            catIdInput.value = parentId; // Use parent as category_id
-        }
-    }
-
-    function handleSubCategoryChange() {
-        const subSelect = document.getElementById('prodSubCategory');
-        const catIdInput = document.getElementById('prodCategoryId');
-        if (subSelect.value) {
-            catIdInput.value = subSelect.value;
-        } else {
-            catIdInput.value = "";
         }
     }
 
@@ -910,6 +892,99 @@
         document.getElementById('mainImagePreview').classList.add('hidden');
     }
 
+    // --- Special Section Builder ---
+    function addSpecialSection(data = null) {
+        const container = document.getElementById('specialSectionsContainer');
+        const idx = specialSectionIndex++;
+        
+        let existingIdHtml = '';
+        let existingImageHtml = '';
+        let previewHtml = '';
+        
+        if (data && data.id) {
+            existingIdHtml = `<input type="hidden" name="special_sections[${idx}][id]" value="${data.id}">`;
+        }
+        if (data && data.image) {
+            existingImageHtml = `<input type="hidden" name="special_sections[${idx}][existing_image]" value="${data.image}">`;
+            const imgUrl = data.image.startsWith('http') ? data.image : window.location.origin + '/' + data.image.replace(/^\//, '');
+            previewHtml = `
+                <div id="specialImagePreview_${idx}" class="mt-3 relative w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img id="specialImagePreviewImg_${idx}" src="${imgUrl}" class="w-full h-full object-cover">
+                    <button type="button" onclick="clearDynamicSpecialImage(${idx})" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center" title="Remove">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+        } else {
+            previewHtml = `
+                <div id="specialImagePreview_${idx}" class="hidden mt-3 relative w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img id="specialImagePreviewImg_${idx}" src="" class="w-full h-full object-cover">
+                    <button type="button" onclick="clearDynamicSpecialImage(${idx})" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center" title="Remove">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        const sectionHtml = `
+            <div id="special_section_row_${idx}" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border border-gray-100 rounded-2xl bg-white relative group">
+                <button type="button" onclick="removeSpecialSection(${idx})" class="absolute -top-3 -right-3 w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-red-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                ${existingIdHtml}
+                ${existingImageHtml}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Subtitle</label>
+                        <input type="text" name="special_sections[${idx}][subtitle]" value="${data ? (data.subtitle || '') : ''}" placeholder="e.g. WATCH THEIR FACE LIGHT UP" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                        <input type="text" name="special_sections[${idx}][title]" value="${data ? (data.title || '') : ''}" placeholder="e.g. Watch their face light up" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                        <textarea name="special_sections[${idx}][description]" rows="4" placeholder="There's nothing quite like seeing a child discover..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">${data ? (data.description || '') : ''}</textarea>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Section Image</label>
+                    <input type="file" name="special_sections[${idx}][image]" id="prodSpecialImageFile_${idx}" accept="image/*" onchange="previewDynamicSpecialImage(event, ${idx})" class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 w-full border border-gray-200 p-1.5 rounded-xl bg-gray-50">
+                    ${previewHtml}
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', sectionHtml);
+    }
+
+    function removeSpecialSection(idx) {
+        document.getElementById(`special_section_row_${idx}`).remove();
+    }
+
+    function previewDynamicSpecialImage(event, idx) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(`specialImagePreviewImg_${idx}`).src = e.target.result;
+            document.getElementById(`specialImagePreview_${idx}`).classList.remove('hidden');
+            // Remove existing image hidden input if they upload a new one
+            const existingInput = document.querySelector(`input[name="special_sections[${idx}][existing_image]"]`);
+            if(existingInput) existingInput.remove();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearDynamicSpecialImage(idx) {
+        document.getElementById(`prodSpecialImageFile_${idx}`).value = '';
+        document.getElementById(`specialImagePreviewImg_${idx}`).src = '';
+        document.getElementById(`specialImagePreview_${idx}`).classList.add('hidden');
+        // Remove existing image hidden input
+        const existingInput = document.querySelector(`input[name="special_sections[${idx}][existing_image]"]`);
+        if(existingInput) existingInput.remove();
+    }
+
     // --- Multi-Image Gallery Preview & Delete ---
     let selectedGalleryFiles = [];
 
@@ -917,11 +992,7 @@
         const files = Array.from(event.target.files);
         files.forEach(file => selectedGalleryFiles.push(file));
         renderGalleryPreview();
-        // Rebuild the input FileList so all selected files are submitted with the form
-        const dt = new DataTransfer();
-        selectedGalleryFiles.forEach(f => dt.items.add(f));
-        document.getElementById('prodGalleryFiles').files = dt.files;
-        // Reset the raw value so the same file can be re-added if needed
+        // Reset input so same files can be picked again
         event.target.value = '';
     }
 
@@ -949,10 +1020,6 @@
     function removeGalleryImage(index) {
         selectedGalleryFiles.splice(index, 1);
         renderGalleryPreview();
-        // Rebuild the FileList for the input using DataTransfer
-        const dt = new DataTransfer();
-        selectedGalleryFiles.forEach(f => dt.items.add(f));
-        document.getElementById('prodGalleryFiles').files = dt.files;
     }
 
     function markImageDeleted(imageId, element) {
@@ -961,6 +1028,52 @@
         document.getElementById('deletedImageIds').value = JSON.stringify(deleted);
         element.remove();
     }
+
+    // --- Form Submit via fetch (ensures gallery files are properly sent) ---
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const form = this;
+        const submitBtn = form.querySelector('[type="submit"]');
+        const originalText = submitBtn.textContent;
+
+        submitBtn.textContent = 'Saving...';
+        submitBtn.disabled = true;
+
+        // Build FormData from existing form fields
+        const formData = new FormData(form);
+
+        // Remove any broken gallery_files entries from FormData (may be empty)
+        formData.delete('gallery_files[]');
+
+        // Append each file from our tracked array
+        selectedGalleryFiles.forEach(file => {
+            formData.append('gallery_files[]', file);
+        });
+
+        // Determine method override
+        const method = document.getElementById('formMethod').value || 'POST';
+        if (method === 'PUT' || method === 'PATCH') {
+            formData.set('_method', method);
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => {
+            // follow redirect (fetch auto-follows, response.url is final URL)
+            window.location.href = response.url;
+        })
+        .catch(err => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            Swal.fire('Error', 'An unexpected error occurred. Please try again.', 'error');
+        });
+    });
 
     // --- Status Toggle SweetAlert ---
     function toggleProductStatus(productId, currentStatus) {

@@ -11,13 +11,49 @@ use Illuminate\Support\Facades\Validator;
 class ReviewController extends Controller
 {
     /**
-     * Display all approved reviews for a product
-     * GET /api/shop/products/{slug}/reviews
+     * Display all approved reviews across all products
+     * GET /api/shop/reviews
      */
-    public function index(string $slug)
+    public function allReviews()
+    {
+        $reviews = ProductReview::with('product:id,title,slug')
+            ->where('is_approved', true)
+            ->latest()
+            ->paginate(15);
+
+        return response()->json([
+            'success' => true,
+            'data' => $reviews->map(fn ($r) => [
+                'id' => $r->id,
+                'reviewer_name' => $r->reviewer_name,
+                'title' => $r->title,
+                'reviewer_location' => $r->reviewer_location,
+                'rating' => (float) $r->rating,
+                'comment' => $r->comment,
+                'created_at' => $r->created_at->format('M d, Y'),
+                'product' => $r->product ? [
+                    'id' => $r->product->id,
+                    'title' => $r->product->title,
+                    'slug' => $r->product->slug,
+                ] : null,
+            ]),
+            'meta' => [
+                'current_page' => $reviews->currentPage(),
+                'last_page' => $reviews->lastPage(),
+                'per_page' => $reviews->perPage(),
+                'total' => $reviews->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Display all approved reviews for a product
+     * GET /api/shop/products/{id}/reviews
+     */
+    public function index(string $id)
     {
         // Find the product
-        $product = Product::where('slug', $slug)
+        $product = Product::where('id', $id)
             ->where('status', true)
             ->firstOrFail();
 
@@ -40,6 +76,7 @@ class ReviewController extends Controller
                 'reviews' => $reviews->map(fn ($r) => [
                     'id' => $r->id,
                     'reviewer_name' => $r->reviewer_name,
+                    'title' => $r->title,
                     'reviewer_location' => $r->reviewer_location,
                     'rating' => (float) $r->rating,
                     'comment' => $r->comment,
@@ -57,18 +94,19 @@ class ReviewController extends Controller
 
     /**
      * Submit a new review (Guest user)
-     * POST /api/shop/products/{slug}/reviews
+     * POST /api/shop/products/{id}/reviews
      */
-    public function store(Request $request, string $slug)
+    public function store(Request $request, string $id)
     {
         // Find the product
-        $product = Product::where('slug', $slug)
+        $product = Product::where('id', $id)
             ->where('status', true)
             ->firstOrFail();
 
         // Validation rules
         $validator = Validator::make($request->all(), [
             'reviewer_name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'reviewer_email' => 'required|email|max:255',
             'reviewer_location' => 'nullable|string|max:255',
             'rating' => 'required|numeric|min:1|max:5',
@@ -109,21 +147,21 @@ class ReviewController extends Controller
         $review = ProductReview::create([
             'product_id' => $product->id,
             'reviewer_name' => $request->reviewer_name,
+            'title' => $request->title,
             'reviewer_email' => $request->reviewer_email,
             'reviewer_location' => $request->reviewer_location,
             'rating' => $request->rating,
             'comment' => $request->comment,
-            'is_approved' => false, // Requires admin approval
+            'is_approved' => true, // Set to true automatically for now so you can see it in API (Usually it should be false and await Admin approval)
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Your review has been submitted successfully! It will be published after admin approval.',
+            'message' => 'Your review has been submitted successfully!',
             'data' => [
                 'id' => $review->id,
                 'reviewer_name' => $review->reviewer_name,
                 'rating' => (float) $review->rating,
-                'status' => 'pending_approval',
             ],
         ], 201);
     }

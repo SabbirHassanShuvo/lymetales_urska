@@ -12,6 +12,7 @@ class Product extends Model
 
     protected $fillable = [
         'category_id',
+        'subcategory_id',
         'title',
         'slug',
         'description',
@@ -59,6 +60,17 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function subcategory()
+    {
+        return $this->belongsTo(Subcategory::class, 'subcategory_id');
+    }
+
+    /** Special sections */
+    public function specialSections()
+    {
+        return $this->hasMany(ProductSpecialSection::class)->orderBy('sort_order');
     }
 
     /** All images ordered by sort_order */

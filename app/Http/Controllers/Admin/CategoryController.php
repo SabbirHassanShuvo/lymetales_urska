@@ -11,7 +11,7 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $parentCategories = Category::parents()->with('subcategories')->orderBy('name')->get();
+        $parentCategories = Category::with('subcategories')->orderBy('name')->get();
         $specialCategories = Category::special()->orderBy('name')->get();
 
         return view('admin.categories.index', compact('parentCategories', 'specialCategories'));

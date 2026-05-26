@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Category;
+use App\Models\Subcategory;
 use App\Models\Coupon;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -18,8 +19,8 @@ class DashboardController extends Controller
         $approvedUsers = User::where('role', 'user')->where('status', 'approved')->count();
         
         $totalCategories = Category::count();
-        $parentCategories = Category::parents()->count();
-        $subCategories = Category::whereNotNull('parent_id')->count();
+        $parentCategories = Category::count();
+        $subCategories = Subcategory::count();
         $specialCategories = Category::special()->count();
         
         $totalCoupons = Coupon::count();

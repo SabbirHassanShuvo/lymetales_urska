@@ -5,6 +5,7 @@ use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\CheckoutController;
 use App\Http\Controllers\API\ConfirmationController;
 use App\Http\Controllers\API\ProductController;
+use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,17 +21,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('shop')->group(function () {
 
- // ── Products ───────────────────────────────────────────────────────────
+    // ── Products ───────────────────────────────────────────────────────────
     Route::get('/products', [ProductController::class, 'index']);
-    Route::get('/products/{slug}', [ProductController::class, 'show']);
+    Route::get('/products/{id}', [ProductController::class, 'show']);
 
     // ── Reviews ────────────────────────────────────────────────────────────
-    Route::get('/products/{slug}/reviews', [ReviewController::class, 'index']);
-    Route::post('/products/{slug}/reviews', [ReviewController::class, 'store']);
+    Route::get('/reviews', [ReviewController::class, 'allReviews']);
+    Route::get('/products/{id}/reviews', [ReviewController::class, 'index']);
+    Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
 
     // ── Categories ─────────────────────────────────────────────────────────
     Route::get('/categories', [CategoryController::class, 'index']);
-    Route::get('/categories/{slug}', [CategoryController::class, 'show']);
+    Route::get('/categories', [CategoryController::class, 'show']);
 
     // Cart
     Route::get('/cart',          [CartController::class, 'index']);

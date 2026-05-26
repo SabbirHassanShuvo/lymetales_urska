@@ -15,17 +15,14 @@ class ProductController extends Controller
     {
         $perPage = min((int) $request->input('per_page', 12), 48);
 
-        $query = Product::with(['category:id,name,slug,parent_id', 'primaryImage', 'galleryImages'])
+        $query = Product::with(['category:id,name,slug', 'subcategory:id,category_id,name,slug', 'primaryImage', 'galleryImages'])
             ->where('status', true);
 
         // Category / Subcategory filter
-        if ($request->filled('subcategory')) {
-            $query->whereHas('category', fn ($q) => $q->where('slug', $request->subcategory));
-        } elseif ($request->filled('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('slug', $request->category)
-                  ->orWhereHas('parent', fn ($q2) => $q2->where('slug', $request->category));
-            });
+        if ($request->filled('subcategory_id')) {
+            $query->where('subcategory_id', $request->subcategory_id);
+        } elseif ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
         }
 
         if ($request->boolean('is_bestseller'))  $query->where('is_bestseller', true);
@@ -68,12 +65,12 @@ class ProductController extends Controller
     }
 
     /**
-     * GET /api/shop/products/{slug}
+     * GET /api/shop/products/{id}
      */
-    public function show(string $slug)
+    public function show(string $id)
     {
-        $product = Product::with(['category:id,name,slug,parent_id', 'primaryImage', 'galleryImages'])
-            ->where('slug', $slug)
+        $product = Product::with(['category:id,name,slug', 'subcategory:id,category_id,name,slug', 'primaryImage', 'galleryImages', 'specialSections'])
+            ->where('id', $id)
             ->where('status', true)
             ->firstOrFail();
 
@@ -102,7 +99,11 @@ class ProductController extends Controller
                 'id'        => $p->category->id,
                 'name'      => $p->category->name,
                 'slug'      => $p->category->slug,
-                'parent_id' => $p->category->parent_id,
+            ] : null,
+            'subcategory'    => $p->subcategory ? [
+                'id'        => $p->subcategory->id,
+                'name'      => $p->subcategory->name,
+                'slug'      => $p->subcategory->slug,
             ] : null,
         ];
 
@@ -115,6 +116,13 @@ class ProductController extends Controller
                 'cover_type'  => $p->cover_type,
                 'print_type'  => $p->print_type,
                 'paper_type'  => $p->paper_type,
+                'special_sections' => $p->specialSections->map(fn ($sec) => [
+                    'id'          => $sec->id,
+                    'title'       => $sec->title,
+                    'subtitle'    => $sec->subtitle,
+                    'description' => $sec->description,
+                    'image'       => $sec->image ? url($sec->image) : null,
+                ])->values(),
                 'images'      => $p->images->map(fn ($img) => [
                     'id'         => $img->id,
                     'url'        => $img->url,

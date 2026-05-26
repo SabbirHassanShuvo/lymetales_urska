@@ -17,7 +17,6 @@ class CategoryController extends Controller
         $categories = Category::with(['subcategories' => function ($q) {
                 $q->where('status', true)->orderBy('name');
             }])
-            ->whereNull('parent_id')
             ->where('status', true)
             ->orderBy('name')
             ->get();
@@ -37,7 +36,7 @@ class CategoryController extends Controller
     {
         $category = Category::with(['subcategories' => function ($q) {
                 $q->where('status', true)->orderBy('name');
-            }, 'parent:id,name,slug'])
+            }])
             ->where('slug', $slug)
             ->where('status', true)
             ->firstOrFail();
@@ -50,7 +49,7 @@ class CategoryController extends Controller
 
     // ── Private helpers ────────────────────────────────────────────────────
 
-    private function formatCategory(Category $c, bool $withChildren = false, bool $withParent = false): array
+    private function formatCategory(Category $c, bool $withChildren = false): array
     {
         $data = [
             'id'          => $c->id,
@@ -58,16 +57,7 @@ class CategoryController extends Controller
             'slug'        => $c->slug,
             'description' => $c->description,
             'is_special'  => $c->is_special,
-            'parent_id'   => $c->parent_id,
         ];
-
-        if ($withParent && $c->parent) {
-            $data['parent'] = [
-                'id'   => $c->parent->id,
-                'name' => $c->parent->name,
-                'slug' => $c->parent->slug,
-            ];
-        }
 
         if ($withChildren) {
             $data['subcategories'] = $c->subcategories
@@ -76,8 +66,6 @@ class CategoryController extends Controller
                     'name'        => $sub->name,
                     'slug'        => $sub->slug,
                     'description' => $sub->description,
-                    'is_special'  => $sub->is_special,
-                    'parent_id'   => $sub->parent_id,
                 ])
                 ->values();
         }

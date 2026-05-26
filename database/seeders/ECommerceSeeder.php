@@ -4,8 +4,10 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Category;
+use App\Models\Subcategory;
 use App\Models\Product;
 use App\Models\Coupon;
+use App\Models\ProductReview;
 use Illuminate\Support\Str;
 
 class ECommerceSeeder extends Seeder
@@ -24,21 +26,19 @@ class ECommerceSeeder extends Seeder
             'status' => true,
         ]);
 
-        $sub1_1 = Category::create([
-            'parent_id' => $cat1->id,
+        $sub1_1 = Subcategory::create([
+            'category_id' => $cat1->id,
             'name' => 'Easter Stories',
             'slug' => 'easter-stories',
             'description' => 'Magical adventures themed around egg hunts and spring.',
-            'is_special' => false,
             'status' => true,
         ]);
 
-        $sub1_2 = Category::create([
-            'parent_id' => $cat1->id,
+        $sub1_2 = Subcategory::create([
+            'category_id' => $cat1->id,
             'name' => 'Birthday Books',
             'slug' => 'birthday-books',
             'description' => 'The perfect personalised keepsake for birthdays.',
-            'is_special' => true,
             'status' => true,
         ]);
 
@@ -50,18 +50,18 @@ class ECommerceSeeder extends Seeder
             'status' => true,
         ]);
 
-        $sub2_1 = Category::create([
-            'parent_id' => $cat2->id,
+        $sub2_1 = Subcategory::create([
+            'category_id' => $cat2->id,
             'name' => 'Coloring & Drawing',
             'slug' => 'coloring-drawing',
             'description' => 'Coloring pages tailored to your kid\'s preferences.',
-            'is_special' => false,
             'status' => true,
         ]);
 
         // 2. Seed Products (Personalised Books)
-        Product::create([
-            'category_id' => $sub1_1->id,
+        $product1 = Product::create([
+            'category_id' => $cat1->id,
+            'subcategory_id' => $sub1_1->id,
             'title' => 'My First Easter Egg Hunt',
             'slug' => 'my-first-easter-egg-hunt',
             'description' => 'A magical personalised Easter adventure where your child hunts for colorful eggs in the enchanted forest, meeting friendly bunnies and solving fun spring puzzles.',
@@ -75,18 +75,28 @@ class ECommerceSeeder extends Seeder
             'paper_type' => 'Thick matte pages',
             'rating' => 4.9,
             'reviews_count' => 2847,
-            'image' => 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400',
-            'gallery' => [
-                'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400',
-                'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=400'
-            ],
             'is_bestseller' => true,
             'is_recommended' => true,
             'status' => true,
         ]);
 
-        Product::create([
-            'category_id' => $sub1_2->id,
+        $product1->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
+        ]);
+
+        foreach (['https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400', 'https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&q=80&w=400'] as $index => $url) {
+            $product1->images()->create([
+                'image_path' => $url,
+                'is_main' => false,
+                'sort_order' => $index + 1,
+            ]);
+        }
+
+        $product2 = Product::create([
+            'category_id' => $cat1->id,
+            'subcategory_id' => $sub1_2->id,
             'title' => 'The Birthday Adventure Kept Safe',
             'slug' => 'the-birthday-adventure-kept-safe',
             'description' => 'Celebrate your child\'s special day with an action-packed journey across stars and oceans to retrieve the missing candles. Beautifully illustrated and deeply memorable.',
@@ -100,17 +110,28 @@ class ECommerceSeeder extends Seeder
             'paper_type' => 'Laminated gloss pages',
             'rating' => 4.8,
             'reviews_count' => 952,
-            'image' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400',
-            'gallery' => [
-                'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&q=80&w=400'
-            ],
             'is_bestseller' => true,
             'is_recommended' => false,
             'status' => true,
         ]);
 
-        Product::create([
-            'category_id' => $sub2_1->id,
+        $product2->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
+        ]);
+
+        foreach (['https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&q=80&w=400'] as $index => $url) {
+            $product2->images()->create([
+                'image_path' => $url,
+                'is_main' => false,
+                'sort_order' => $index + 1,
+            ]);
+        }
+
+        $product3 = Product::create([
+            'category_id' => $cat2->id,
+            'subcategory_id' => $sub2_1->id,
             'title' => 'Coloring My Wild Kingdom',
             'slug' => 'coloring-my-wild-kingdom',
             'description' => 'A customizable coloring book featuring wild animals matching your child\'s name initials. Over 40 unique drawings of lions, elephants, and magical birds.',
@@ -124,11 +145,15 @@ class ECommerceSeeder extends Seeder
             'paper_type' => 'Heavyweight coloring paper',
             'rating' => 5.0,
             'reviews_count' => 143,
-            'image' => 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=400',
-            'gallery' => [],
             'is_bestseller' => false,
             'is_recommended' => true,
             'status' => true,
+        ]);
+
+        $product3->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
         ]);
 
         // 3. Seed Coupons
@@ -163,6 +188,40 @@ class ECommerceSeeder extends Seeder
             'usage_limit' => 100,
             'used_count' => 100,
             'status' => true,
+        ]);
+
+        // 4. Seed Product Reviews
+        ProductReview::create([
+            'product_id' => $product1->id,
+            'reviewer_name' => 'Alice Smith',
+            'reviewer_email' => 'alice@example.com',
+            'title' => 'Absolutely Magical!',
+            'reviewer_location' => 'New York, USA',
+            'rating' => 5,
+            'comment' => 'My son loved seeing his name in the story! The illustrations are stunning.',
+            'is_approved' => true,
+        ]);
+
+        ProductReview::create([
+            'product_id' => $product1->id,
+            'reviewer_name' => 'John Doe',
+            'reviewer_email' => 'john@example.com',
+            'title' => 'Great Easter Gift',
+            'reviewer_location' => 'London, UK',
+            'rating' => 4,
+            'comment' => 'Very nice quality paper and colors. Arrived just in time for Easter.',
+            'is_approved' => true,
+        ]);
+
+        ProductReview::create([
+            'product_id' => $product2->id,
+            'reviewer_name' => 'Emma Watson',
+            'reviewer_email' => 'emma@example.com',
+            'title' => 'Beautiful Birthday Keepsake',
+            'reviewer_location' => 'Sydney, AU',
+            'rating' => 5,
+            'comment' => 'This is the most thoughtful birthday gift ever. Highly recommend.',
+            'is_approved' => true,
         ]);
     }
 }
