@@ -185,6 +185,12 @@ Route::prefix('admin')->group(function () {
         // Settings
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings.index');
         Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
+
+        // Dynamic Pages
+        Route::resource('pages', \App\Http\Controllers\Admin\PageController::class)->names('admin.pages');
+
+        // Contact Messages
+        Route::resource('contact-messages', \App\Http\Controllers\Admin\ContactMessageController::class)->only(['index', 'show', 'destroy'])->names('admin.contact-messages');
     });
 });
 

@@ -13,6 +13,7 @@
             font-family: 'Inter', sans-serif;
         }
     </style>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
 
 <body class="bg-gray-50 text-gray-900">
@@ -77,6 +78,72 @@
                         </path>
                     </svg>
                     Orders
+                </a>
+                {{-- ── Content Management ─────────────────────────── --}}
+                @php
+                    $pagesOpen = request()->routeIs('admin.pages.*');
+                    $allPages = \App\Models\Page::orderBy('id')->get();
+                    $unreadCount = \App\Models\ContactMessage::where('is_read', false)->count();
+                @endphp
+
+                {{-- Section heading --}}
+                <p class="px-4 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Content</p>
+
+                {{-- Pages group toggle --}}
+                <div x-data="{ open: {{ $pagesOpen ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open"
+                        class="w-full flex items-center px-4 py-3 {{ $pagesOpen ? 'text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span class="flex-1 text-left">Pages</span>
+                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+
+                    {{-- Sub-links: one per known page slug --}}
+                    <div x-show="open" x-transition class="ml-4 pl-3 border-l border-gray-100 mt-1 space-y-1">
+                        @foreach([
+                            'our-story'            => ['label' => 'Our Story',          'color' => 'bg-indigo-400'],
+                            'privacy-policy'       => ['label' => 'Privacy Policy',      'color' => 'bg-blue-400'],
+                            'terms-and-conditions' => ['label' => 'Terms of Service',    'color' => 'bg-blue-400'],
+                            'faq'                  => ['label' => 'FAQ',                 'color' => 'bg-amber-400'],
+                            'contact-us'           => ['label' => 'Contact With Us',     'color' => 'bg-green-400'],
+                        ] as $slug => $meta)
+                            @php $pg = $allPages->where('slug', $slug)->first() @endphp
+                            @if($pg)
+                                <a href="{{ route('admin.pages.edit', $pg) }}"
+                                    class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg {{ request()->is('*pages/'.$pg->id.'/edit') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800' }} transition-all">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $meta['color'] }} flex-shrink-0"></span>
+                                    {{ $meta['label'] }}
+                                </a>
+                            @else
+                                <span class="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 rounded-lg cursor-not-allowed">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-200 flex-shrink-0"></span>
+                                    {{ $meta['label'] }}
+                                    <span class="text-[10px] bg-gray-100 text-gray-400 px-1.5 rounded ml-auto">Seed</span>
+                                </span>
+                            @endif
+                        @endforeach
+                        <a href="{{ route('admin.pages.index') }}"
+                            class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-700 transition-all">
+                            <span class="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>
+                            All Pages
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Messages --}}
+                <a href="{{ route('admin.contact-messages.index') }}"
+                    class="flex items-center px-4 py-3 {{ request()->routeIs('admin.contact-messages.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                    </svg>
+                    <span class="flex-1">Messages</span>
+                    @if($unreadCount > 0)
+                        <span class="ml-auto bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ $unreadCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.settings.index') }}"
                     class="flex items-center px-4 py-3 {{ request()->routeIs('admin.settings.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">

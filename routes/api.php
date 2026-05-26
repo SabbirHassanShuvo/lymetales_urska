@@ -7,6 +7,8 @@ use App\Http\Controllers\API\ConfirmationController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\WebhookController;
+use App\Http\Controllers\API\PageController;
+use App\Http\Controllers\API\ContactController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,6 +52,12 @@ Route::prefix('shop')->group(function () {
 
     // Order Confirmation
     Route::get('/confirmation/{orderNumber}', [ConfirmationController::class, 'show']);
+
+    // Dynamic Pages
+    Route::get('/pages/{slug}', [PageController::class, 'show']);
+
+    // Contact Form
+    Route::post('/contact', [ContactController::class, 'store']);
 });
 
 // Stripe Webhook (no CSRF, no auth)
