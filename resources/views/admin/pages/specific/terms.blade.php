@@ -76,7 +76,15 @@
                     </div>
                     <div>
                         <label class="label">Section Body</label>
-                        <textarea :name="'section_body['+i+']'" x-model="section.body" rows="4" class="input" style="resize:vertical"></textarea>
+                        <div x-init="
+                            ClassicEditor.create($refs.editor).then(editor => {
+                                editor.model.document.on('change:data', () => {
+                                    section.body = editor.getData();
+                                });
+                            }).catch(err => console.error(err));
+                        ">
+                            <textarea x-ref="editor" :name="'section_body['+i+']'" x-model="section.body" rows="4" class="input" style="resize:vertical"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -94,4 +102,8 @@
 </form>
 
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<style>
+    .ck-editor__editable_inline { min-height: 150px; font-size: 0.9rem; }
+</style>
 @endsection

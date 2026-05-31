@@ -103,7 +103,7 @@
     </a>
 </div>
 
-<form action="{{ route('admin.pages.update', $page) }}" method="POST" x-data="ourStoryForm()">
+<form action="{{ route('admin.pages.update', $page) }}" method="POST" enctype="multipart/form-data" x-data="ourStoryForm()">
 @csrf @method('PUT')
 
 {{-- ── Page Meta ──────────────────────────────── --}}
@@ -143,7 +143,17 @@
         <div class="col-2"><label class="field-label">Subtitle</label><input type="text" name="hero_subtitle" value="{{ $content['hero']['subtitle'] ?? '' }}" class="field-input"></div>
         <div><label class="field-label">Button Text</label><input type="text" name="hero_button_text" value="{{ $content['hero']['button_text'] ?? '' }}" class="field-input"></div>
         <div><label class="field-label">Button URL</label><input type="text" name="hero_button_url" value="{{ $content['hero']['button_url'] ?? '' }}" class="field-input"></div>
-        <div class="col-2"><label class="field-label">Hero Image URL</label><input type="text" name="hero_image_url" value="{{ $content['hero']['image_url'] ?? '' }}" class="field-input" placeholder="https://..."></div>
+        <div class="col-2">
+            <label class="field-label">Hero Image</label>
+            <input type="file" name="hero_image_file" class="field-input" accept="image/*" onchange="previewImage(event, 'hero-preview')">
+            <img id="hero-preview" src="#" alt="Hero Preview" style="display: none; height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
+            @if(!empty($content['hero']['image_url']))
+                <div class="mt-2 flex items-center gap-2">
+                    <img src="{{ asset($content['hero']['image_url']) }}" style="height: 40px; border-radius: 4px;" alt="Hero">
+                    <span class="text-xs text-gray-500">Current Image</span>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
@@ -154,8 +164,8 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:0.75rem">
         <div><label class="field-label">Title</label><input type="text" name="mission_title" value="{{ $content['mission']['title'] ?? '' }}" class="field-input"></div>
-        <div><label class="field-label">Paragraph 1</label><textarea name="mission_paragraph_1" rows="3" class="field-input" style="resize:vertical">{{ $content['mission']['paragraph_1'] ?? '' }}</textarea></div>
-        <div><label class="field-label">Paragraph 2</label><textarea name="mission_paragraph_2" rows="3" class="field-input" style="resize:vertical">{{ $content['mission']['paragraph_2'] ?? '' }}</textarea></div>
+        <div><label class="field-label">Paragraph 1</label><textarea name="mission_paragraph_1" rows="3" class="field-input ck-editor" style="resize:vertical">{{ $content['mission']['paragraph_1'] ?? '' }}</textarea></div>
+        <div><label class="field-label">Paragraph 2</label><textarea name="mission_paragraph_2" rows="3" class="field-input ck-editor" style="resize:vertical">{{ $content['mission']['paragraph_2'] ?? '' }}</textarea></div>
     </div>
 </div>
 
@@ -170,9 +180,19 @@
             <div style="display:flex;flex-direction:column;gap:0.6rem">
                 <div><label class="field-label">Badge</label><input type="text" name="quality_left_badge" value="{{ $content['quality_section']['left']['badge'] ?? '' }}" class="field-input"></div>
                 <div><label class="field-label">Title</label><input type="text" name="quality_left_title" value="{{ $content['quality_section']['left']['title'] ?? '' }}" class="field-input"></div>
-                <div><label class="field-label">Paragraph 1</label><textarea name="quality_left_p1" rows="2" class="field-input" style="resize:vertical">{{ $content['quality_section']['left']['paragraph_1'] ?? '' }}</textarea></div>
-                <div><label class="field-label">Paragraph 2</label><textarea name="quality_left_p2" rows="2" class="field-input" style="resize:vertical">{{ $content['quality_section']['left']['paragraph_2'] ?? '' }}</textarea></div>
-                <div><label class="field-label">Image URL</label><input type="text" name="quality_left_image" value="{{ $content['quality_section']['left']['image_url'] ?? '' }}" class="field-input" placeholder="https://..."></div>
+                <div><label class="field-label">Paragraph 1</label><textarea name="quality_left_p1" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['left']['paragraph_1'] ?? '' }}</textarea></div>
+                <div><label class="field-label">Paragraph 2</label><textarea name="quality_left_p2" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['left']['paragraph_2'] ?? '' }}</textarea></div>
+                <div>
+                    <label class="field-label">Image</label>
+                    <input type="file" name="quality_left_image_file" class="field-input" accept="image/*" onchange="previewImage(event, 'qleft-preview')">
+                    <img id="qleft-preview" src="#" alt="Preview" style="display: none; height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
+                    @if(!empty($content['quality_section']['left']['image_url']))
+                        <div class="mt-2 flex items-center gap-2">
+                            <img src="{{ asset($content['quality_section']['left']['image_url']) }}" style="height: 40px; border-radius: 4px;" alt="Image">
+                            <span class="text-xs text-gray-500">Current</span>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
         <div style="border:1.5px solid #f1f2f4;border-radius:0.75rem;padding:1rem">
@@ -180,9 +200,19 @@
             <div style="display:flex;flex-direction:column;gap:0.6rem">
                 <div><label class="field-label">Badge</label><input type="text" name="quality_right_badge" value="{{ $content['quality_section']['right']['badge'] ?? '' }}" class="field-input"></div>
                 <div><label class="field-label">Title</label><input type="text" name="quality_right_title" value="{{ $content['quality_section']['right']['title'] ?? '' }}" class="field-input"></div>
-                <div><label class="field-label">Paragraph 1</label><textarea name="quality_right_p1" rows="2" class="field-input" style="resize:vertical">{{ $content['quality_section']['right']['paragraph_1'] ?? '' }}</textarea></div>
-                <div><label class="field-label">Paragraph 2</label><textarea name="quality_right_p2" rows="2" class="field-input" style="resize:vertical">{{ $content['quality_section']['right']['paragraph_2'] ?? '' }}</textarea></div>
-                <div><label class="field-label">Image URL</label><input type="text" name="quality_right_image" value="{{ $content['quality_section']['right']['image_url'] ?? '' }}" class="field-input" placeholder="https://..."></div>
+                <div><label class="field-label">Paragraph 1</label><textarea name="quality_right_p1" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['right']['paragraph_1'] ?? '' }}</textarea></div>
+                <div><label class="field-label">Paragraph 2</label><textarea name="quality_right_p2" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['right']['paragraph_2'] ?? '' }}</textarea></div>
+                <div>
+                    <label class="field-label">Image</label>
+                    <input type="file" name="quality_right_image_file" class="field-input" accept="image/*" onchange="previewImage(event, 'qright-preview')">
+                    <img id="qright-preview" src="#" alt="Preview" style="display: none; height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
+                    @if(!empty($content['quality_section']['right']['image_url']))
+                        <div class="mt-2 flex items-center gap-2">
+                            <img src="{{ asset($content['quality_section']['right']['image_url']) }}" style="height: 40px; border-radius: 4px;" alt="Image">
+                            <span class="text-xs text-gray-500">Current</span>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -261,8 +291,17 @@
     <div class="grid-2">
         <div><label class="field-label">Gallery Title</label><input type="text" name="gallery_title" value="{{ $content['gallery']['title'] ?? '' }}" class="field-input"></div>
         <div>
-            <label class="field-label">Image URLs <span style="font-weight:400;text-transform:none;letter-spacing:0">(one per line)</span></label>
-            <textarea name="gallery_images" rows="4" class="field-input" style="font-family:monospace;font-size:0.8rem;resize:vertical" placeholder="https://image1.jpg&#10;https://image2.jpg">{{ implode("\n", $content['gallery']['images'] ?? []) }}</textarea>
+            <label class="field-label">Add New Images <span style="font-weight:400;text-transform:none;letter-spacing:0">(Select multiple)</span></label>
+            <input type="file" name="gallery_image_files[]" multiple class="field-input" accept="image/*" onchange="previewMultipleImages(event, 'gallery-preview-container')">
+            <div id="gallery-preview-container" class="mt-3 flex flex-wrap gap-2"></div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                @foreach($content['gallery']['images'] ?? [] as $img)
+                    <div class="relative">
+                        <img src="{{ asset($img) }}" style="height: 50px; border-radius: 4px;" alt="Gallery">
+                        <input type="hidden" name="old_gallery_images[]" value="{{ $img }}">
+                    </div>
+                @endforeach
+            </div>
         </div>
     </div>
 </div>
@@ -275,7 +314,17 @@
         <div><label class="field-label">Description</label><input type="text" name="cta_description" value="{{ $content['cta']['description'] ?? '' }}" class="field-input"></div>
         <div><label class="field-label">Button Text</label><input type="text" name="cta_button_text" value="{{ $content['cta']['button_text'] ?? '' }}" class="field-input"></div>
         <div><label class="field-label">Button URL</label><input type="text" name="cta_button_url" value="{{ $content['cta']['button_url'] ?? '' }}" class="field-input"></div>
-        <div class="col-2"><label class="field-label">CTA Image URL</label><input type="text" name="cta_image_url" value="{{ $content['cta']['image_url'] ?? '' }}" class="field-input"></div>
+        <div class="col-2">
+            <label class="field-label">CTA Image</label>
+            <input type="file" name="cta_image_file" class="field-input" accept="image/*" onchange="previewImage(event, 'cta-preview')">
+            <img id="cta-preview" src="#" alt="CTA Preview" style="display: none; height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
+            @if(!empty($content['cta']['image_url']))
+                <div class="mt-2 flex items-center gap-2">
+                    <img src="{{ asset($content['cta']['image_url']) }}" style="height: 40px; border-radius: 4px;" alt="CTA">
+                    <span class="text-xs text-gray-500">Current Image</span>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
@@ -288,7 +337,55 @@
 </form>
 
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<style>
+    /* Fix CKEditor z-index and styles */
+    .ck-editor__editable_inline { min-height: 150px; font-size: 0.9rem; }
+</style>
 <script>
-function ourStoryForm() { return {}; }
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize CKEditor for elements with .ck-editor class
+    document.querySelectorAll('.ck-editor').forEach(el => {
+        ClassicEditor.create(el, {
+            toolbar: [ 'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo' ]
+        }).catch(error => { console.error(error); });
+    });
+});
+
+function ourStoryForm() { 
+    return {
+        // Alpine data...
+    }; 
+}
+
+function previewImage(event, previewId) {
+    const reader = new FileReader();
+    reader.onload = function() {
+        const output = document.getElementById(previewId);
+        output.src = reader.result;
+        output.style.display = 'block';
+    };
+    if(event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0]);
+    }
+}
+
+function previewMultipleImages(event, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = ''; // Clear previous previews
+    
+    Array.from(event.target.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.height = '100px';
+            img.style.borderRadius = '8px';
+            img.style.objectFit = 'cover';
+            container.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+}
 </script>
 @endsection

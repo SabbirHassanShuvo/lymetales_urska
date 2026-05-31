@@ -9,7 +9,6 @@ use Illuminate\Support\Str;
 
 class PageController extends Controller
 {
-    // Map slug → specific view
     private array $specificViews = [
         'our-story'           => 'admin.pages.specific.our-story',
         'privacy-policy'      => 'admin.pages.specific.privacy-policy',
@@ -17,6 +16,33 @@ class PageController extends Controller
         'faq'                 => 'admin.pages.specific.faq',
         'contact-us'          => 'admin.pages.specific.contact-us',
     ];
+
+    private function handleImageUpload(Request $request, $fileKey, $oldImageUrl = null)
+    {
+        if ($request->hasFile($fileKey)) {
+            $file = $request->file($fileKey);
+            $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/pages'), $filename);
+            // Return full url as well or relative? Previous is just 'http://...' so relative or absolute depending on how frontend uses it. But frontend usually assumes it is passed properly.
+            // Earlier it was passed as string "https://...". The Hero controller uses asset(). Let's use relative path so we can format it. Actually, wait.
+            // In the previous request they were using raw string.
+            return 'uploads/pages/' . $filename;
+        }
+        return $oldImageUrl;
+    }
+
+    private function handleGalleryUpload(Request $request, $fileKey, $oldImages = [])
+    {
+        $images = $oldImages;
+        if ($request->hasFile($fileKey)) {
+            foreach ($request->file($fileKey) as $file) {
+                $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                $file->move(public_path('uploads/pages'), $filename);
+                $images[] = 'uploads/pages/' . $filename;
+            }
+        }
+        return $images;
+    }
 
     public function index()
     {
@@ -88,6 +114,8 @@ class PageController extends Controller
     // ─── Our Story ────────────────────────────────────────────────────────────
     private function updateOurStory(Request $request, Page $page)
     {
+        $oldContent = is_array($page->content) ? $page->content : (json_decode($page->content, true) ?? []);
+
         $content = [
             'hero' => [
                 'badge'       => $request->input('hero_badge'),
@@ -95,7 +123,7 @@ class PageController extends Controller
                 'subtitle'    => $request->input('hero_subtitle'),
                 'button_text' => $request->input('hero_button_text'),
                 'button_url'  => $request->input('hero_button_url'),
-                'image_url'   => $request->input('hero_image_url'),
+                'image_url'   => $this->handleImageUpload($request, 'hero_image_file', $oldContent['hero']['image_url'] ?? ''),
             ],
             'mission' => [
                 'title'       => $request->input('mission_title'),
@@ -108,14 +136,14 @@ class PageController extends Controller
                     'title'       => $request->input('quality_left_title'),
                     'paragraph_1' => $request->input('quality_left_p1'),
                     'paragraph_2' => $request->input('quality_left_p2'),
-                    'image_url'   => $request->input('quality_left_image'),
+                    'image_url'   => $this->handleImageUpload($request, 'quality_left_image_file', $oldContent['quality_section']['left']['image_url'] ?? ''),
                 ],
                 'right' => [
                     'badge'       => $request->input('quality_right_badge'),
                     'title'       => $request->input('quality_right_title'),
                     'paragraph_1' => $request->input('quality_right_p1'),
                     'paragraph_2' => $request->input('quality_right_p2'),
-                    'image_url'   => $request->input('quality_right_image'),
+                    'image_url'   => $this->handleImageUpload($request, 'quality_right_image_file', $oldContent['quality_section']['right']['image_url'] ?? ''),
                 ],
             ],
             'steps' => [
@@ -140,14 +168,14 @@ class PageController extends Controller
             ],
             'gallery' => [
                 'title'  => $request->input('gallery_title'),
-                'images' => array_filter(explode("\n", $request->input('gallery_images', ''))),
+                'images' => $this->handleGalleryUpload($request, 'gallery_image_files', $request->input('old_gallery_images', [])),
             ],
             'cta' => [
                 'title'       => $request->input('cta_title'),
                 'description' => $request->input('cta_description'),
                 'button_text' => $request->input('cta_button_text'),
                 'button_url'  => $request->input('cta_button_url'),
-                'image_url'   => $request->input('cta_image_url'),
+                'image_url'   => $this->handleImageUpload($request, 'cta_image_file', $oldContent['cta']['image_url'] ?? ''),
             ],
         ];
 

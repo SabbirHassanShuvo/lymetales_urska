@@ -9,6 +9,7 @@ use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\WebhookController;
 use App\Http\Controllers\API\PageController;
 use App\Http\Controllers\API\ContactController;
+use App\Http\Controllers\API\HomeContentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -58,6 +59,9 @@ Route::prefix('shop')->group(function () {
 
     // Contact Form
     Route::post('/contact', [ContactController::class, 'store']);
+    
+    // Home Content (Hero, Gifts, FAQs)
+    Route::get('/home-content', [HomeContentController::class, 'index']);
 });
 
 // Stripe Webhook (no CSRF, no auth)

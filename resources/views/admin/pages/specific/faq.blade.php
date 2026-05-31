@@ -101,7 +101,18 @@
                             <div style="display:flex;align-items:flex-start;gap:0.75rem">
                                 <div style="flex:1;display:flex;flex-direction:column;gap:0.5rem">
                                     <div><label class="label">Question</label><input type="text" x-model="q.question" class="input" placeholder="How does...?"></div>
-                                    <div><label class="label">Answer</label><textarea x-model="q.answer" rows="2" class="input" style="resize:vertical" placeholder="Answer..."></textarea></div>
+                                    <div>
+                                        <label class="label">Answer</label>
+                                        <div x-init="
+                                            ClassicEditor.create($refs.editor).then(editor => {
+                                                editor.model.document.on('change:data', () => {
+                                                    q.answer = editor.getData();
+                                                });
+                                            }).catch(err => console.error(err));
+                                        ">
+                                            <textarea x-ref="editor" x-model="q.answer" rows="2" class="input" style="resize:vertical" placeholder="Answer..."></textarea>
+                                        </div>
+                                    </div>
                                 </div>
                                 <button type="button" @click="cat.questions.splice(qi,1)" style="background:none;color:#f87171;border:none;cursor:pointer;padding:0.25rem;border-radius:0.35rem;margin-top:1.4rem;flex-shrink:0" title="Remove question">
                                     <svg style="width:0.9rem;height:0.9rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -140,6 +151,10 @@
 </form>
 
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<style>
+    .ck-editor__editable_inline { min-height: 150px; font-size: 0.9rem; }
+</style>
 <script>
 function faqEditor(content) {
     return {

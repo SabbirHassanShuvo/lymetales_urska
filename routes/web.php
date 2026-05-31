@@ -189,6 +189,15 @@ Route::prefix('admin')->group(function () {
         // Dynamic Pages
         Route::resource('pages', \App\Http\Controllers\Admin\PageController::class)->names('admin.pages');
 
+        // Home Content (Hero, Gifts, FAQs)
+        Route::get('/home-content', [\App\Http\Controllers\Admin\HomeContentController::class, 'index'])->name('admin.home-content.index');
+        Route::post('/home-content/hero', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeHero'])->name('admin.home-content.hero.store');
+        Route::delete('/home-content/hero/{hero}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyHero'])->name('admin.home-content.hero.destroy');
+        Route::post('/home-content/gift', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeGift'])->name('admin.home-content.gift.store');
+        Route::delete('/home-content/gift/{gift}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyGift'])->name('admin.home-content.gift.destroy');
+        Route::post('/home-content/faq', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFaq'])->name('admin.home-content.faq.store');
+        Route::delete('/home-content/faq/{faq}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFaq'])->name('admin.home-content.faq.destroy');
+
         // Contact Messages
         Route::resource('contact-messages', \App\Http\Controllers\Admin\ContactMessageController::class)->only(['index', 'show', 'destroy'])->names('admin.contact-messages');
     });
