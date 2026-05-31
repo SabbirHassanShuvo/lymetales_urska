@@ -10,6 +10,7 @@ use App\Http\Controllers\API\WebhookController;
 use App\Http\Controllers\API\PageController;
 use App\Http\Controllers\API\ContactController;
 use App\Http\Controllers\API\HomeContentController;
+use App\Http\Controllers\API\SearchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -62,6 +63,9 @@ Route::prefix('shop')->group(function () {
     
     // Home Content (Hero, Gifts, FAQs)
     Route::get('/home-content', [HomeContentController::class, 'index']);
+
+    // Global Search (AI Smart Search)
+    Route::get('/search', [SearchController::class, 'search']);
 });
 
 // Stripe Webhook (no CSRF, no auth)

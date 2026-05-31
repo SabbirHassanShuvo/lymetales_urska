@@ -193,13 +193,12 @@ class PageController extends Controller
     // ─── Legal Pages (Privacy + Terms) ─────────────────────────────────────────
     private function updateLegalPage(Request $request, Page $page)
     {
+        $body = $request->input('sections_body', '');
+
+        // Store as a single section with no title — the HTML contains all formatted content
         $sections = [];
-        $titles   = $request->input('section_title', []);
-        $bodies   = $request->input('section_body', []);
-        foreach ($titles as $i => $title) {
-            if (!empty($title)) {
-                $sections[] = ['title' => $title, 'body' => $bodies[$i] ?? ''];
-            }
+        if (trim(strip_tags($body)) !== '') {
+            $sections[] = ['title' => '', 'body' => $body];
         }
 
         $content = [

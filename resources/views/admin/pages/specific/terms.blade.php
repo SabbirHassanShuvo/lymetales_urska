@@ -1,6 +1,17 @@
 @extends('layouts.admin')
 @section('content')
 
+@php
+    $combinedBody = '';
+    $sections = $content['sections'] ?? [];
+    foreach ($sections as $sec) {
+        if (!empty($sec['title'])) {
+            $combinedBody .= '<h2>' . e($sec['title']) . '</h2>';
+        }
+        $combinedBody .= $sec['body'] ?? '';
+    }
+@endphp
+
 <style>
     .label { display:block; font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#6b7280; margin-bottom:0.35rem; }
     .input { width:100%; padding:0.55rem 0.85rem; border:1.5px solid #e5e7eb; border-radius:0.6rem; font-size:0.875rem; color:#1f2937; background:#fff; transition:border-color 0.15s, box-shadow 0.15s; outline:none; box-sizing:border-box; }
@@ -29,7 +40,7 @@
     </a>
 </div>
 
-<form action="{{ route('admin.pages.update', $page) }}" method="POST" x-data="{ sections: {{ json_encode($content['sections'] ?? []) }} }">
+<form action="{{ route('admin.pages.update', $page) }}" method="POST">
 @csrf @method('PUT')
 
 {{-- Meta --}}
@@ -57,39 +68,12 @@
     </div>
 </div>
 
-{{-- Terms Sections --}}
+{{-- Terms Content --}}
 <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem">
-        <div class="card-title" style="margin-bottom:0"><span class="dot" style="background:#6366f1"></span> Terms Sections</div>
-        <button type="button" class="btn-add" @click="sections.push({title:'', body:''})">+ Add Section</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0.75rem">
-        <template x-for="(section, i) in sections" :key="i">
-            <div style="border:1.5px solid #f1f2f4;border-radius:0.75rem;padding:1rem;position:relative">
-                <button type="button" @click="sections.splice(i,1)" style="position:absolute;top:0.65rem;right:0.65rem;background:#fff5f5;color:#f87171;border:none;cursor:pointer;border-radius:0.4rem;padding:0.25rem 0.4rem" title="Remove">
-                    <svg style="width:0.85rem;height:0.85rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-                <div style="padding-right:2rem;display:flex;flex-direction:column;gap:0.6rem">
-                    <div>
-                        <label class="label">Section Title</label>
-                        <input type="text" :name="'section_title['+i+']'" x-model="section.title" class="input" placeholder="e.g. 1. Welcome">
-                    </div>
-                    <div>
-                        <label class="label">Section Body</label>
-                        <div x-init="
-                            ClassicEditor.create($refs.editor).then(editor => {
-                                editor.model.document.on('change:data', () => {
-                                    section.body = editor.getData();
-                                });
-                            }).catch(err => console.error(err));
-                        ">
-                            <textarea x-ref="editor" :name="'section_body['+i+']'" x-model="section.body" rows="4" class="input" style="resize:vertical"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </template>
-        <p x-show="sections.length === 0" style="text-align:center;color:#9ca3af;font-size:0.85rem;padding:1.5rem 0">No sections yet. Click "Add Section" to start.</p>
+    <div class="card-title"><span class="dot" style="background:#6366f1"></span> Terms Content</div>
+    <div>
+        <label class="label">Page Body Content</label>
+        <textarea id="terms_body" name="sections_body" rows="15" class="input" style="resize:vertical">{!! $combinedBody !!}</textarea>
     </div>
 </div>
 
@@ -101,9 +85,20 @@
 </div>
 </form>
 
-<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+<script>
+    let termsEditor;
+    ClassicEditor.create(document.querySelector('#terms_body')).then(editor => {
+        termsEditor = editor;
+    }).catch(err => console.error(err));
+
+    document.querySelector('form').addEventListener('submit', function () {
+        if (termsEditor) {
+            document.querySelector('#terms_body').value = termsEditor.getData();
+        }
+    });
+</script>
 <style>
-    .ck-editor__editable_inline { min-height: 150px; font-size: 0.9rem; }
+    .ck-editor__editable_inline { min-height: 400px; font-size: 0.9rem; }
 </style>
 @endsection
