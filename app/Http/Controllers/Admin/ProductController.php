@@ -16,11 +16,11 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'primaryImage', 'images', 'specialSections'])
+        $products = Product::with(['category', 'subcategory', 'primaryImage', 'images', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $categories   = Category::orderBy('name')->get();
+        $categories   = Category::with('subcategories')->orderBy('name')->get();
         $subcategories = Subcategory::orderBy('name')->get();
 
         return view('admin.products.index', compact('products', 'categories', 'subcategories'));
@@ -46,6 +46,10 @@ class ProductController extends Controller
             'image_url'          => 'nullable|string|max:2048',
             'gallery_files.*'    => 'nullable|image|max:4096',
             'gallery_urls'       => 'nullable|string',
+            'category_images'                 => 'nullable|array',
+            'category_images.*.category_id'   => 'nullable|exists:categories,id',
+            'category_images.*.subcategory_id'=> 'nullable|exists:subcategories,id',
+            'category_images.*.image'         => 'nullable|image|max:4096',
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
@@ -55,6 +59,12 @@ class ProductController extends Controller
             'special_sections.*.subtitle'  => 'nullable|string|max:255',
             'special_sections.*.description' => 'nullable|string',
             'special_sections.*.image'     => 'nullable|image|max:4096',
+            'name_text'        => 'nullable|string|max:255',
+            'name_font_family' => 'nullable|string|max:100',
+            'name_top'         => 'nullable|string|max:20',
+            'name_color'       => 'nullable|string|max:20',
+            'name_font_size'   => 'nullable|string|max:20',
+            'name_right'       => 'nullable|string|max:20',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -77,6 +87,12 @@ class ProductController extends Controller
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
+                'name_text'        => $request->name_text,
+                'name_font_family' => $request->name_font_family ?: 'PetitCochon',
+                'name_top'         => $request->name_top ?: '2%',
+                'name_color'       => $request->name_color ?: '#e591ae',
+                'name_font_size'   => $request->name_font_size ?: '88px',
+                'name_right'       => $request->name_right ?: '50%',
             ]);
 
             // Save special sections
@@ -143,6 +159,23 @@ class ProductController extends Controller
                     ]);
                 }
             }
+
+            // Save category images
+            if ($request->has('category_images') && is_array($request->category_images)) {
+                $sort = 0;
+                foreach ($request->category_images as $index => $catImg) {
+                    if (empty($catImg['category_id']) || !$request->hasFile("category_images.$index.image")) {
+                        continue;
+                    }
+                    $imagePath = $this->saveUploadedFile($request->file("category_images.$index.image"), 'cat');
+                    $product->categoryImages()->create([
+                        'category_id'    => $catImg['category_id'],
+                        'subcategory_id' => !empty($catImg['subcategory_id']) ? $catImg['subcategory_id'] : null,
+                        'image_path'     => $imagePath,
+                        'sort_order'     => $sort++,
+                    ]);
+                }
+            }
         });
 
         return redirect()->route('admin.products.index')->with('success', 'Book created successfully.');
@@ -170,6 +203,12 @@ class ProductController extends Controller
             'image_url'          => 'nullable|string|max:2048',
             'gallery_files.*'    => 'nullable|image|max:4096',
             'gallery_urls'       => 'nullable|string',
+            'category_images'                 => 'nullable|array',
+            'category_images.*.id'            => 'nullable|exists:product_category_images,id',
+            'category_images.*.category_id'   => 'nullable|exists:categories,id',
+            'category_images.*.subcategory_id'=> 'nullable|exists:subcategories,id',
+            'category_images.*.image'         => 'nullable|image|max:4096',
+            'category_images.*.existing_image'=> 'nullable|string',
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
@@ -181,6 +220,12 @@ class ProductController extends Controller
             'special_sections.*.description' => 'nullable|string',
             'special_sections.*.image'     => 'nullable|image|max:4096',
             'special_sections.*.existing_image' => 'nullable|string',
+            'name_text'        => 'nullable|string|max:255',
+            'name_font_family' => 'nullable|string|max:100',
+            'name_top'         => 'nullable|string|max:20',
+            'name_color'       => 'nullable|string|max:20',
+            'name_font_size'   => 'nullable|string|max:20',
+            'name_right'       => 'nullable|string|max:20',
         ]);
 
         DB::transaction(function () use ($request, $product) {
@@ -203,6 +248,12 @@ class ProductController extends Controller
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
+                'name_text'        => $request->name_text,
+                'name_font_family' => $request->name_font_family ?: $product->name_font_family ?: 'PetitCochon',
+                'name_top'         => $request->name_top ?: $product->name_top ?: '2%',
+                'name_color'       => $request->name_color ?: $product->name_color ?: '#e591ae',
+                'name_font_size'   => $request->name_font_size ?: $product->name_font_size ?: '88px',
+                'name_right'       => $request->name_right ?: $product->name_right ?: '50%',
             ]);
 
             // Save special sections
@@ -322,6 +373,65 @@ class ProductController extends Controller
                     ]);
                 }
             }
+
+            // Save category images
+            if ($request->has('category_images') && is_array($request->category_images)) {
+                $submittedCatImgIds = [];
+                $sort = 0;
+
+                foreach ($request->category_images as $index => $catImg) {
+                    $id = $catImg['id'] ?? null;
+
+                    if (empty($catImg['category_id']) && !$request->hasFile("category_images.$index.image") && empty($catImg['existing_image'])) {
+                        continue;
+                    }
+
+                    $imagePath = $catImg['existing_image'] ?? null;
+                    if ($request->hasFile("category_images.$index.image")) {
+                        $imagePath = $this->saveUploadedFile($request->file("category_images.$index.image"), 'cat');
+                    }
+
+                    if ($id) {
+                        $existingCatImg = $product->categoryImages()->find($id);
+                        if ($existingCatImg) {
+                            $existingCatImg->update([
+                                'category_id'    => !empty($catImg['category_id']) ? $catImg['category_id'] : null,
+                                'subcategory_id' => !empty($catImg['subcategory_id']) ? $catImg['subcategory_id'] : null,
+                                'image_path'     => $imagePath,
+                                'sort_order'     => $sort++,
+                            ]);
+                            $submittedCatImgIds[] = $existingCatImg->id;
+                        }
+                    } else {
+                        if ($catImg['category_id'] && $imagePath) {
+                            $newCatImg = $product->categoryImages()->create([
+                                'category_id'    => $catImg['category_id'],
+                                'subcategory_id' => !empty($catImg['subcategory_id']) ? $catImg['subcategory_id'] : null,
+                                'image_path'     => $imagePath,
+                                'sort_order'     => $sort++,
+                            ]);
+                            $submittedCatImgIds[] = $newCatImg->id;
+                        }
+                    }
+                }
+
+                // Delete removed category images
+                $toDeleteCatImgs = $product->categoryImages()->whereNotIn('id', $submittedCatImgIds)->get();
+                foreach ($toDeleteCatImgs as $delImg) {
+                    if ($delImg->image_path) {
+                        $this->deleteFile($delImg->image_path);
+                    }
+                    $delImg->delete();
+                }
+            } else {
+                $toDeleteCatImgs = $product->categoryImages;
+                foreach ($toDeleteCatImgs as $delImg) {
+                    if ($delImg->image_path) {
+                        $this->deleteFile($delImg->image_path);
+                    }
+                    $delImg->delete();
+                }
+            }
         });
 
         return redirect()->route('admin.products.index')->with('success', 'Book updated successfully.');
@@ -338,6 +448,12 @@ class ProductController extends Controller
         foreach ($product->specialSections as $sec) {
             if ($sec->image) {
                 $this->deleteFile($sec->image);
+            }
+        }
+
+        foreach ($product->categoryImages as $catImg) {
+            if ($catImg->image_path) {
+                $this->deleteFile($catImg->image_path);
             }
         }
 

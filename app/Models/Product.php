@@ -16,6 +16,12 @@ class Product extends Model
         'title',
         'slug',
         'description',
+        'name_text',
+        'name_font_family',
+        'name_top',
+        'name_color',
+        'name_font_size',
+        'name_right',
         'price',
         'pages',
         'age_range',
@@ -91,6 +97,12 @@ class Product extends Model
         return $this->hasMany(ProductImage::class)
             ->where('is_main', false)
             ->orderBy('sort_order');
+    }
+
+    /** Category images */
+    public function categoryImages()
+    {
+        return $this->hasMany(ProductCategoryImage::class)->orderBy('sort_order');
     }
 
     // ── Convenience accessors ──────────────────────────────────────────────

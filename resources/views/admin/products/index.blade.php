@@ -110,10 +110,36 @@
                             </td>
                             <!-- Category -->
                             <td class="px-6 py-4">
-                                @if($product->category)
-                                    <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100/50">
-                                        {{ $product->category->name }}
-                                    </span>
+                                @if($product->categoryImages && $product->categoryImages->count() > 0)
+                                    <div class="flex flex-col gap-2">
+                                        @foreach($product->categoryImages as $catImg)
+                                            @if($catImg->category)
+                                                <div class="flex flex-col items-start gap-1 p-1.5 bg-gray-50 rounded border border-gray-100">
+                                                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md border border-indigo-100/50">
+                                                        {{ $catImg->category->name }}
+                                                    </span>
+                                                    @if($catImg->subcategory)
+                                                        <span class="px-2 py-0.5 bg-pink-50 text-pink-700 text-xs font-bold rounded-md border border-pink-100/50 flex items-center mt-0.5">
+                                                            <svg class="w-2.5 h-2.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                            {{ $catImg->subcategory->name }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                @elseif($product->category)
+                                    <div class="flex flex-col items-start gap-1">
+                                        <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100/50">
+                                            {{ $product->category->name }}
+                                        </span>
+                                        @if($product->subcategory)
+                                            <span class="px-2.5 py-1 bg-pink-50 text-pink-700 text-xs font-bold rounded-lg border border-pink-100/50 flex items-center">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                {{ $product->subcategory->name }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 @else
                                     <span class="text-gray-400 italic text-xs">Uncategorized</span>
                                 @endif
@@ -240,7 +266,7 @@
                                 </select>
                             </div>
                             <!-- Subcategory (shown only when parent has sub) -->
-                            <div id="subCategoryContainer" class="hidden">
+                            <div id="subCategoryContainer" class="hidden mt-4">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory *</label>
                                 <select name="subcategory_id" id="prodSubCategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                     <option value="">-- Select Subcategory --</option>
@@ -324,6 +350,20 @@
                                     </button>
                                 </div>
                                 <input type="text" name="image_url" id="prodImageUrl" placeholder="Or enter Image URL (e.g. https://images.unsplash.com/...)" class="w-full px-4 py-2 mt-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
+                                
+                                <!-- Name Overlay Configuration Button -->
+                                <button type="button" onclick="openNameOverlayModal()" class="mt-3 w-full py-2 px-4 border border-indigo-200 rounded-xl shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    Configure Name Overlay
+                                </button>
+
+                                <!-- Hidden Inputs for Name Overlay -->
+                                <input type="hidden" name="name_text" id="prodNameText">
+                                <input type="hidden" name="name_font_family" id="prodNameFontFamily" value="PetitCochon">
+                                <input type="hidden" name="name_top" id="prodNameTop" value="2%">
+                                <input type="hidden" name="name_color" id="prodNameColor" value="#e591ae">
+                                <input type="hidden" name="name_font_size" id="prodNameFontSize" value="88px">
+                                <input type="hidden" name="name_right" id="prodNameRight" value="50%">
                             </div>
 
                             <!-- Gallery Upload -->
@@ -347,6 +387,20 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Book Description</label>
                         <textarea name="description" id="prodDesc" rows="3" placeholder="Write a gorgeous description for this personalized story..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"></textarea>
+                    </div>
+
+                    <!-- Dynamic "Book Category Images" Sections -->
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-md font-bold text-gray-800">Book Category Images</h4>
+                            <button type="button" onclick="addCategoryImageSection()" class="px-3 py-1.5 bg-pink-50 text-pink-700 text-sm font-semibold rounded-lg hover:bg-pink-100 transition-all flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add Image
+                            </button>
+                        </div>
+                        <div id="categoryImagesContainer" class="space-y-6">
+                            <!-- Dynamic sections appended here via JS -->
+                        </div>
                     </div>
 
                     <!-- Dynamic "What makes this special" Sections -->
@@ -420,10 +474,7 @@
                         <div class="w-full aspect-[4/5] bg-gray-50 rounded-2xl overflow-hidden border border-gray-100/50 shadow-inner flex items-center justify-center">
                             <img id="prevImg" src="" alt="Book Cover" class="w-full h-full object-cover transition-all duration-300">
                         </div>
-                        <!-- Mini Gallery -->
-                        <div id="prevGallery" class="flex space-x-3 overflow-x-auto pb-2">
-                            <!-- JS injected thumbnails -->
-                        </div>
+                        <!-- Mini Gallery Removed -->
                     </div>
 
                     <!-- Right: Product details -->
@@ -529,6 +580,102 @@
     </div>
 </div>
 
+<!-- Name Overlay Configuration Modal -->
+<div id="nameOverlayModal" class="fixed inset-0 z-[60] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 transition-opacity bg-gray-900/50 backdrop-blur-sm" aria-hidden="true" onclick="closeNameOverlayModal()"></div>
+
+        <!-- Modal Panel -->
+        <div class="relative inline-block w-full max-w-5xl overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <h3 class="text-lg font-extrabold text-gray-900" id="modal-title">Configure Name Overlay</h3>
+                <button type="button" onclick="closeNameOverlayModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Preview Side (Fixed 650x650 area relative to its container) -->
+                <div class="flex flex-col items-center">
+                    <p class="text-sm font-semibold text-gray-700 mb-3 w-full text-center">Live Preview (650x650 Base)</p>
+                    <div class="relative bg-gray-100 border border-gray-200 overflow-hidden rounded-xl flex items-center justify-center shadow-inner" style="width: 100%; max-width: 650px; aspect-ratio: 1/1;" id="overlayPreviewBox">
+                        <img id="overlayPreviewImage" src="" class="w-full h-full object-cover" alt="Main Cover Preview">
+                        <div id="overlayPreviewText" class="absolute whitespace-nowrap drop-shadow-md" style="font-family: 'PetitCochon', cursive; top: 2%; right: 50%; color: #e591ae; font-size: 88px; transform: translateX(50%);">Your Name</div>
+                    </div>
+                </div>
+
+                <!-- Controls Side -->
+                <div class="flex flex-col space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Name Text</label>
+                        <input type="text" id="configNameText" placeholder="e.g. Emma" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" oninput="updateOverlayPreview()">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Font Family</label>
+                        <select id="configNameFont" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" onchange="updateOverlayPreview()">
+                            <option value="PetitCochon">PetitCochon</option>
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                            <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                            <option value="'Comic Sans MS', cursive, sans-serif">Comic Sans MS</option>
+                            <option value="Impact, fantasy">Impact</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Text Color</label>
+                            <div class="flex items-center space-x-3">
+                                <input type="color" id="configNameColor" value="#e591ae" class="h-10 w-16 p-1 bg-white border border-gray-200 rounded-lg cursor-pointer" oninput="updateOverlayPreview()">
+                                <span class="text-xs text-gray-500 font-mono" id="colorHexDisplay">#e591ae</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Font Size (px)</label>
+                            <div class="flex items-center space-x-3">
+                                <input type="range" id="configNameFontSize" min="10" max="250" value="88" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" oninput="updateOverlayPreview()">
+                                <span class="text-xs text-gray-700 font-bold w-12 text-right" id="fontSizeDisplay">88px</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Top Position (%)</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="range" id="configNameTop" min="0" max="100" value="2" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" oninput="updateOverlayPreview()">
+                            <span class="text-xs text-gray-700 font-bold w-12 text-right" id="topDisplay">2%</span>
+                        </div>
+                        <p class="text-2xs text-gray-400 mt-1">Move text down.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Right Position (%)</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="range" id="configNameRight" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" oninput="updateOverlayPreview()">
+                            <span class="text-xs text-gray-700 font-bold w-12 text-right" id="rightDisplay">50%</span>
+                        </div>
+                        <p class="text-2xs text-gray-400 mt-1">Move text left.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-end space-x-3 rounded-b-2xl">
+                <button type="button" onclick="closeNameOverlayModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="saveNameOverlayConfig()" class="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md shadow-indigo-200 transition-all">
+                    Apply Overlay Config
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- SweetAlert delete form helper -->
 <form id="deleteForm" method="POST" class="hidden">
     @csrf
@@ -536,7 +683,10 @@
 </form>
 
 <script>
+    const categoriesData = @json($categories);
+    const subcategoriesData = @json($subcategories);
     let specialSectionIndex = 0;
+    let categoryImageIndex = 0;
 
     function toggleModal(modalId) {
         const modal = document.getElementById(modalId);
@@ -556,9 +706,9 @@
         document.getElementById('modalTitle').textContent = "Create New Book";
         
         document.getElementById('prodTitle').value = "";
-        document.getElementById('prodParentCategory').value = "";
-        document.getElementById('prodSubCategory').value = "";
-        document.getElementById('subCategoryContainer').classList.add('hidden');
+        if (document.getElementById('prodParentCategory')) document.getElementById('prodParentCategory').value = "";
+        if (document.getElementById('prodSubCategory')) document.getElementById('prodSubCategory').value = "";
+        if (document.getElementById('subCategoryContainer')) document.getElementById('subCategoryContainer').classList.add('hidden');
         document.getElementById('prodPrice').value = "";
         document.getElementById('prodPages').value = "";
         document.getElementById('prodAgeRange').value = "";
@@ -569,6 +719,15 @@
         document.getElementById('prodPaperType').value = "";
         document.getElementById('prodRating').value = "";
         document.getElementById('prodReviewsCount').value = "";
+        
+        // Name Overlay Reset
+        document.getElementById('prodNameText').value = "";
+        document.getElementById('prodNameFontFamily').value = "PetitCochon";
+        document.getElementById('prodNameTop').value = "2%";
+        document.getElementById('prodNameColor').value = "#e591ae";
+        document.getElementById('prodNameFontSize').value = "88px";
+        document.getElementById('prodNameRight').value = "50%";
+
         document.getElementById('prodImageUrl').value = "";
         document.getElementById('prodGalleryUrls').value = "";
         document.getElementById('prodImageFile').value = "";
@@ -577,6 +736,10 @@
         document.getElementById('specialSectionsContainer').innerHTML = "";
         specialSectionIndex = 0;
         addSpecialSection(); // Add one blank section by default
+
+        document.getElementById('categoryImagesContainer').innerHTML = "";
+        categoryImageIndex = 0;
+        addCategoryImageSection(); // Add one blank category image section by default
 
         // Clear image previews
         document.getElementById('mainImagePreview').classList.add('hidden');
@@ -611,14 +774,14 @@
         const subContainer = document.getElementById('subCategoryContainer');
         
         // Reset category state
-        parentSelect.value = "";
-        subSelect.value = "";
-        subContainer.classList.add('hidden');
+        if (parentSelect) parentSelect.value = "";
+        if (subSelect) subSelect.value = "";
+        if (subContainer) subContainer.classList.add('hidden');
 
-        if (product.category_id) {
+        if (product.category_id && parentSelect) {
             parentSelect.value = product.category_id;
-            handleCategoryChange();
-            if (product.subcategory_id) {
+            if(typeof handleCategoryChange === 'function') handleCategoryChange();
+            if (product.subcategory_id && subSelect) {
                 subSelect.value = product.subcategory_id;
             }
         }
@@ -634,6 +797,14 @@
         document.getElementById('prodRating').value = product.rating || "";
         document.getElementById('prodReviewsCount').value = product.reviews_count || "";
         
+        // Name Overlay Populate
+        document.getElementById('prodNameText').value = product.name_text || "";
+        document.getElementById('prodNameFontFamily').value = product.name_font_family || "PetitCochon";
+        document.getElementById('prodNameTop').value = product.name_top || "2%";
+        document.getElementById('prodNameColor').value = product.name_color || "#e591ae";
+        document.getElementById('prodNameFontSize').value = product.name_font_size || "88px";
+        document.getElementById('prodNameRight').value = product.name_right || "50%";
+        
         document.getElementById('specialSectionsContainer').innerHTML = "";
         specialSectionIndex = 0;
         
@@ -643,9 +814,17 @@
             addSpecialSection();
         }
         
+        document.getElementById('categoryImagesContainer').innerHTML = "";
+        categoryImageIndex = 0;
+        
+        if (product.category_images && product.category_images.length > 0) {
+            product.category_images.forEach(catImg => addCategoryImageSection(catImg));
+        } else {
+            addCategoryImageSection();
+        }
+
         // Handle images — populate from product.images relation
         const primaryImg = product.images ? product.images.find(i => i.is_main) : null;
-        const galleryImgs = product.images ? product.images.filter(i => !i.is_main) : [];
 
         // Primary image — show preview and populate URL field
         const mainPreviewDiv = document.getElementById('mainImagePreview');
@@ -653,15 +832,11 @@
         document.getElementById('prodImageFile').value = "";
 
         if (primaryImg && primaryImg.image_path) {
-            // Use the 'url' accessor if available, otherwise build from image_path
-            const imgUrl = primaryImg.url
-                ? primaryImg.url
-                : (primaryImg.image_path.startsWith('http') ? primaryImg.image_path : window.location.origin + '/' + primaryImg.image_path.replace(/^\//, ''));
+            const imgUrl = primaryImg.image_path.startsWith('http') ? primaryImg.image_path : window.location.origin + '/' + primaryImg.image_path.replace(/^\//, '');
 
             mainPreviewImg.src = imgUrl;
             mainPreviewDiv.classList.remove('hidden');
 
-            // Only populate the URL text field for external URLs
             if (primaryImg.image_path.startsWith('http://') || primaryImg.image_path.startsWith('https://')) {
                 document.getElementById('prodImageUrl').value = primaryImg.image_path;
             } else {
@@ -678,17 +853,17 @@
         document.getElementById('replaceGalleryGroup').classList.add('flex');
 
         // Render existing gallery images with delete buttons
+        const galleryImgs = product.images ? product.images.filter(i => !i.is_main) : [];
         const existingContainer = document.getElementById('existingGalleryContainer');
         existingContainer.innerHTML = '';
         document.getElementById('deletedImageIds').value = "[]";
+        selectedGalleryFiles = [];
+        document.getElementById('galleryPreviewContainer').innerHTML = '';
 
         if (galleryImgs.length > 0) {
             existingContainer.classList.remove('hidden');
             galleryImgs.forEach(img => {
-                // Use url accessor if available, otherwise build from image_path
-                const imgUrl = img.url
-                    ? img.url
-                    : (img.image_path.startsWith('http') ? img.image_path : window.location.origin + '/' + img.image_path.replace(/^\//, ''));
+                const imgUrl = img.image_path.startsWith('http') ? img.image_path : window.location.origin + '/' + img.image_path.replace(/^\//, '');
                 const div = document.createElement('div');
                 div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group';
                 div.dataset.imageId = img.id;
@@ -762,36 +937,7 @@
         }
         document.getElementById('prevBadges').innerHTML = badgesHtml;
 
-        // Build Gallery Thumbnails
-        const prevGallery = document.getElementById('prevGallery');
-        prevGallery.innerHTML = "";
-        
-        // Add main cover as first thumbnail
-        const mainThumb = document.createElement('div');
-        mainThumb.className = "w-16 h-20 bg-gray-50 rounded-lg overflow-hidden border border-indigo-400 cursor-pointer flex-shrink-0";
-        mainThumb.innerHTML = `<img src="${primaryUrl || fallBackImg}" class="w-full h-full object-cover">`;
-        mainThumb.onclick = () => {
-            document.querySelectorAll('#prevGallery > div').forEach(d => d.classList.remove('border-indigo-400'));
-            mainThumb.classList.add('border-indigo-400');
-            document.getElementById('prevImg').src = primaryUrl || fallBackImg;
-        };
-        prevGallery.appendChild(mainThumb);
-
-        // Add gallery images
-        galleryImgs.forEach(img => {
-            if (img.image_path) {
-                const galleryUrl = resolveUrl(img);
-                const thumb = document.createElement('div');
-                thumb.className = "w-16 h-20 bg-gray-50 rounded-lg overflow-hidden border border-gray-200 hover:border-indigo-300 cursor-pointer flex-shrink-0 transition-all";
-                thumb.innerHTML = `<img src="${galleryUrl}" class="w-full h-full object-cover">`;
-                thumb.onclick = () => {
-                    document.querySelectorAll('#prevGallery > div').forEach(d => d.classList.remove('border-indigo-400'));
-                    thumb.classList.add('border-indigo-400');
-                    document.getElementById('prevImg').src = galleryUrl;
-                };
-                prevGallery.appendChild(thumb);
-            }
-        });
+        // Gallery Thumbnails Removed
 
         toggleModal('previewModal');
     }
@@ -1029,7 +1175,149 @@
         element.remove();
     }
 
-    // --- Form Submit via fetch (ensures gallery files are properly sent) ---
+    // --- Category Images Builder ---
+    function addCategoryImageSection(data = null) {
+        const container = document.getElementById('categoryImagesContainer');
+        const idx = categoryImageIndex++;
+        
+        let existingIdHtml = '';
+        let existingImageHtml = '';
+        let previewHtml = '';
+        
+        if (data && data.id) {
+            existingIdHtml = `<input type="hidden" name="category_images[${idx}][id]" value="${data.id}">`;
+        }
+        if (data && data.image_path) {
+            existingImageHtml = `<input type="hidden" name="category_images[${idx}][existing_image]" value="${data.image_path}">`;
+            const imgUrl = data.image_path.startsWith('http') ? data.image_path : window.location.origin + '/' + data.image_path.replace(/^\//, '');
+            previewHtml = `
+                <div id="categoryImagePreview_${idx}" class="mt-3 relative w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img id="categoryImagePreviewImg_${idx}" src="${imgUrl}" class="w-full h-full object-cover">
+                    <button type="button" onclick="clearDynamicCategoryImage(${idx})" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center" title="Remove">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+        } else {
+            previewHtml = `
+                <div id="categoryImagePreview_${idx}" class="hidden mt-3 relative w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img id="categoryImagePreviewImg_${idx}" src="" class="w-full h-full object-cover">
+                    <button type="button" onclick="clearDynamicCategoryImage(${idx})" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center" title="Remove">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        // Build Category Options
+        let categoryOptions = '<option value="">-- Select Category --</option>';
+        categoriesData.forEach(cat => {
+            const isSelected = data && data.category_id == cat.id ? 'selected' : '';
+            categoryOptions += `<option value="${cat.id}" data-has-sub="${cat.subcategories && cat.subcategories.length > 0 ? 'true' : 'false'}" ${isSelected}>${cat.name}</option>`;
+        });
+
+        const sectionHtml = `
+            <div id="category_image_row_${idx}" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border border-pink-100 rounded-2xl bg-pink-50/30 relative group">
+                <button type="button" onclick="removeCategoryImageSection(${idx})" class="absolute -top-3 -right-3 w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-red-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                ${existingIdHtml}
+                ${existingImageHtml}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
+                        <select name="category_images[${idx}][category_id]" id="catImgCategory_${idx}" onchange="handleCategoryRowChange(${idx})" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold" required>
+                            ${categoryOptions}
+                        </select>
+                    </div>
+                    <div id="catImgSubContainer_${idx}" class="hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory *</label>
+                        <select name="category_images[${idx}][subcategory_id]" id="catImgSubcategory_${idx}" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold">
+                            <option value="">-- Select Subcategory --</option>
+                            ${subcategoriesData.map(sub => `<option value="${sub.id}" data-parent="${sub.category_id}">${sub.name}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Section Image</label>
+                    <input type="file" name="category_images[${idx}][image]" id="catImgFile_${idx}" accept="image/*" onchange="previewDynamicCategoryImage(event, ${idx})" class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 w-full border border-gray-200 p-1.5 rounded-xl bg-white">
+                    ${previewHtml}
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', sectionHtml);
+
+        // Pre-fill subcategory logic if editing
+        if (data && data.category_id) {
+            handleCategoryRowChange(idx);
+            if (data.subcategory_id) {
+                document.getElementById(`catImgSubcategory_${idx}`).value = data.subcategory_id;
+            }
+        }
+    }
+
+    function removeCategoryImageSection(idx) {
+        document.getElementById(`category_image_row_${idx}`).remove();
+    }
+
+    function handleCategoryRowChange(idx) {
+        const parentSelect = document.getElementById(`catImgCategory_${idx}`);
+        const selectedOption = parentSelect.options[parentSelect.selectedIndex];
+        const hasSub = selectedOption ? selectedOption.getAttribute('data-has-sub') === 'true' : false;
+        const parentId = parentSelect.value;
+        const subContainer = document.getElementById(`catImgSubContainer_${idx}`);
+        const subSelect = document.getElementById(`catImgSubcategory_${idx}`);
+
+        if (!parentId) {
+            subContainer.classList.add('hidden');
+            subSelect.required = false;
+            subSelect.value = '';
+            return;
+        }
+
+        if (hasSub) {
+            subContainer.classList.remove('hidden');
+            subSelect.required = true;
+            Array.from(subSelect.options).forEach(opt => {
+                if (opt.value === '') {
+                    opt.style.display = '';
+                } else if (opt.getAttribute('data-parent') == parentId) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+            subSelect.value = '';
+        } else {
+            subContainer.classList.add('hidden');
+            subSelect.required = false;
+            subSelect.value = '';
+        }
+    }
+
+    function previewDynamicCategoryImage(event, idx) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(`categoryImagePreviewImg_${idx}`).src = e.target.result;
+            document.getElementById(`categoryImagePreview_${idx}`).classList.remove('hidden');
+            const existingInput = document.querySelector(`input[name="category_images[${idx}][existing_image]"]`);
+            if(existingInput) existingInput.remove();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearDynamicCategoryImage(idx) {
+        document.getElementById(`catImgFile_${idx}`).value = '';
+        document.getElementById(`categoryImagePreviewImg_${idx}`).src = '';
+        document.getElementById(`categoryImagePreview_${idx}`).classList.add('hidden');
+        const existingInput = document.querySelector(`input[name="category_images[${idx}][existing_image]"]`);
+        if(existingInput) existingInput.remove();
+    }
+
+    // --- Form Submit via fetch ---
     document.getElementById('productForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -1127,6 +1415,88 @@
                 });
             }
         });
+    }
+
+    // --- Name Overlay Configuration Modal Logic ---
+    function openNameOverlayModal() {
+        // Sync values from hidden inputs to modal inputs
+        document.getElementById('configNameText').value = document.getElementById('prodNameText').value || '';
+        document.getElementById('configNameFont').value = document.getElementById('prodNameFontFamily').value || 'PetitCochon';
+        
+        let colorVal = document.getElementById('prodNameColor').value || '#e591ae';
+        document.getElementById('configNameColor').value = colorVal;
+        
+        let fontSizeVal = (document.getElementById('prodNameFontSize').value || '88px').replace('px', '');
+        document.getElementById('configNameFontSize').value = fontSizeVal;
+        
+        let topVal = (document.getElementById('prodNameTop').value || '2%').replace('%', '');
+        document.getElementById('configNameTop').value = topVal;
+        
+        let rightVal = (document.getElementById('prodNameRight').value || '50%').replace('%', '');
+        document.getElementById('configNameRight').value = rightVal;
+
+        // Sync main image preview to overlay preview
+        let mainImgSrc = document.getElementById('mainImagePreviewImg').src;
+        let overlayImg = document.getElementById('overlayPreviewImage');
+        if(mainImgSrc && !mainImgSrc.endsWith('/')) {
+            overlayImg.src = mainImgSrc;
+        } else {
+            overlayImg.src = 'https://via.placeholder.com/650x650.png?text=Upload+Main+Cover+Image';
+        }
+
+        updateOverlayPreview();
+        
+        const modal = document.getElementById('nameOverlayModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.querySelector('.transform').classList.add('scale-100', 'opacity-100');
+            modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0');
+        }, 10);
+    }
+
+    function closeNameOverlayModal() {
+        const modal = document.getElementById('nameOverlayModal');
+        modal.querySelector('.transform').classList.remove('scale-100', 'opacity-100');
+        modal.querySelector('.transform').classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function updateOverlayPreview() {
+        let text = document.getElementById('configNameText').value || 'Your Name';
+        let font = document.getElementById('configNameFont').value;
+        let color = document.getElementById('configNameColor').value;
+        let fontSize = document.getElementById('configNameFontSize').value + 'px';
+        let top = document.getElementById('configNameTop').value + '%';
+        let right = document.getElementById('configNameRight').value + '%';
+
+        // Update displays
+        document.getElementById('colorHexDisplay').textContent = color;
+        document.getElementById('fontSizeDisplay').textContent = fontSize;
+        document.getElementById('topDisplay').textContent = top;
+        document.getElementById('rightDisplay').textContent = right;
+
+        // Apply to preview text
+        let previewText = document.getElementById('overlayPreviewText');
+        previewText.textContent = text;
+        previewText.style.fontFamily = font;
+        previewText.style.color = color;
+        previewText.style.fontSize = fontSize;
+        previewText.style.top = top;
+        previewText.style.right = right;
+    }
+
+    function saveNameOverlayConfig() {
+        // Save back to hidden inputs
+        document.getElementById('prodNameText').value = document.getElementById('configNameText').value;
+        document.getElementById('prodNameFontFamily').value = document.getElementById('configNameFont').value;
+        document.getElementById('prodNameColor').value = document.getElementById('configNameColor').value;
+        document.getElementById('prodNameFontSize').value = document.getElementById('configNameFontSize').value + 'px';
+        document.getElementById('prodNameTop').value = document.getElementById('configNameTop').value + '%';
+        document.getElementById('prodNameRight').value = document.getElementById('configNameRight').value + '%';
+        
+        closeNameOverlayModal();
     }
 </script>
 

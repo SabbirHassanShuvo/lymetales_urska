@@ -174,6 +174,8 @@ Route::prefix('admin')->group(function () {
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->names('admin.products');
         Route::patch('categories/{category}/status', [\App\Http\Controllers\Admin\CategoryController::class, 'toggleStatus'])->name('admin.categories.status');
         Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)->names('admin.categories');
+        Route::patch('subcategories/{subcategory}/status', [\App\Http\Controllers\Admin\SubcategoryController::class, 'toggleStatus'])->name('admin.subcategories.status');
+        Route::resource('subcategories', \App\Http\Controllers\Admin\SubcategoryController::class)->except(['index', 'create', 'show', 'edit'])->names('admin.subcategories');
         Route::patch('coupons/{coupon}/status', [\App\Http\Controllers\Admin\CouponController::class, 'toggleStatus'])->name('admin.coupons.status');
         Route::resource('coupons', \App\Http\Controllers\Admin\CouponController::class)->names('admin.coupons');
 

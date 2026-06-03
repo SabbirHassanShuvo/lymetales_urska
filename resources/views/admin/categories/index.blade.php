@@ -144,7 +144,6 @@
                             <th class="px-6 py-4">Parent</th>
                             <th class="px-6 py-4">Slug</th>
                             <th class="px-6 py-4">Description</th>
-                            <th class="px-6 py-4">Special</th>
                             <th class="px-6 py-4">Status</th>
                             <th class="px-6 py-4 text-right">Actions</th>
                         </tr>
@@ -164,21 +163,14 @@
                                         {{ $sub->description ?: 'No description provided.' }}
                                     </td>
                                     <td class="px-6 py-4">
-                                        @if($sub->is_special)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-800">★ Special</span>
-                                        @else
-                                            <span class="text-xs text-gray-400">Regular</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <button onclick="toggleCategoryStatus({{ $sub->id }}, {{ $sub->status ? 'true' : 'false' }})" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors {{ $sub->status ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100' }}">
+                                        <button onclick="toggleSubcategoryStatus({{ $sub->id }}, {{ $sub->status ? 'true' : 'false' }})" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors {{ $sub->status ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100' }}">
                                             {{ $sub->status ? 'Active' : 'Inactive' }}
                                         </button>
                                     </td>
                                     <td class="px-6 py-4 text-right space-x-2">
                                         <button onclick="openEditModal({{ json_encode($sub) }}, 'sub')"
                                             class="text-indigo-600 hover:text-indigo-900 font-semibold text-xs">Edit</button>
-                                        <button onclick="confirmDelete('{{ route('admin.categories.destroy', $sub->id) }}')"
+                                        <button onclick="confirmDelete('{{ route('admin.subcategories.destroy', $sub->id) }}')"
                                             class="text-red-500 hover:text-red-800 font-semibold text-xs">Delete</button>
                                     </td>
                                 </tr>
@@ -269,7 +261,7 @@
         <div class="fixed inset-0 bg-gray-500/75 transition-opacity" onclick="closeModal('subCreateModal')"></div>
 
         <div class="relative bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-lg">
-            <form action="{{ route('admin.categories.store') }}" method="POST">
+            <form action="{{ route('admin.subcategories.store') }}" method="POST">
                 @csrf
 
                 <div class="px-8 pt-8 pb-6 space-y-5">
@@ -327,11 +319,6 @@
                     </div>
 
                     <div class="flex items-center space-x-6 pt-1">
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" name="is_special" value="1"
-                                class="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500 cursor-pointer">
-                            <span class="text-sm font-semibold text-gray-700">★ Special</span>
-                        </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
                             <input type="checkbox" name="status" value="1" checked
                                 class="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500 cursor-pointer">
@@ -402,11 +389,6 @@
                     </div>
 
                     <div class="flex items-center space-x-6 pt-1">
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" name="is_special" id="subEditIsSpecial" value="1"
-                                class="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500 cursor-pointer">
-                            <span class="text-sm font-semibold text-gray-700">★ Special</span>
-                        </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
                             <input type="checkbox" name="status" id="subEditStatus" value="1"
                                 class="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500 cursor-pointer">
@@ -536,11 +518,10 @@
             openModal('parentModal');
         } else {
             const form = document.getElementById('subEditForm');
-            form.action = '/admin/categories/' + category.id;
-            document.getElementById('subEditParentId').value = category.parent_id || '';
+            form.action = '/admin/subcategories/' + category.id;
+            document.getElementById('subEditParentId').value = category.category_id || '';
             document.getElementById('subEditName').value = category.name;
             document.getElementById('subEditDesc').value = category.description || '';
-            document.getElementById('subEditIsSpecial').checked = !!category.is_special;
             document.getElementById('subEditStatus').checked = !!category.status;
             openModal('subEditModal');
         }
@@ -579,6 +560,59 @@
         Swal.fire({
             title: `Want to ${actionText}?`,
             text: `This will ${actionText} the category.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: 'Yes, do it!',
+            background: '#ffffff',
+            borderRadius: '1rem',
+            customClass: {
+                popup: 'rounded-2xl border border-gray-100 shadow-xl',
+                confirmButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105',
+                cancelButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        Swal.fire({
+                            title: 'Updated!',
+                            text: data.message,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: { popup: 'rounded-2xl shadow-xl' }
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                });
+            }
+        });
+    }
+
+    function toggleSubcategoryStatus(subcategoryId, currentStatus) {
+        const actionText = currentStatus ? "deactivate" : "activate";
+        const url = `/admin/subcategories/${subcategoryId}/status`;
+
+        Swal.fire({
+            title: `Want to ${actionText}?`,
+            text: `This will ${actionText} the subcategory.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#4f46e5',
