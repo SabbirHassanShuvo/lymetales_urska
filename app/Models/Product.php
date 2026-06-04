@@ -105,6 +105,20 @@ class Product extends Model
         return $this->hasMany(ProductCategoryImage::class)->orderBy('sort_order');
     }
 
+    /** All reviews */
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class)->latest();
+    }
+
+    /** Only approved reviews */
+    public function approvedReviews()
+    {
+        return $this->hasMany(ProductReview::class)
+            ->where('is_approved', true)
+            ->latest();
+    }
+
     // ── Convenience accessors ──────────────────────────────────────────────
 
     /** Returns the URL of the primary image, or null */

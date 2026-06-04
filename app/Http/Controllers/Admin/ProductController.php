@@ -46,10 +46,12 @@ class ProductController extends Controller
             'image_url'          => 'nullable|string|max:2048',
             'gallery_files.*'    => 'nullable|image|max:4096',
             'gallery_urls'       => 'nullable|string',
-            'category_images'                 => 'nullable|array',
-            'category_images.*.category_id'   => 'nullable|exists:categories,id',
-            'category_images.*.subcategory_id'=> 'nullable|exists:subcategories,id',
-            'category_images.*.image'         => 'nullable|image|max:4096',
+            'category_images'                   => 'nullable|array',
+            'category_images.*.category_id'    => 'nullable|exists:categories,id',
+            'category_images.*.subcategory_id' => 'nullable|exists:subcategories,id',
+            'category_images.*.image'          => 'nullable|image|max:4096',
+            'category_images.*.option_type'    => 'nullable|in:box,drop,color',
+            'category_images.*.option_value'   => 'nullable|string|max:20',
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
@@ -173,6 +175,8 @@ class ProductController extends Controller
                         'subcategory_id' => !empty($catImg['subcategory_id']) ? $catImg['subcategory_id'] : null,
                         'image_path'     => $imagePath,
                         'sort_order'     => $sort++,
+                        'option_type'    => $catImg['option_type'] ?? 'box',
+                        'option_value'   => ($catImg['option_type'] ?? 'box') === 'color' ? ($catImg['option_value'] ?? null) : null,
                     ]);
                 }
             }
@@ -203,12 +207,14 @@ class ProductController extends Controller
             'image_url'          => 'nullable|string|max:2048',
             'gallery_files.*'    => 'nullable|image|max:4096',
             'gallery_urls'       => 'nullable|string',
-            'category_images'                 => 'nullable|array',
-            'category_images.*.id'            => 'nullable|exists:product_category_images,id',
-            'category_images.*.category_id'   => 'nullable|exists:categories,id',
-            'category_images.*.subcategory_id'=> 'nullable|exists:subcategories,id',
-            'category_images.*.image'         => 'nullable|image|max:4096',
-            'category_images.*.existing_image'=> 'nullable|string',
+            'category_images'                   => 'nullable|array',
+            'category_images.*.id'             => 'nullable|exists:product_category_images,id',
+            'category_images.*.category_id'    => 'nullable|exists:categories,id',
+            'category_images.*.subcategory_id' => 'nullable|exists:subcategories,id',
+            'category_images.*.image'          => 'nullable|image|max:4096',
+            'category_images.*.existing_image' => 'nullable|string',
+            'category_images.*.option_type'    => 'nullable|in:box,drop,color',
+            'category_images.*.option_value'   => 'nullable|string|max:20',
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
@@ -399,6 +405,8 @@ class ProductController extends Controller
                                 'subcategory_id' => !empty($catImg['subcategory_id']) ? $catImg['subcategory_id'] : null,
                                 'image_path'     => $imagePath,
                                 'sort_order'     => $sort++,
+                                'option_type'    => $catImg['option_type'] ?? 'box',
+                                'option_value'   => ($catImg['option_type'] ?? 'box') === 'color' ? ($catImg['option_value'] ?? null) : null,
                             ]);
                             $submittedCatImgIds[] = $existingCatImg->id;
                         }
@@ -409,6 +417,8 @@ class ProductController extends Controller
                                 'subcategory_id' => !empty($catImg['subcategory_id']) ? $catImg['subcategory_id'] : null,
                                 'image_path'     => $imagePath,
                                 'sort_order'     => $sort++,
+                                'option_type'    => $catImg['option_type'] ?? 'box',
+                                'option_value'   => ($catImg['option_type'] ?? 'box') === 'color' ? ($catImg['option_value'] ?? null) : null,
                             ]);
                             $submittedCatImgIds[] = $newCatImg->id;
                         }

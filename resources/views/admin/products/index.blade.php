@@ -252,29 +252,6 @@
                                 <input type="text" name="title" id="prodTitle" required placeholder="e.g. My First Easter Egg Hunt" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                             </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
-                                <select name="category_id" id="prodParentCategory" onchange="handleCategoryChange()" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
-                                    <option value="">-- Select Category --</option>
-                                    @foreach($categories as $cat)
-                                        @if($cat->subcategories->count() == 0)
-                                            <option value="{{ $cat->id }}" data-has-sub="false">{{ $cat->name }}</option>
-                                        @else
-                                            <option value="{{ $cat->id }}" data-has-sub="true">{{ $cat->name }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-                            <!-- Subcategory (shown only when parent has sub) -->
-                            <div id="subCategoryContainer" class="hidden mt-4">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory *</label>
-                                <select name="subcategory_id" id="prodSubCategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
-                                    <option value="">-- Select Subcategory --</option>
-                                    @foreach($subcategories as $sub)
-                                        <option value="{{ $sub->id }}" data-parent="{{ $sub->category_id }}">{{ $sub->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
@@ -719,6 +696,7 @@
         document.getElementById('prodPaperType').value = "";
         document.getElementById('prodRating').value = "";
         document.getElementById('prodReviewsCount').value = "";
+        document.getElementById('prodDesc').value = "";
         
         // Name Overlay Reset
         document.getElementById('prodNameText').value = "";
@@ -768,24 +746,6 @@
 
         document.getElementById('prodTitle').value = product.title;
         
-        // Category Logic update for Edit
-        const parentSelect = document.getElementById('prodParentCategory');
-        const subSelect = document.getElementById('prodSubCategory');
-        const subContainer = document.getElementById('subCategoryContainer');
-        
-        // Reset category state
-        if (parentSelect) parentSelect.value = "";
-        if (subSelect) subSelect.value = "";
-        if (subContainer) subContainer.classList.add('hidden');
-
-        if (product.category_id && parentSelect) {
-            parentSelect.value = product.category_id;
-            if(typeof handleCategoryChange === 'function') handleCategoryChange();
-            if (product.subcategory_id && subSelect) {
-                subSelect.value = product.subcategory_id;
-            }
-        }
-
         document.getElementById('prodPrice').value = product.price;
         document.getElementById('prodPages').value = product.pages || "";
         document.getElementById('prodAgeRange').value = product.age_range || "";
@@ -796,6 +756,7 @@
         document.getElementById('prodPaperType').value = product.paper_type || "";
         document.getElementById('prodRating').value = product.rating || "";
         document.getElementById('prodReviewsCount').value = product.reviews_count || "";
+        document.getElementById('prodDesc').value = product.description || "";
         
         // Name Overlay Populate
         document.getElementById('prodNameText').value = product.name_text || "";
@@ -983,42 +944,6 @@
         });
     }
 
-    // --- Category Logic ---
-    function handleCategoryChange() {
-        const parentSelect = document.getElementById('prodParentCategory');
-        const selectedOption = parentSelect.options[parentSelect.selectedIndex];
-        const hasSub = selectedOption ? selectedOption.getAttribute('data-has-sub') === 'true' : false;
-        const parentId = parentSelect.value;
-        const subContainer = document.getElementById('subCategoryContainer');
-        const subSelect = document.getElementById('prodSubCategory');
-
-        if (!parentId) {
-            subContainer.classList.add('hidden');
-            subSelect.required = false;
-            subSelect.value = '';
-            return;
-        }
-
-        if (hasSub) {
-            subContainer.classList.remove('hidden');
-            subSelect.required = true;
-            // Show only subcategories of selected parent
-            Array.from(subSelect.options).forEach(opt => {
-                if (opt.value === '') {
-                    opt.style.display = '';
-                } else if (opt.getAttribute('data-parent') == parentId) {
-                    opt.style.display = '';
-                } else {
-                    opt.style.display = 'none';
-                }
-            });
-            subSelect.value = '';
-        } else {
-            subContainer.classList.add('hidden');
-            subSelect.required = false;
-            subSelect.value = '';
-        }
-    }
 
     // --- Main Image Preview ---
     function previewMainImage(event) {
@@ -1237,6 +1162,28 @@
                             ${subcategoriesData.map(sub => `<option value="${sub.id}" data-parent="${sub.category_id}">${sub.name}</option>`).join('')}
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Option Type</label>
+                        <select name="category_images[${idx}][option_type]" id="catImgOptionType_${idx}" onchange="handleOptionTypeChange(${idx})" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold">
+                            <option value="box"   ${(data && data.option_type === 'box')   || !data ? 'selected' : ''}>Box</option>
+                            <option value="drop"  ${data && data.option_type === 'drop'  ? 'selected' : ''}>Drop</option>
+                            <option value="color" ${data && data.option_type === 'color' ? 'selected' : ''}>Color</option>
+                        </select>
+                    </div>
+                    <div id="catImgColorContainer_${idx}" class="${data && data.option_type === 'color' ? '' : 'hidden'}">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Color</label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="catImgColorPicker_${idx}" value="${data && data.option_value ? data.option_value : '#e591ae'}"
+                                oninput="syncColorValue(${idx})"
+                                class="w-12 h-12 rounded-xl border border-gray-200 cursor-pointer p-1 bg-white">
+                            <input type="text" name="category_images[${idx}][option_value]" id="catImgColorValue_${idx}"
+                                value="${data && data.option_value ? data.option_value : '#e591ae'}"
+                                oninput="syncColorPicker(${idx})"
+                                placeholder="#e591ae"
+                                class="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono text-sm">
+                            <div id="catImgColorPreview_${idx}" class="w-10 h-10 rounded-xl border border-gray-200 shadow-inner" style="background:${data && data.option_value ? data.option_value : '#e591ae'}"></div>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Section Image</label>
@@ -1259,6 +1206,33 @@
 
     function removeCategoryImageSection(idx) {
         document.getElementById(`category_image_row_${idx}`).remove();
+    }
+
+    function handleOptionTypeChange(idx) {
+        const type = document.getElementById(`catImgOptionType_${idx}`).value;
+        const colorContainer = document.getElementById(`catImgColorContainer_${idx}`);
+        if (type === 'color') {
+            colorContainer.classList.remove('hidden');
+        } else {
+            colorContainer.classList.add('hidden');
+            // clear option_value when not color
+            const valInput = document.getElementById(`catImgColorValue_${idx}`);
+            if (valInput) valInput.value = '';
+        }
+    }
+
+    function syncColorValue(idx) {
+        const hex = document.getElementById(`catImgColorPicker_${idx}`).value;
+        document.getElementById(`catImgColorValue_${idx}`).value = hex;
+        document.getElementById(`catImgColorPreview_${idx}`).style.background = hex;
+    }
+
+    function syncColorPicker(idx) {
+        const val = document.getElementById(`catImgColorValue_${idx}`).value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+            document.getElementById(`catImgColorPicker_${idx}`).value = val;
+            document.getElementById(`catImgColorPreview_${idx}`).style.background = val;
+        }
     }
 
     function handleCategoryRowChange(idx) {

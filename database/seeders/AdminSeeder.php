@@ -24,6 +24,7 @@ class AdminSeeder extends Seeder
                 'status' => 'approved',
                 'role' => 'admin',
             ]
-        );
+        ); 
     }
 }
+ 

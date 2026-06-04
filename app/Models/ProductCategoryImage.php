@@ -15,6 +15,8 @@ class ProductCategoryImage extends Model
         'subcategory_id',
         'image_path',
         'sort_order',
+        'option_type',
+        'option_value',
     ];
 
     public function product()

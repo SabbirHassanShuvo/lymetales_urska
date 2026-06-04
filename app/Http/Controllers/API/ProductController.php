@@ -69,7 +69,17 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $product = Product::with(['category:id,name,slug', 'subcategory:id,category_id,name,slug', 'primaryImage', 'galleryImages', 'specialSections'])
+        $product = Product::with([
+            'category:id,name,slug', 
+            'subcategory:id,category_id,name,slug', 
+            'primaryImage', 
+            'galleryImages', 
+            'images',
+            'specialSections',
+            'categoryImages.category:id,name,slug',
+            'categoryImages.subcategory:id,name,slug',
+            'approvedReviews'
+        ])
             ->where('id', $id)
             ->where('status', true)
             ->firstOrFail();
@@ -89,11 +99,12 @@ class ProductController extends Controller
             'title'          => $p->title,
             'slug'           => $p->slug,
             'price'          => (float) $p->price,
-            'image'          => $p->imageUrl,   // primary image URL via accessor
+            'image'          => $this->resolveImageUrl($p->imageUrl),
             'rating'         => (float) $p->rating,
             'reviews_count'  => $p->reviews_count,
-            'is_bestseller'  => $p->is_bestseller,
-            'is_recommended' => $p->is_recommended,
+            'is_bestseller'  => (bool) $p->is_bestseller,
+            'is_recommended' => (bool) $p->is_recommended,
+            'status'         => (bool) $p->status,
             'age_range'      => $p->age_range,
             'category'       => $p->category ? [
                 'id'        => $p->category->id,
@@ -108,30 +119,107 @@ class ProductController extends Controller
         ];
 
         if ($detailed) {
-            $base += [
-                'description' => $p->description,
-                'pages'       => $p->pages,
-                'size'        => $p->size,
-                'characters'  => $p->characters,
-                'cover_type'  => $p->cover_type,
-                'print_type'  => $p->print_type,
-                'paper_type'  => $p->paper_type,
-                'special_sections' => $p->specialSections->map(fn ($sec) => [
+            return [
+                'general_info'    => $base,
+                'product_details' => [
+                    'description' => $p->description,
+                    'pages'       => $p->pages,
+                    'size'        => $p->size,
+                    'characters'  => $p->characters,
+                    'cover_type'  => $p->cover_type,
+                    'print_type'  => $p->print_type,
+                    'paper_type'  => $p->paper_type,
+                ],
+                'rating_and_reviews' => [
+                    'rating'        => (float) ($p->rating ?? 5.0),
+                    'rating_out_of' => 5.0,
+                    'rating_display'=> number_format((float) ($p->rating ?? 5.0), 1) . ' / 5.0',
+                    'stars'         => (int) round((float) ($p->rating ?? 5.0)),
+                    'reviews_count' => (int) ($p->reviews_count ?? 0),
+                    'reviews_text'  => 'Based on ' . number_format((int) ($p->reviews_count ?? 0)) . ' reviews',
+                    'reviews'       => $p->approvedReviews ? $p->approvedReviews->map(fn ($r) => [
+                        'id'               => $r->id,
+                        'reviewer_name'    => $r->reviewer_name,
+                        'title'            => $r->title,
+                        'reviewer_location'=> $r->reviewer_location,
+                        'rating'           => (float) $r->rating,
+                        'stars'            => (int) round((float) $r->rating),
+                        'comment'          => $r->comment,
+                        'created_at'       => $r->created_at->toDateString(),
+                        'time_ago'         => $r->created_at->diffForHumans(),
+                    ])->values() : [],
+                ],
+                'name_overlay'    => [
+                    'text'        => $p->name_text,
+                    'font_family' => $p->name_font_family,
+                    'font_size'   => $p->name_font_size,
+                    'color'       => $p->name_color,
+                    'position'    => [
+                        'top'   => $p->name_top,
+                        'right' => $p->name_right,
+                    ],
+                ],
+                'book_category_images' => $p->categoryImages
+                    ? $p->categoryImages
+                        ->groupBy(fn ($img) => $img->category_id)
+                        ->map(fn ($items) => [
+                            'id'            => $items->first()->category?->id,
+                            'name'          => $items->first()->category?->name,
+                            'slug'          => $items->first()->category?->slug,
+                            'subcategories' => $items->map(fn ($img) => [
+                                'id'           => $img->subcategory?->id,
+                                'name'         => $img->subcategory?->name,
+                                'slug'         => $img->subcategory?->slug,
+                                'image'        => $this->resolveImageUrl($img->image_path),
+                                'sort_order'   => $img->sort_order,
+                                'option_type'  => $img->option_type ?? 'box',
+                                'option_value' => $img->option_value,
+                            ])->values(),
+                        ])
+                        ->values()
+                    : [],
+                'special_sections' => $p->specialSections ? $p->specialSections->map(fn ($sec) => [
                     'id'          => $sec->id,
                     'title'       => $sec->title,
                     'subtitle'    => $sec->subtitle,
                     'description' => $sec->description,
-                    'image'       => $sec->image ? url($sec->image) : null,
-                ])->values(),
-                'images'      => $p->images->map(fn ($img) => [
+                    'image'       => $this->resolveImageUrl($sec->image),
+                ])->values() : [],
+                'gallery_thumbnails' => $p->galleryImages ? $p->galleryImages->map(fn ($img) => [
                     'id'         => $img->id,
-                    'url'        => $img->url,
+                    'url'        => $this->resolveImageUrl($img->image_path),
                     'is_primary' => $img->is_main,
                     'sort_order' => $img->sort_order,
-                ])->values(),
+                ])->values() : [],
             ];
         }
 
         return $base;
+    }
+
+    /**
+     * Resolve image URL handling external links, relative paths, and faker text gracefully.
+     */
+    private function resolveImageUrl(?string $path): ?string
+    {
+        if (empty($path)) {
+            return null;
+        }
+
+        // Check if it's already a valid external URL
+        if (filter_var($path, FILTER_VALIDATE_URL) || str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        // If it looks like faker sentence data (contains space and lacks file extension)
+        if (!preg_match('/\.(jpg|jpeg|png|webp|gif|svg)$/i', $path) && str_contains($path, ' ')) {
+            // Provide a placeholder image for broken faker data to maintain professional look
+            return 'https://placehold.co/600x400/eeeeee/333333?text=' . urlencode($path);
+        }
+
+        // Normalise path and use Laravel's asset helper
+        $normalised = ltrim($path, '/');
+        
+        return asset($normalised);
     }
 }
