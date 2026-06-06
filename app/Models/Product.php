@@ -35,6 +35,7 @@ class Product extends Model
         'is_bestseller',
         'is_recommended',
         'status',
+        'domain',
     ];
 
     protected $casts = [

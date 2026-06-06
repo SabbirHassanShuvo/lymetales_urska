@@ -52,7 +52,11 @@ Route::prefix('shop')->group(function () {
     Route::post('/coupon/apply',  [CheckoutController::class, 'applyCoupon']);
     Route::post('/coupon/remove', [CheckoutController::class, 'removeCoupon']);
 
-    // Order Confirmation
+    // Cart fast production toggle
+    Route::post('/cart/fast-production', [CartController::class, 'toggleFastProduction']);
+
+    // Personalisation — validate & attach to cart item
+    Route::post('/personalisation', [\App\Http\Controllers\API\PersonalisationController::class, 'store']);
     Route::get('/confirmation/{orderNumber}', [ConfirmationController::class, 'show']);
 
     // Dynamic Pages

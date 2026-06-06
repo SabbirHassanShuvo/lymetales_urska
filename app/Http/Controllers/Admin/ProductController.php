@@ -18,12 +18,21 @@ class ProductController extends Controller
     {
         $products = Product::with(['category', 'subcategory', 'primaryImage', 'images', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(15);
 
-        $categories   = Category::with('subcategories')->orderBy('name')->get();
+        // Totals for header cards (all products, not just current page)
+        $totalCount       = Product::count();
+        $bestsellersCount = Product::where('is_bestseller', true)->count();
+        $recommendedCount = Product::where('is_recommended', true)->count();
+        $activeCount      = Product::where('status', true)->count();
+
+        $categories    = Category::with('subcategories')->orderBy('name')->get();
         $subcategories = Subcategory::orderBy('name')->get();
 
-        return view('admin.products.index', compact('products', 'categories', 'subcategories'));
+        return view('admin.products.index', compact(
+            'products', 'categories', 'subcategories',
+            'totalCount', 'bestsellersCount', 'recommendedCount', 'activeCount'
+        ));
     }
 
     public function store(Request $request)
@@ -56,8 +65,7 @@ class ProductController extends Controller
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
-            'special_sections'             => 'nullable|array',
-            'special_sections.*.title'     => 'nullable|string|max:255',
+            'domain'             => 'nullable|in:domain1,domain2',
             'special_sections.*.subtitle'  => 'nullable|string|max:255',
             'special_sections.*.description' => 'nullable|string',
             'special_sections.*.image'     => 'nullable|image|max:4096',
@@ -89,6 +97,7 @@ class ProductController extends Controller
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
+                'domain'         => $request->filled('domain') ? $request->domain : null,
                 'name_text'        => $request->name_text,
                 'name_font_family' => $request->name_font_family ?: 'PetitCochon',
                 'name_top'         => $request->name_top ?: '2%',
@@ -219,6 +228,7 @@ class ProductController extends Controller
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
+            'domain'             => 'nullable|in:domain1,domain2',
             'special_sections'             => 'nullable|array',
             'special_sections.*.id'        => 'nullable|exists:product_special_sections,id',
             'special_sections.*.title'     => 'nullable|string|max:255',
@@ -254,6 +264,7 @@ class ProductController extends Controller
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
+                'domain'         => $request->filled('domain') ? $request->domain : null,
                 'name_text'        => $request->name_text,
                 'name_font_family' => $request->name_font_family ?: $product->name_font_family ?: 'PetitCochon',
                 'name_top'         => $request->name_top ?: $product->name_top ?: '2%',

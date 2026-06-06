@@ -12,7 +12,7 @@
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500 font-medium">Total Books</h3>
-                <p class="text-2xl font-bold text-gray-800">{{ $products->count() }}</p>
+                <p class="text-2xl font-bold text-gray-800">{{ $totalCount }}</p>
             </div>
         </div>
 
@@ -24,7 +24,7 @@
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500 font-medium">Bestsellers</h3>
-                <p class="text-2xl font-bold text-gray-800">{{ $products->where('is_bestseller', true)->count() }}</p>
+                <p class="text-2xl font-bold text-gray-800">{{ $bestsellersCount }}</p>
             </div>
         </div>
 
@@ -36,7 +36,7 @@
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500 font-medium">Recommended</h3>
-                <p class="text-2xl font-bold text-gray-800">{{ $products->where('is_recommended', true)->count() }}</p>
+                <p class="text-2xl font-bold text-gray-800">{{ $recommendedCount }}</p>
             </div>
         </div>
 
@@ -48,7 +48,7 @@
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500 font-medium">Active Books</h3>
-                <p class="text-2xl font-bold text-gray-800">{{ $products->where('status', true)->count() }}</p>
+                <p class="text-2xl font-bold text-gray-800">{{ $activeCount }}</p>
             </div>
         </div>
     </div>
@@ -78,116 +78,146 @@
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-gray-50 text-gray-500 text-xs font-semibold uppercase border-b border-gray-100">
-                        <th class="px-6 py-4">Book Details</th>
-                        <th class="px-6 py-4">Category</th>
-                        <th class="px-6 py-4">Price</th>
-                        <th class="px-6 py-4">Specifications</th>
-                        <th class="px-6 py-4">Badges</th>
-                        <th class="px-6 py-4">Status</th>
-                        <th class="px-6 py-4 text-right">Actions</th>
+                    <tr class="bg-gray-50 text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
+                        <th class="px-5 py-3.5">Book</th>
+                        <th class="px-5 py-3.5">Domain</th>
+                        <th class="px-5 py-3.5">Category</th>
+                        <th class="px-5 py-3.5">Price</th>
+                        <th class="px-5 py-3.5">Specs</th>
+                        <th class="px-5 py-3.5">Badges</th>
+                        <th class="px-5 py-3.5">Status</th>
+                        <th class="px-5 py-3.5 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 text-sm text-gray-700" id="productTableBody">
+                <tbody class="divide-y divide-gray-50 text-sm" id="productTableBody">
                     @forelse($products as $product)
-                        <tr class="hover:bg-gray-50/50 transition-colors product-row" data-title="{{ strtolower($product->title) }}" data-category="{{ strtolower($product->category ? $product->category->name : '') }}">
-                            <!-- Title & Main Image -->
-                            <td class="px-6 py-4">
-                                <div class="flex items-center space-x-4">
-                                    <div class="w-14 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0">
-                                        <img src="{{ $product->imageUrl ?: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=120' }}" alt="{{ $product->title }}" class="w-full h-full object-cover">
+                        <tr class="hover:bg-gray-50/60 transition-colors product-row group"
+                            data-title="{{ strtolower($product->title) }}"
+                            data-category="{{ strtolower($product->category ? $product->category->name : '') }}">
+
+                            {{-- Book --}}
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-13 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0 bg-gray-50" style="height:3.25rem">
+                                        <img src="{{ $product->imageUrl ?: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=80' }}"
+                                             alt="{{ $product->title }}"
+                                             class="w-full h-full object-cover">
                                     </div>
-                                    <div>
-                                        <h4 class="font-bold text-gray-800 text-sm hover:text-indigo-600 transition-colors">
-                                            {{ $product->title }}
-                                        </h4>
-                                        <div class="flex items-center space-x-1.5 mt-1 text-xs text-amber-500 font-semibold">
-                                            <span>★ {{ number_format($product->rating ?: 5.0, 1) }}</span>
-                                            <span class="text-gray-400 font-normal">({{ $product->reviews_count ?: 0 }} reviews)</span>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-gray-800 text-sm truncate max-w-[180px]">{{ $product->title }}</p>
+                                        <div class="flex items-center gap-1 mt-0.5">
+                                            <span class="text-amber-400 text-xs">★</span>
+                                            <span class="text-xs text-gray-500">{{ number_format($product->rating ?: 5.0, 1) }}</span>
+                                            <span class="text-gray-300 text-xs">·</span>
+                                            <span class="text-xs text-gray-400">{{ $product->reviews_count ?: 0 }} reviews</span>
                                         </div>
                                     </div>
                                 </div>
                             </td>
-                            <!-- Category -->
-                            <td class="px-6 py-4">
+
+                            {{-- Domain --}}
+                            <td class="px-5 py-3.5">
+                                @if($product->domain)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold
+                                        {{ $product->domain === 'domain1' ? 'bg-violet-50 text-violet-700 border border-violet-100' : 'bg-sky-50 text-sky-700 border border-sky-100' }}">
+                                        {{ $product->domain === 'domain1' ? 'Domain 1' : 'Domain 2' }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-300 text-xs">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Category --}}
+                            <td class="px-5 py-3.5">
                                 @if($product->categoryImages && $product->categoryImages->count() > 0)
-                                    <div class="flex flex-col gap-2">
-                                        @foreach($product->categoryImages as $catImg)
+                                    <div class="flex flex-col gap-1">
+                                        @foreach($product->categoryImages->unique('category_id')->take(2) as $catImg)
                                             @if($catImg->category)
-                                                <div class="flex flex-col items-start gap-1 p-1.5 bg-gray-50 rounded border border-gray-100">
-                                                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md border border-indigo-100/50">
-                                                        {{ $catImg->category->name }}
-                                                    </span>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-md border border-indigo-100/60 w-fit">
+                                                    {{ $catImg->category->name }}
                                                     @if($catImg->subcategory)
-                                                        <span class="px-2 py-0.5 bg-pink-50 text-pink-700 text-xs font-bold rounded-md border border-pink-100/50 flex items-center mt-0.5">
-                                                            <svg class="w-2.5 h-2.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                                            {{ $catImg->subcategory->name }}
-                                                        </span>
+                                                        <span class="text-indigo-300">›</span>
+                                                        <span class="text-indigo-500">{{ $catImg->subcategory->name }}</span>
                                                     @endif
-                                                </div>
+                                                </span>
                                             @endif
                                         @endforeach
-                                    </div>
-                                @elseif($product->category)
-                                    <div class="flex flex-col items-start gap-1">
-                                        <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100/50">
-                                            {{ $product->category->name }}
-                                        </span>
-                                        @if($product->subcategory)
-                                            <span class="px-2.5 py-1 bg-pink-50 text-pink-700 text-xs font-bold rounded-lg border border-pink-100/50 flex items-center">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                                {{ $product->subcategory->name }}
-                                            </span>
+                                        @if($product->categoryImages->unique('category_id')->count() > 2)
+                                            <span class="text-xs text-gray-400">+{{ $product->categoryImages->unique('category_id')->count() - 2 }} more</span>
                                         @endif
                                     </div>
+                                @elseif($product->category)
+                                    <span class="inline-flex items-center px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-md border border-indigo-100/60">
+                                        {{ $product->category->name }}
+                                    </span>
                                 @else
-                                    <span class="text-gray-400 italic text-xs">Uncategorized</span>
+                                    <span class="text-gray-300 text-xs italic">None</span>
                                 @endif
                             </td>
-                            <!-- Price -->
-                            <td class="px-6 py-4 font-bold text-gray-900 text-sm">
-                                ${{ number_format($product->price, 2) }}
+
+                            {{-- Price --}}
+                            <td class="px-5 py-3.5">
+                                <span class="text-sm font-bold text-gray-900">${{ number_format($product->price, 2) }}</span>
                             </td>
-                            <!-- Specifications -->
-                            <td class="px-6 py-4 text-xs space-y-1 text-gray-500">
-                                <div><span class="font-semibold text-gray-700">Ages:</span> {{ $product->age_range ?: 'N/A' }}</div>
-                                <div><span class="font-semibold text-gray-700">Pages:</span> {{ $product->pages ?: 'N/A' }} pg</div>
-                                <div><span class="font-semibold text-gray-700">Cover:</span> {{ $product->cover_type ?: 'N/A' }}</div>
+
+                            {{-- Specs --}}
+                            <td class="px-5 py-3.5">
+                                <div class="space-y-0.5 text-xs text-gray-500">
+                                    <div><span class="font-semibold text-gray-600">Ages:</span> {{ $product->age_range ?: '—' }}</div>
+                                    <div><span class="font-semibold text-gray-600">Pages:</span> {{ $product->pages ?: '—' }}</div>
+                                    <div><span class="font-semibold text-gray-600">Cover:</span> {{ $product->cover_type ? \Illuminate\Support\Str::limit($product->cover_type, 16) : '—' }}</div>
+                                </div>
                             </td>
-                            <!-- Badges -->
-                            <td class="px-6 py-4 space-y-1">
-                                @if($product->is_bestseller)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-2xs font-extrabold bg-amber-50 text-amber-800 uppercase tracking-wider border border-amber-200">
-                                        Best Seller
-                                    </span>
-                                @endif
-                                @if($product->is_recommended)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-2xs font-extrabold bg-rose-50 text-rose-800 uppercase tracking-wider border border-rose-200 block w-max">
-                                        Recommended
-                                    </span>
-                                @endif
-                                @if(!$product->is_bestseller && !$product->is_recommended)
-                                    <span class="text-gray-400 italic text-xs">None</span>
-                                @endif
+
+                            {{-- Badges --}}
+                            <td class="px-5 py-3.5">
+                                <div class="flex flex-col gap-1">
+                                    @if($product->is_bestseller)
+                                        <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                            ★ Bestseller
+                                        </span>
+                                    @endif
+                                    @if($product->is_recommended)
+                                        <span class="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                            ❤ Recommended
+                                        </span>
+                                    @endif
+                                    @if(!$product->is_bestseller && !$product->is_recommended)
+                                        <span class="text-gray-300 text-xs">—</span>
+                                    @endif
+                                </div>
                             </td>
-                            <!-- Status -->
-                            <td class="px-6 py-4">
-                                <button onclick="toggleProductStatus({{ $product->id }}, {{ $product->status ? 'true' : 'false' }})" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold transition-colors {{ $product->status ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100' }}">
+
+                            {{-- Status --}}
+                            <td class="px-5 py-3.5">
+                                <button onclick="toggleProductStatus({{ $product->id }}, {{ $product->status ? 'true' : 'false' }})"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors
+                                    {{ $product->status
+                                        ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                                        : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200' }}">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $product->status ? 'bg-green-500' : 'bg-red-400' }}"></span>
                                     {{ $product->status ? 'Active' : 'Inactive' }}
                                 </button>
                             </td>
-                            <!-- Actions -->
-                            <td class="px-6 py-4 text-right space-x-2">
-                                <div class="flex items-center justify-end space-x-1.5">
-                                    <button onclick="previewProduct({{ json_encode($product->load('images')) }})" class="px-2.5 py-1.5 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-150 rounded-lg text-xs font-bold transition-all" title="Customer Preview">
+
+                            {{-- Actions --}}
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button onclick="previewProduct({{ json_encode($product->load('images')) }})"
+                                        class="px-2.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:text-indigo-600 transition-all"
+                                        title="Preview">
                                         Preview
                                     </button>
-                                    <button onclick="editProduct({{ json_encode($product->load('images')) }})" class="px-2.5 py-1.5 bg-gray-50 hover:bg-indigo-55 hover:text-indigo-600 border border-gray-150 rounded-lg text-xs font-bold transition-all" title="Edit Book">
+                                    <button onclick="editProduct({{ json_encode($product->load('images')) }})"
+                                        class="px-2.5 py-1.5 bg-white hover:bg-indigo-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:text-indigo-600 transition-all"
+                                        title="Edit">
                                         Edit
                                     </button>
-                                    <button onclick="confirmDelete('{{ route('admin.products.destroy', $product->id) }}', 'This book and its files will be permanently deleted.')" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete Book">
+                                    <button onclick="confirmDelete('{{ route('admin.products.destroy', $product->id) }}', 'This book and its files will be permanently deleted.')"
+                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100"
+                                        title="Delete">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                     </button>
                                 </div>
@@ -195,20 +225,54 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-16 text-gray-400">
-                                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3 text-gray-300">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            <td colspan="8" class="text-center py-16 text-gray-400">
+                                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                                     </svg>
                                 </div>
-                                <h4 class="font-bold text-gray-700">No Books Found</h4>
-                                <p class="text-xs text-gray-500 mt-1">Get started by creating your very first personalised book product.</p>
+                                <p class="font-bold text-gray-700">No Books Found</p>
+                                <p class="text-xs text-gray-400 mt-1">Get started by adding your first book.</p>
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+
+        {{-- Pagination --}}
+        @if($products->hasPages())
+        <div class="px-5 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p class="text-xs text-gray-500">
+                Showing <span class="font-semibold text-gray-700">{{ $products->firstItem() }}</span>–<span class="font-semibold text-gray-700">{{ $products->lastItem() }}</span>
+                of <span class="font-semibold text-gray-700">{{ $products->total() }}</span> books
+            </p>
+            <div class="flex items-center gap-1">
+                {{-- Previous --}}
+                @if($products->onFirstPage())
+                    <span class="px-3 py-1.5 text-xs font-semibold text-gray-300 bg-gray-50 border border-gray-100 rounded-lg cursor-not-allowed">← Prev</span>
+                @else
+                    <a href="{{ $products->previousPageUrl() }}" class="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-gray-200 rounded-lg transition-all">← Prev</a>
+                @endif
+
+                {{-- Page numbers --}}
+                @foreach($products->getUrlRange(max(1, $products->currentPage()-2), min($products->lastPage(), $products->currentPage()+2)) as $page => $url)
+                    @if($page == $products->currentPage())
+                        <span class="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 border border-indigo-600 rounded-lg">{{ $page }}</span>
+                    @else
+                        <a href="{{ $url }}" class="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-gray-200 rounded-lg transition-all">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                {{-- Next --}}
+                @if($products->hasMorePages())
+                    <a href="{{ $products->nextPageUrl() }}" class="px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-gray-200 rounded-lg transition-all">Next →</a>
+                @else
+                    <span class="px-3 py-1.5 text-xs font-semibold text-gray-300 bg-gray-50 border border-gray-100 rounded-lg cursor-not-allowed">Next →</span>
+                @endif
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 
@@ -252,6 +316,14 @@
                                 <input type="text" name="title" id="prodTitle" required placeholder="e.g. My First Easter Egg Hunt" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                             </div>
 
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Domain</label>
+                                <select name="domain" id="prodDomain" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                    <option value="">— No specific domain —</option>
+                                    <option value="domain1">Domain 1</option>
+                                    <option value="domain2">Domain 2</option>
+                                </select>
+                            </div>
 
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
@@ -683,6 +755,7 @@
         document.getElementById('modalTitle').textContent = "Create New Book";
         
         document.getElementById('prodTitle').value = "";
+        if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = "";
         if (document.getElementById('prodParentCategory')) document.getElementById('prodParentCategory').value = "";
         if (document.getElementById('prodSubCategory')) document.getElementById('prodSubCategory').value = "";
         if (document.getElementById('subCategoryContainer')) document.getElementById('subCategoryContainer').classList.add('hidden');
@@ -745,6 +818,7 @@
         document.getElementById('modalTitle').textContent = "Edit Book";
 
         document.getElementById('prodTitle').value = product.title;
+        if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = product.domain || "";
         
         document.getElementById('prodPrice').value = product.price;
         document.getElementById('prodPages').value = product.pages || "";

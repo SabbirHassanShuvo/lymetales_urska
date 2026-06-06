@@ -181,6 +181,7 @@ Route::prefix('admin')->group(function () {
 
         // Orders
         Route::get('/orders', [\App\Http\Controllers\Admin\OrderController::class, 'index'])->name('admin.orders.index');
+        Route::delete('/orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'destroy'])->name('admin.orders.destroy');
         Route::patch('/orders/{order}/order-status', [\App\Http\Controllers\Admin\OrderController::class, 'updateOrderStatus'])->name('admin.orders.order-status');
         Route::patch('/orders/{order}/payment-status', [\App\Http\Controllers\Admin\OrderController::class, 'updatePaymentStatus'])->name('admin.orders.payment-status');
 

@@ -30,6 +30,7 @@ class ProductController extends Controller
         if ($request->filled('min_price'))       $query->where('price', '>=', (float) $request->min_price);
         if ($request->filled('max_price'))       $query->where('price', '<=', (float) $request->max_price);
         if ($request->filled('age_range'))       $query->where('age_range', $request->age_range);
+        if ($request->filled('domain'))          $query->where('domain', $request->domain);
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
@@ -106,6 +107,7 @@ class ProductController extends Controller
             'is_recommended' => (bool) $p->is_recommended,
             'status'         => (bool) $p->status,
             'age_range'      => $p->age_range,
+            'domain'         => $p->domain,
             'category'       => $p->category ? [
                 'id'        => $p->category->id,
                 'name'      => $p->category->name,

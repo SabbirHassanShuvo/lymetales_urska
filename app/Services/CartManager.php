@@ -44,9 +44,10 @@ class CartManager
      * If the product is already in the cart its quantity is incremented.
      * Quantity is capped at 99.
      *
+     * @param  array|null  $personalisation  Personalisation data for this product (name, dedication, custom fields).
      * @throws CartException if the product is not found or is inactive.
      */
-    public function add(int $productId, int $quantity = 1): void
+    public function add(int $productId, int $quantity = 1, ?array $personalisation = null): void
     {
         $product = Product::find($productId);
 
@@ -60,22 +61,29 @@ class CartManager
 
         $cart = $this->getCart();
 
-        if (isset($cart[$productId])) {
-            $newQuantity = $cart[$productId]['quantity'] + $quantity;
+        // Cart key: if personalisation is provided, make item unique per personalisation
+        // so the same product can appear multiple times with different names/options.
+        $cartKey = $personalisation
+            ? $productId . '_' . md5(json_encode($personalisation))
+            : $productId;
+
+        if (isset($cart[$cartKey])) {
+            $newQuantity = $cart[$cartKey]['quantity'] + $quantity;
             $newQuantity = min($newQuantity, self::MAX_QUANTITY);
 
-            $cart[$productId]['quantity']   = $newQuantity;
-            $cart[$productId]['line_total'] = round($cart[$productId]['unit_price'] * $newQuantity, 2);
+            $cart[$cartKey]['quantity']   = $newQuantity;
+            $cart[$cartKey]['line_total'] = round($cart[$cartKey]['unit_price'] * $newQuantity, 2);
         } else {
             $unitPrice = round((float) $product->price, 2);
 
-            $cart[$productId] = [
-                'product_id' => $product->id,
-                'title'      => $product->title,
-                'image'      => $product->image ?? '',
-                'unit_price' => $unitPrice,
-                'quantity'   => min($quantity, self::MAX_QUANTITY),
-                'line_total' => round($unitPrice * min($quantity, self::MAX_QUANTITY), 2),
+            $cart[$cartKey] = [
+                'product_id'      => $product->id,
+                'title'           => $product->title,
+                'image'           => $product->imageUrl ?? '',
+                'unit_price'      => $unitPrice,
+                'quantity'        => min($quantity, self::MAX_QUANTITY),
+                'line_total'      => round($unitPrice * min($quantity, self::MAX_QUANTITY), 2),
+                'personalisation' => $personalisation,
             ];
         }
 

@@ -21,7 +21,16 @@ class OrderController extends Controller
     }
 
     /**
-     * PATCH /admin/orders/{order}/order-status
+     * DELETE /admin/orders/{order}
+     */
+    public function destroy(Order $order): JsonResponse
+    {
+        $order->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Updates order_status for any order (COD or Stripe).
      * Allowed values: pending, processing, shipped, delivered, cancelled
      */

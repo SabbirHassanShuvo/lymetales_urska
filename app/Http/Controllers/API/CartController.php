@@ -80,19 +80,21 @@ class CartController extends Controller
 
     /**
      * POST /api/shop/cart/add
-     * Body: { "product_id": 1, "quantity": 1 }
+     * Body: { "product_id": 1, "quantity": 1, "personalisation": { "child_name": "Emma", ... } }
      */
     public function add(Request $request): JsonResponse
     {
         $request->validate([
-            'product_id' => ['required', 'integer', 'min:1'],
-            'quantity'   => ['sometimes', 'integer', 'min:1', 'max:99'],
+            'product_id'      => ['required', 'integer', 'min:1'],
+            'quantity'        => ['sometimes', 'integer', 'min:1', 'max:99'],
+            'personalisation' => ['sometimes', 'nullable', 'array'],
         ]);
 
         try {
             $this->cart->add(
                 (int) $request->input('product_id'),
-                (int) $request->input('quantity', 1)
+                (int) $request->input('quantity', 1),
+                $request->input('personalisation')
             );
         } catch (CartException $e) {
             return response()->json([

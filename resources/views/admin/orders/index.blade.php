@@ -6,45 +6,34 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4 hover:shadow-md transition-all duration-200">
             <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500">Total Orders</h3>
                 <p class="text-2xl font-bold text-gray-800">{{ $orders->count() }}</p>
             </div>
         </div>
-
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4 hover:shadow-md transition-all duration-200">
             <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500">Pending</h3>
                 <p class="text-2xl font-bold text-gray-800">{{ $orders->where('order_status', 'pending')->count() }}</p>
             </div>
         </div>
-
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4 hover:shadow-md transition-all duration-200">
             <div class="p-3 bg-green-50 text-green-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500">Delivered</h3>
                 <p class="text-2xl font-bold text-gray-800">{{ $orders->where('order_status', 'delivered')->count() }}</p>
             </div>
         </div>
-
         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4 hover:shadow-md transition-all duration-200">
             <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <div>
                 <h3 class="text-sm font-semibold text-gray-500">Total Revenue</h3>
@@ -81,6 +70,8 @@
                         <th class="px-5 py-4">Payment Status</th>
                         <th class="px-5 py-4">Total</th>
                         <th class="px-5 py-4">Date</th>
+                        <th class="px-5 py-4">Preview</th>
+                        <th class="px-5 py-4">Delete</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
@@ -124,36 +115,24 @@
                             </td>
                             <td class="px-5 py-4">
                                 @if($order->payment_method === 'stripe')
-                                    {{-- Stripe: read-only, webhook-controlled --}}
                                     @php
-                                        $psColors = [
-                                            'pending' => 'bg-amber-50 text-amber-700',
-                                            'paid'    => 'bg-green-50 text-green-700',
-                                            'failed'  => 'bg-red-50 text-red-700',
-                                        ];
+                                        $psColors = ['pending' => 'bg-amber-50 text-amber-700', 'paid' => 'bg-green-50 text-green-700', 'failed' => 'bg-red-50 text-red-700'];
                                         $psColor = $psColors[$order->payment_status] ?? 'bg-gray-50 text-gray-600';
                                     @endphp
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-xs font-bold px-2.5 py-1.5 rounded-lg {{ $psColor }}">
-                                            {{ ucfirst($order->payment_status) }}
-                                        </span>
+                                        <span class="text-xs font-bold px-2.5 py-1.5 rounded-lg {{ $psColor }}">{{ ucfirst($order->payment_status) }}</span>
                                         <span title="Stripe payment status is webhook-controlled" class="text-gray-400 cursor-help">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                            </svg>
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                                         </span>
                                     </div>
                                 @else
-                                    {{-- COD: editable --}}
                                     <select
                                         class="payment-status-select text-xs font-semibold border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-colors"
                                         data-order-id="{{ $order->id }}"
                                         data-type="payment-status"
                                         onchange="updateStatus(this, 'payment-status', {{ $order->id }})">
                                         @foreach(['pending', 'paid', 'failed'] as $status)
-                                            <option value="{{ $status }}" {{ $order->payment_status === $status ? 'selected' : '' }}>
-                                                {{ ucfirst($status) }}
-                                            </option>
+                                            <option value="{{ $status }}" {{ $order->payment_status === $status ? 'selected' : '' }}>{{ ucfirst($status) }}</option>
                                         @endforeach
                                     </select>
                                 @endif
@@ -165,14 +144,49 @@
                                 {{ $order->created_at->format('M d, Y') }}<br>
                                 <span class="text-gray-400">{{ $order->created_at->format('H:i') }}</span>
                             </td>
+
+                            {{-- Preview button --}}
+                            <td class="px-5 py-4">
+                                @php
+                                    $previewImage = null;
+                                    $orderItems = is_array($order->items) ? $order->items : json_decode($order->items, true);
+                                    foreach ($orderItems ?? [] as $oi) {
+                                        if (!empty($oi['personalisation']['preview_image'])) {
+                                            $previewImage = $oi['personalisation']['preview_image'];
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                @if($previewImage)
+                                    <button onclick="openPreviewModal('{{ $previewImage }}', '{{ $order->order_number }}')"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        Preview
+                                    </button>
+                                @else
+                                    <span class="text-gray-300 text-xs">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Delete button --}}
+                            <td class="px-5 py-4">
+                                <button onclick="deleteOrder({{ $order->id }}, '{{ $order->order_number }}', this)"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-all">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    Delete
+                                </button>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-12">
+                            <td colspan="9" class="text-center py-12">
                                 <div class="text-gray-300 mb-3">
-                                    <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                    </svg>
+                                    <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 </div>
                                 <h4 class="font-bold text-gray-700">No Orders Yet</h4>
                                 <p class="text-gray-500 text-sm mt-1">Orders will appear here once customers start placing them.</p>
@@ -185,79 +199,187 @@
     </div>
 </div>
 
+<!-- Image Preview Modal — full viewport, image fills the space -->
+<div id="imagePreviewModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black bg-opacity-85" onclick="closePreviewModal()"></div>
+
+    <!-- Panel -->
+    <div class="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-6">
+
+        <!-- Top bar: order number + close -->
+        <div class="w-full max-w-2xl flex items-center justify-between mb-3">
+            <span id="pvOrderNumber" class="font-mono text-sm font-semibold text-white/80"></span>
+            <button onclick="closePreviewModal()" class="text-white/70 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Image — max height fills screen, natural aspect ratio preserved -->
+        <div class="w-full max-w-2xl flex-1 flex items-center justify-center">
+            <img id="pvImage" src="" alt="Book Preview"
+                 class="max-w-full rounded-xl shadow-2xl border border-white/10"
+                 style="max-height: calc(100vh - 160px); object-fit: contain;">
+        </div>
+
+        <!-- Download PDF button -->
+        <div class="w-full max-w-2xl mt-4">
+            <button onclick="downloadPreviewAsPdf()"
+                class="w-full flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                Download as PDF
+            </button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
     const csrfToken = '{{ csrf_token() }}';
 
-    /**
-     * Called when a status dropdown changes.
-     * @param {HTMLSelectElement} select
-     * @param {'order-status'|'payment-status'} type
-     * @param {number} orderId
-     */
-    function updateStatus(select, type, orderId) {
-        const newValue = select.value;
-        const previousValue = select.dataset.previous ?? select.querySelector('option[selected]')?.value ?? newValue;
+    // ── Image Preview Modal ────────────────────────────────────────────────
 
-        // Store previous value for rollback on error
+    let _pvCurrentSrc   = '';
+    let _pvCurrentOrder = '';
+
+    function openPreviewModal(imagePath, orderNumber) {
+        const src = imagePath.startsWith('http')
+            ? imagePath
+            : window.location.origin + '/' + imagePath.replace(/^\//, '');
+
+        _pvCurrentSrc   = src;
+        _pvCurrentOrder = orderNumber;
+
+        document.getElementById('pvImage').src = src;
+        document.getElementById('pvOrderNumber').textContent = orderNumber;
+        document.getElementById('imagePreviewModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePreviewModal() {
+        document.getElementById('imagePreviewModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closePreviewModal();
+    });
+
+    function downloadPreviewAsPdf() {
+        const img = document.getElementById('pvImage');
+
+        const generate = () => {
+            const { jsPDF } = window.jspdf;
+
+            const natW = img.naturalWidth  || img.width  || 600;
+            const natH = img.naturalHeight || img.height || 800;
+
+            // Use image's own aspect ratio for PDF page size (in mm)
+            const pageW = 210;
+            const pageH = Math.round((natH / natW) * pageW);
+
+            const pdf = new jsPDF({ orientation: pageH > pageW ? 'portrait' : 'landscape', unit: 'mm', format: [pageW, pageH] });
+            pdf.addImage(_pvCurrentSrc, 'JPEG', 0, 0, pageW, pageH);
+            pdf.save(`preview-${_pvCurrentOrder}.pdf`);
+        };
+
+        if (img.complete && img.naturalWidth > 0) {
+            generate();
+        } else {
+            img.onload = generate;
+        }
+    }
+
+    // ── Delete Order ───────────────────────────────────────────────────────
+
+    function deleteOrder(orderId, orderNumber, btn) {
+        Swal.fire({
+            title: 'Delete order?',
+            text: `Order ${orderNumber} will be permanently deleted.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#ef4444',
+            customClass: { popup: 'rounded-2xl shadow-xl' },
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            btn.disabled = true;
+
+            fetch(`/admin/orders/${orderId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message ?? 'Delete failed.');
+                // Remove table row
+                btn.closest('tr').remove();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted!',
+                    text: `Order ${orderNumber} has been deleted.`,
+                    timer: 1500,
+                    showConfirmButton: false,
+                    customClass: { popup: 'rounded-2xl shadow-xl' },
+                });
+            })
+            .catch(err => {
+                btn.disabled = false;
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message, customClass: { popup: 'rounded-2xl shadow-xl' } });
+            });
+        });
+    }
+
+    // ── Status Update ──────────────────────────────────────────────────────
+
+    function updateStatus(select, type, orderId) {
+        const newValue      = select.value;
+        const previousValue = select.dataset.previous ?? newValue;
         select.dataset.previous = previousValue;
 
-        const url = `/admin/orders/${orderId}/${type}`;
+        const url     = `/admin/orders/${orderId}/${type}`;
         const bodyKey = type === 'order-status' ? 'order_status' : 'payment_status';
 
         select.disabled = true;
 
         fetch(url, {
             method: 'PATCH',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ [bodyKey]: newValue }),
         })
         .then(async res => {
             const data = await res.json();
-            if (!res.ok || !data.success) {
-                throw new Error(data.message ?? 'Update failed.');
-            }
-            return data;
-        })
-        .then(data => {
+            if (!res.ok || !data.success) throw new Error(data.message ?? 'Update failed.');
             select.dataset.previous = newValue;
-            Swal.fire({
-                icon: 'success',
-                title: 'Updated!',
-                text: `Status changed to "${newValue}".`,
-                timer: 1500,
-                showConfirmButton: false,
-                customClass: { popup: 'rounded-2xl shadow-xl' },
-            });
+            Swal.fire({ icon: 'success', title: 'Updated!', text: `Status changed to "${newValue}".`, timer: 1500, showConfirmButton: false, customClass: { popup: 'rounded-2xl shadow-xl' } });
         })
         .catch(err => {
-            // Roll back the dropdown to the previous value
             select.value = previousValue;
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: err.message,
-                customClass: { popup: 'rounded-2xl shadow-xl' },
-            });
+            Swal.fire({ icon: 'error', title: 'Error', text: err.message, customClass: { popup: 'rounded-2xl shadow-xl' } });
         })
-        .finally(() => {
-            select.disabled = false;
-        });
+        .finally(() => { select.disabled = false; });
     }
+
+    // ── Search ─────────────────────────────────────────────────────────────
 
     function filterTable() {
         const query = document.getElementById('searchInput').value.toLowerCase();
         document.querySelectorAll('.order-row').forEach(row => {
-            const searchData = row.getAttribute('data-search') ?? '';
-            row.style.display = searchData.includes(query) ? '' : 'none';
+            row.style.display = (row.getAttribute('data-search') ?? '').includes(query) ? '' : 'none';
         });
     }
 
-    // Initialise previous-value tracking on all selects
     document.querySelectorAll('select[data-type]').forEach(select => {
         select.dataset.previous = select.value;
     });
