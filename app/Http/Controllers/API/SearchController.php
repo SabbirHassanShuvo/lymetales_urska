@@ -198,7 +198,6 @@ class SearchController extends Controller
             'subcategory'    => $p->subcategory ? [
                 'id'   => $p->subcategory->id,
                 'name' => $p->subcategory->name,
-                'slug' => $p->subcategory->slug,
             ] : null,
         ];
     }

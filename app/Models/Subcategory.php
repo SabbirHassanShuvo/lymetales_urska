@@ -13,7 +13,6 @@ class Subcategory extends Model
     protected $fillable = [
         'category_id',
         'name',
-        'slug',
         'description',
         'status',
     ];
@@ -28,12 +27,6 @@ class Subcategory extends Model
     protected static function boot()
     {
         parent::boot();
-
-        static::saving(function ($subcategory) {
-            if (empty($subcategory->slug)) {
-                $subcategory->slug = Str::slug($subcategory->name);
-            }
-        });
     }
 
     /**

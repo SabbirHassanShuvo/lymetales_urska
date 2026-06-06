@@ -18,7 +18,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('category_id')->index();
             $table->string('name');
-            $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
@@ -35,7 +34,6 @@ return new class extends Migration
             $newId = DB::table('subcategories')->insertGetId([
                 'category_id' => $sub->parent_id,
                 'name'        => $sub->name,
-                'slug'        => $sub->slug,
                 'description' => $sub->description,
                 'status'      => $sub->status,
                 'created_at'  => $sub->created_at,
@@ -84,7 +82,6 @@ return new class extends Migration
             $oldId = DB::table('categories')->insertGetId([
                 'parent_id'   => $sub->category_id,
                 'name'        => $sub->name,
-                'slug'        => $sub->slug . '_restored',
                 'description' => $sub->description,
                 'status'      => $sub->status,
                 'created_at'  => $sub->created_at,

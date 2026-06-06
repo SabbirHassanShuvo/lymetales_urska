@@ -78,7 +78,7 @@ class ProductController extends Controller
             'images',
             'specialSections',
             'categoryImages.category:id,name,slug',
-            'categoryImages.subcategory:id,name,slug',
+            'categoryImages.subcategory:id,name',
             'approvedReviews'
         ])
             ->where('id', $id)
@@ -133,13 +133,27 @@ class ProductController extends Controller
                     'paper_type'  => $p->paper_type,
                 ],
                 'rating_and_reviews' => [
-                    'rating'        => (float) ($p->rating ?? 5.0),
-                    'rating_out_of' => 5.0,
-                    'rating_display'=> number_format((float) ($p->rating ?? 5.0), 1) . ' / 5.0',
-                    'stars'         => (int) round((float) ($p->rating ?? 5.0)),
-                    'reviews_count' => (int) ($p->reviews_count ?? 0),
-                    'reviews_text'  => 'Based on ' . number_format((int) ($p->reviews_count ?? 0)) . ' reviews',
-                    'reviews'       => $p->approvedReviews ? $p->approvedReviews->map(fn ($r) => [
+                    'rating'         => (float) ($p->rating ?? 5.0),
+                    'rating_out_of'  => 5.0,
+                    'rating_display' => number_format((float) ($p->rating ?? 5.0), 1) . ' / 5.0',
+                    'stars'          => (int) round((float) ($p->rating ?? 5.0)),
+                    'reviews_count'  => (int) ($p->reviews_count ?? 0),
+                    'reviews_text'   => 'Based on ' . number_format((int) ($p->reviews_count ?? 0)) . ' reviews',
+                    'rating_breakdown' => (function () use ($p) {
+                        $reviews = $p->approvedReviews ?? collect();
+                        $total   = $reviews->count();
+                        $breakdown = [];
+                        for ($star = 5; $star >= 1; $star--) {
+                            $count = $reviews->where('rating', $star)->count();
+                            $breakdown[] = [
+                                'star'       => $star,
+                                'count'      => $count,
+                                'percentage' => $total > 0 ? (int) round(($count / $total) * 100) : 0,
+                            ];
+                        }
+                        return $breakdown;
+                    })(),
+                    'reviews' => $p->approvedReviews ? $p->approvedReviews->map(fn ($r) => [
                         'id'               => $r->id,
                         'reviewer_name'    => $r->reviewer_name,
                         'title'            => $r->title,

@@ -27,7 +27,6 @@ class SubcategoryController extends Controller
             Subcategory::create([
                 'category_id' => $request->parent_id,
                 'name'        => $name,
-                'slug'        => Str::slug($name),
                 'description' => $request->description,
                 'status'      => $request->boolean('status'),
             ]);
@@ -52,7 +51,6 @@ class SubcategoryController extends Controller
 
         $subcategory->update([
             'name'        => $request->name,
-            'slug'        => Str::slug($request->name),
             'description' => $request->description,
             'category_id' => $request->parent_id,
             'status'      => $request->boolean('status'),
