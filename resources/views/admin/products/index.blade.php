@@ -733,7 +733,29 @@
 
 <script>
     const categoriesData = @json($categories);
-    const subcategoriesData = @json($subcategories);
+    const subcategoriesData = @json($subcategories);  // L1 subcategories with children[]
+
+    /**
+     * Build <option> HTML for subcategory select.
+     * L1 shown normally, L2 children indented under their parent.
+     * If catId is given, filter to that category only.
+     */
+    function buildSubcategoryOptions(catId = null, selectedId = null) {
+        let html = '';
+        subcategoriesData.forEach(l1 => {
+            if (catId && l1.category_id != catId) return;
+            const l1Sel = selectedId && String(l1.id) === String(selectedId) ? 'selected' : '';
+            html += `<option value="${l1.id}" data-parent="${l1.category_id}" data-level="1" ${l1Sel}>${l1.name}</option>`;
+            if (l1.children && l1.children.length > 0) {
+                l1.children.forEach(l2 => {
+                    if (catId && l2.category_id != catId) return;
+                    const l2Sel = selectedId && String(l2.id) === String(selectedId) ? 'selected' : '';
+                    html += `<option value="${l2.id}" data-parent="${l2.category_id}" data-l1parent="${l2.parent_id}" data-level="2" ${l2Sel}>&nbsp;&nbsp;&nbsp;↳ ${l2.name}</option>`;
+                });
+            }
+        });
+        return html;
+    }
     let specialSectionIndex = 0;
     let categoryImageIndex = 0;
 
@@ -1233,7 +1255,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory *</label>
                         <select name="category_images[${idx}][subcategory_id]" id="catImgSubcategory_${idx}" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold">
                             <option value="">-- Select Subcategory --</option>
-                            ${subcategoriesData.map(sub => `<option value="${sub.id}" data-parent="${sub.category_id}">${sub.name}</option>`).join('')}
+                            ${buildSubcategoryOptions(null, data && data.subcategory_id ? data.subcategory_id : null)}
                         </select>
                     </div>
                     <div>
@@ -1271,10 +1293,7 @@
 
         // Pre-fill subcategory logic if editing
         if (data && data.category_id) {
-            handleCategoryRowChange(idx);
-            if (data.subcategory_id) {
-                document.getElementById(`catImgSubcategory_${idx}`).value = data.subcategory_id;
-            }
+            handleCategoryRowChange(idx, data.subcategory_id || null);
         }
     }
 
@@ -1309,7 +1328,7 @@
         }
     }
 
-    function handleCategoryRowChange(idx) {
+    function handleCategoryRowChange(idx, preserveValue = null) {
         const parentSelect = document.getElementById(`catImgCategory_${idx}`);
         const selectedOption = parentSelect.options[parentSelect.selectedIndex];
         const hasSub = selectedOption ? selectedOption.getAttribute('data-has-sub') === 'true' : false;
@@ -1320,27 +1339,20 @@
         if (!parentId) {
             subContainer.classList.add('hidden');
             subSelect.required = false;
-            subSelect.value = '';
+            subSelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
             return;
         }
 
         if (hasSub) {
+            // Rebuild options filtered to this category (L1 + L2 children grouped)
+            subSelect.innerHTML = '<option value="">-- Select Subcategory --</option>'
+                + buildSubcategoryOptions(parentId, preserveValue);
             subContainer.classList.remove('hidden');
             subSelect.required = true;
-            Array.from(subSelect.options).forEach(opt => {
-                if (opt.value === '') {
-                    opt.style.display = '';
-                } else if (opt.getAttribute('data-parent') == parentId) {
-                    opt.style.display = '';
-                } else {
-                    opt.style.display = 'none';
-                }
-            });
-            subSelect.value = '';
         } else {
             subContainer.classList.add('hidden');
             subSelect.required = false;
-            subSelect.value = '';
+            subSelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
         }
     }
 

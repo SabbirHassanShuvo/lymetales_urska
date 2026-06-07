@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Subcategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -11,10 +12,12 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $parentCategories = Category::with('subcategories')->orderBy('name')->get();
+        $parentCategories  = Category::with(['subcategories.children'])->orderBy('name')->get();
         $specialCategories = Category::special()->orderBy('name')->get();
+        // All level-1 subcategories for the "Add Sub-subcategory" parent selector
+        $allSubcategories  = Subcategory::whereNull('parent_id')->with('category')->orderBy('name')->get();
 
-        return view('admin.categories.index', compact('parentCategories', 'specialCategories'));
+        return view('admin.categories.index', compact('parentCategories', 'specialCategories', 'allSubcategories'));
     }
 
     public function store(Request $request)

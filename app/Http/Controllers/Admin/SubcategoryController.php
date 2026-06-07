@@ -3,20 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Subcategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class SubcategoryController extends Controller
 {
     public function store(Request $request)
     {
         $request->validate([
-            'parent_id'   => 'required|exists:categories,id',
-            'names'       => 'required|array|min:1',
-            'names.*'     => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status'      => 'nullable|in:0,1',
+            'parent_category_id' => 'required|exists:categories,id',
+            'parent_id'          => 'nullable|exists:subcategories,id',
+            'names'              => 'required|array|min:1',
+            'names.*'            => 'required|string|max:255',
+            'description'        => 'nullable|string',
+            'status'             => 'nullable|in:0,1',
         ]);
 
         $count = 0;
@@ -25,7 +26,8 @@ class SubcategoryController extends Controller
             if ($name === '') continue;
 
             Subcategory::create([
-                'category_id' => $request->parent_id,
+                'category_id' => $request->parent_category_id,
+                'parent_id'   => $request->filled('parent_id') ? $request->parent_id : null,
                 'name'        => $name,
                 'description' => $request->description,
                 'status'      => $request->boolean('status'),
@@ -43,16 +45,23 @@ class SubcategoryController extends Controller
         $subcategory = Subcategory::findOrFail($id);
 
         $request->validate([
-            'name'        => 'required|string|max:255',
-            'parent_id'   => 'required|exists:categories,id',
-            'description' => 'nullable|string',
-            'status'      => 'nullable|in:0,1',
+            'name'               => 'required|string|max:255',
+            'parent_category_id' => 'required|exists:categories,id',
+            'parent_id'          => 'nullable|exists:subcategories,id',
+            'description'        => 'nullable|string',
+            'status'             => 'nullable|in:0,1',
         ]);
+
+        // Prevent setting parent_id to self
+        $parentId = $request->filled('parent_id') && $request->parent_id != $id
+            ? $request->parent_id
+            : null;
 
         $subcategory->update([
             'name'        => $request->name,
             'description' => $request->description,
-            'category_id' => $request->parent_id,
+            'category_id' => $request->parent_category_id,
+            'parent_id'   => $parentId,
             'status'      => $request->boolean('status'),
         ]);
 
@@ -80,13 +89,13 @@ class SubcategoryController extends Controller
 
             return response()->json([
                 'success' => true,
-                'status' => $subcategory->status,
-                'message' => 'Subcategory status updated successfully.'
+                'status'  => $subcategory->status,
+                'message' => 'Subcategory status updated successfully.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating status: ' . $e->getMessage()
+                'message' => 'Error updating status: ' . $e->getMessage(),
             ], 500);
         }
     }

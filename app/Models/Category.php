@@ -37,12 +37,16 @@ class Category extends Model
         });
     }
 
-    /**
-     * Get the subcategories.
-     */
+    /** Level-1 subcategories (parent_id IS NULL) */
     public function subcategories()
     {
-        return $this->hasMany(Subcategory::class, 'category_id');
+        return $this->hasMany(Subcategory::class, 'category_id')->whereNull('parent_id')->orderBy('name');
+    }
+
+    /** All subcategories flat (level-1 and level-2) */
+    public function allSubcategories()
+    {
+        return $this->hasMany(Subcategory::class, 'category_id')->orderBy('name');
     }
 
     /**

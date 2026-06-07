@@ -71,19 +71,18 @@ class ProductController extends Controller
     public function show(string $id)
     {
         $product = Product::with([
-            'category:id,name,slug', 
-            'subcategory:id,category_id,name,slug', 
-            'primaryImage', 
-            'galleryImages', 
+            'category:id,name,slug',
+            'subcategory:id,category_id,parent_id,name',
+            'subcategory.parent:id,name',
+            'primaryImage',
+            'galleryImages',
             'images',
             'specialSections',
             'categoryImages.category:id,name,slug',
-            'categoryImages.subcategory:id,name',
-            'approvedReviews'
-        ])
-            ->where('id', $id)
-            ->where('status', true)
-            ->firstOrFail();
+            'categoryImages.subcategory:id,name,parent_id',
+            'categoryImages.subcategory.parent:id,name',
+            'approvedReviews',
+        ])->where('id', $id)->where('status', true)->firstOrFail();
 
         return response()->json([
             'success' => true,
@@ -183,13 +182,15 @@ class ProductController extends Controller
                             'name'          => $items->first()->category?->name,
                             'slug'          => $items->first()->category?->slug,
                             'subcategories' => $items->map(fn ($img) => [
-                                'id'           => $img->subcategory?->id,
-                                'name'         => $img->subcategory?->name,
-                                'slug'         => $img->subcategory?->slug,
-                                'image'        => $this->resolveImageUrl($img->image_path),
-                                'sort_order'   => $img->sort_order,
-                                'option_type'  => $img->option_type ?? 'box',
-                                'option_value' => $img->option_value,
+                                'id'              => $img->subcategory?->id,
+                                'name'            => $img->subcategory?->name,
+                                'slug'            => $img->subcategory?->slug,
+                                'parent_id'       => $img->subcategory?->parent_id,
+                                'parent_name'     => $img->subcategory?->parent?->name,
+                                'image'           => $this->resolveImageUrl($img->image_path),
+                                'sort_order'      => $img->sort_order,
+                                'option_type'     => $img->option_type ?? 'box',
+                                'option_value'    => $img->option_value,
                             ])->values(),
                         ])
                         ->values()
@@ -201,12 +202,33 @@ class ProductController extends Controller
                     'description' => $sec->description,
                     'image'       => $this->resolveImageUrl($sec->image),
                 ])->values() : [],
-                'gallery_thumbnails' => $p->galleryImages ? $p->galleryImages->map(fn ($img) => [
-                    'id'         => $img->id,
-                    'url'        => $this->resolveImageUrl($img->image_path),
-                    'is_primary' => $img->is_main,
-                    'sort_order' => $img->sort_order,
-                ])->values() : [],
+                'gallery_thumbnails' => (function () use ($p) {
+                    $thumbnails = collect();
+
+                    // Primary/cover image always comes first
+                    if ($p->primaryImage) {
+                        $thumbnails->push([
+                            'id'         => $p->primaryImage->id,
+                            'url'        => $this->resolveImageUrl($p->primaryImage->image_path),
+                            'is_primary' => true,
+                            'sort_order' => 0,
+                        ]);
+                    }
+
+                    // Then all non-primary gallery images
+                    if ($p->galleryImages) {
+                        foreach ($p->galleryImages as $img) {
+                            $thumbnails->push([
+                                'id'         => $img->id,
+                                'url'        => $this->resolveImageUrl($img->image_path),
+                                'is_primary' => false,
+                                'sort_order' => $img->sort_order,
+                            ]);
+                        }
+                    }
+
+                    return $thumbnails->values();
+                })(),
             ];
         }
 
@@ -233,9 +255,15 @@ class ProductController extends Controller
             return 'https://placehold.co/600x400/eeeeee/333333?text=' . urlencode($path);
         }
 
-        // Normalise path and use Laravel's asset helper
+        // Normalise path — ensure storage/ prefix for stored uploads
         $normalised = ltrim($path, '/');
-        
+
+        // If the path doesn't already start with 'storage/' or 'public/',
+        // it's a relative upload path (e.g. "products/xxx.png") → prepend storage/
+        if (!str_starts_with($normalised, 'storage/') && !str_starts_with($normalised, 'public/')) {
+            $normalised = 'storage/' . $normalised;
+        }
+
         return asset($normalised);
     }
 }

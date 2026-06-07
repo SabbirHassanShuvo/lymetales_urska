@@ -26,8 +26,8 @@ class ProductController extends Controller
         $recommendedCount = Product::where('is_recommended', true)->count();
         $activeCount      = Product::where('status', true)->count();
 
-        $categories    = Category::with('subcategories')->orderBy('name')->get();
-        $subcategories = Subcategory::orderBy('name')->get();
+        $categories    = Category::with(['subcategories.children'])->orderBy('name')->get();
+        $subcategories = Subcategory::with('children')->whereNull('parent_id')->orderBy('name')->get();
 
         return view('admin.products.index', compact(
             'products', 'categories', 'subcategories',
