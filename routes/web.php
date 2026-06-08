@@ -171,6 +171,7 @@ Route::prefix('admin')->group(function () {
 
         // Products, Categories & Coupons
         Route::patch('products/{product}/status', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('admin.products.status');
+        Route::get('products/{product}/customization', [\App\Http\Controllers\Admin\ProductController::class, 'getCustomization'])->name('admin.products.customization');
         Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)->names('admin.products');
         Route::patch('categories/{category}/status', [\App\Http\Controllers\Admin\CategoryController::class, 'toggleStatus'])->name('admin.categories.status');
         Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)->names('admin.categories');

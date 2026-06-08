@@ -106,6 +106,12 @@ class Product extends Model
         return $this->hasMany(ProductCategoryImage::class)->orderBy('sort_order');
     }
 
+    /** Customization steps (Gender → Boy/Girl → Hair Color → Red/Black) */
+    public function customizationSteps()
+    {
+        return $this->hasMany(\App\Models\ProductCustomizationStep::class)->orderBy('sort_order');
+    }
+
     /** All reviews */
     public function reviews()
     {

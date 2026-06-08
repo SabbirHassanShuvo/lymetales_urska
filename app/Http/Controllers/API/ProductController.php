@@ -82,6 +82,7 @@ class ProductController extends Controller
             'categoryImages.subcategory:id,name,parent_id',
             'categoryImages.subcategory.parent:id,name',
             'approvedReviews',
+            'customizationSteps.options.subSteps.subOptions',
         ])->where('id', $id)->where('status', true)->firstOrFail();
 
         return response()->json([
@@ -174,27 +175,27 @@ class ProductController extends Controller
                         'right' => $p->name_right,
                     ],
                 ],
-                'book_category_images' => $p->categoryImages
-                    ? $p->categoryImages
-                        ->groupBy(fn ($img) => $img->category_id)
-                        ->map(fn ($items) => [
-                            'id'            => $items->first()->category?->id,
-                            'name'          => $items->first()->category?->name,
-                            'slug'          => $items->first()->category?->slug,
-                            'subcategories' => $items->map(fn ($img) => [
-                                'id'              => $img->subcategory?->id,
-                                'name'            => $img->subcategory?->name,
-                                'slug'            => $img->subcategory?->slug,
-                                'parent_id'       => $img->subcategory?->parent_id,
-                                'parent_name'     => $img->subcategory?->parent?->name,
-                                'image'           => $this->resolveImageUrl($img->image_path),
-                                'sort_order'      => $img->sort_order,
-                                'option_type'     => $img->option_type ?? 'box',
-                                'option_value'    => $img->option_value,
-                            ])->values(),
-                        ])
-                        ->values()
-                    : [],
+                // 'book_category_images' => $p->categoryImages
+                //     ? $p->categoryImages
+                //         ->groupBy(fn ($img) => $img->category_id)
+                //         ->map(fn ($items) => [
+                //             'id'            => $items->first()->category?->id,
+                //             'name'          => $items->first()->category?->name,
+                //             'slug'          => $items->first()->category?->slug,
+                //             'subcategories' => $items->map(fn ($img) => [
+                //                 'id'              => $img->subcategory?->id,
+                //                 'name'            => $img->subcategory?->name,
+                //                 'slug'            => $img->subcategory?->slug,
+                //                 'parent_id'       => $img->subcategory?->parent_id,
+                //                 'parent_name'     => $img->subcategory?->parent?->name,
+                //                 'image'           => $this->resolveImageUrl($img->image_path),
+                //                 'sort_order'      => $img->sort_order,
+                //                 'option_type'     => $img->option_type ?? 'box',
+                //                 'option_value'    => $img->option_value,
+                //             ])->values(),
+                //         ])
+                //         ->values()
+                //     : [],
                 'special_sections' => $p->specialSections ? $p->specialSections->map(fn ($sec) => [
                     'id'          => $sec->id,
                     'title'       => $sec->title,
@@ -229,6 +230,30 @@ class ProductController extends Controller
 
                     return $thumbnails->values();
                 })(),
+                'customization' => $p->customizationSteps
+                    ? $p->customizationSteps->map(fn ($step) => [
+                        'step_id'    => $step->id,
+                        'step_name'  => $step->name,
+                        'sort_order' => $step->sort_order,
+                        'options'    => $step->options->map(fn ($opt) => [
+                            'id'         => $opt->id,
+                            'name'       => $opt->name,
+                            'image'      => $this->resolveImageUrl($opt->image_path),
+                            'is_default' => $opt->is_default,
+                            'sub_steps'  => $opt->subSteps->map(fn ($ss) => [
+                                'step_id'    => $ss->id,
+                                'step_name'  => $ss->name,
+                                'sort_order' => $ss->sort_order,
+                                'options'    => $ss->subOptions->map(fn ($so) => [
+                                    'id'         => $so->id,
+                                    'name'       => $so->name,
+                                    'image'      => $this->resolveImageUrl($so->image_path),
+                                    'is_default' => $so->is_default,
+                                ])->values(),
+                            ])->values(),
+                        ])->values(),
+                    ])->values()
+                    : [],
             ];
         }
 

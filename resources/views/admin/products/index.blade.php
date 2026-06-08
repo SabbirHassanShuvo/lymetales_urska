@@ -438,6 +438,11 @@
                         <textarea name="description" id="prodDesc" rows="3" placeholder="Write a gorgeous description for this personalized story..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"></textarea>
                     </div>
 
+                    {{--
+                    ╔══════════════════════════════════════════════════════════╗
+                    ║  Book Category Images — DISABLED (replaced by           ║
+                    ║  Customization Steps below)                             ║
+                    ╚══════════════════════════════════════════════════════════╝
                     <!-- Dynamic "Book Category Images" Sections -->
                     <div class="pt-6 border-t border-gray-100">
                         <div class="flex items-center justify-between mb-4">
@@ -448,11 +453,25 @@
                             </button>
                         </div>
                         <div id="categoryImagesContainer" class="space-y-6">
-                            <!-- Dynamic sections appended here via JS -->
                         </div>
                     </div>
+                    --}}
 
-                    <!-- Dynamic "What makes this special" Sections -->
+                    {{-- ── Customization Steps ───────────────────────────────── --}}
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-800">Customization Steps</h4>
+                                <p class="text-xs text-gray-400 mt-0.5">Gender → Boy / Girl → Hair Color → Red / Black</p>
+                            </div>
+                            <button type="button" onclick="addCustomizationStep()"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                Add Step
+                            </button>
+                        </div>
+                        <div id="customizationStepsContainer" class="space-y-5"></div>
+                    </div>
                     <div class="pt-6 border-t border-gray-100">
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-md font-bold text-gray-800">"What makes this special" Sections</h4>
@@ -810,9 +829,15 @@
         specialSectionIndex = 0;
         addSpecialSection(); // Add one blank section by default
 
-        document.getElementById('categoryImagesContainer').innerHTML = "";
-        categoryImageIndex = 0;
-        addCategoryImageSection(); // Add one blank category image section by default
+        const catImgCont = document.getElementById('categoryImagesContainer');
+        if (catImgCont) {
+            catImgCont.innerHTML = "";
+            categoryImageIndex = 0;
+            addCategoryImageSection();
+        }
+
+        // Reset customization steps
+        resetCustomizationSteps();
 
         // Clear image previews
         document.getElementById('mainImagePreview').classList.add('hidden');
@@ -838,6 +863,10 @@
         document.getElementById('productForm').action = "/admin/products/" + product.id;
         document.getElementById('formMethod').value = "PUT";
         document.getElementById('modalTitle').textContent = "Edit Book";
+
+        // Reset and pre-fill customization steps from server
+        resetCustomizationSteps();
+        prefillCustomizationSteps(product.id);
 
         document.getElementById('prodTitle').value = product.title;
         if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = product.domain || "";
@@ -871,13 +900,15 @@
             addSpecialSection();
         }
         
-        document.getElementById('categoryImagesContainer').innerHTML = "";
-        categoryImageIndex = 0;
-        
-        if (product.category_images && product.category_images.length > 0) {
-            product.category_images.forEach(catImg => addCategoryImageSection(catImg));
-        } else {
-            addCategoryImageSection();
+        const catImgContEdit = document.getElementById('categoryImagesContainer');
+        if (catImgContEdit) {
+            catImgContEdit.innerHTML = "";
+            categoryImageIndex = 0;
+            if (product.category_images && product.category_images.length > 0) {
+                product.category_images.forEach(catImg => addCategoryImageSection(catImg));
+            } else {
+                addCategoryImageSection();
+            }
         }
 
         // Handle images — populate from product.images relation
@@ -1199,6 +1230,7 @@
     // --- Category Images Builder ---
     function addCategoryImageSection(data = null) {
         const container = document.getElementById('categoryImagesContainer');
+        if (!container) return; // section is disabled/commented out
         const idx = categoryImageIndex++;
         
         let existingIdHtml = '';
@@ -1557,6 +1589,295 @@
         document.getElementById('prodNameRight').value = document.getElementById('configNameRight').value + '%';
         
         closeNameOverlayModal();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CUSTOMIZATION STEPS BUILDER — option names from category selects
+    // ═══════════════════════════════════════════════════════════════════
+
+    function buildCatOpts(selectedName) {
+        let o = '<option value="">— Select —</option>';
+        if (typeof categoriesData === 'undefined') return o;
+        categoriesData.forEach(c => {
+            const s = c.name === selectedName ? 'selected' : '';
+            o += `<option value="${c.name}" ${s}>${c.name}</option>`;
+            (c.subcategories || []).forEach(s1 => {
+                const ss1 = s1.name === selectedName ? 'selected' : '';
+                o += `<option value="${s1.name}" ${ss1}>\u00a0\u00a0\u21b3 ${s1.name}</option>`;
+                (s1.children || []).forEach(s2 => {
+                    const ss2 = s2.name === selectedName ? 'selected' : '';
+                    o += `<option value="${s2.name}" ${ss2}>\u00a0\u00a0\u00a0\u00a0\u21b3 ${s2.name}</option>`;
+                });
+            });
+        });
+        return o;
+    }
+
+    let customStepIdx = 0;
+
+    function addCustomizationStep(data = null) {
+        const container = document.getElementById('customizationStepsContainer');
+        const si = customStepIdx++;
+        const stepName = data ? data.name : '';
+
+        const div = document.createElement('div');
+        div.id = `custStep_${si}`;
+        div.className = 'border border-violet-200 rounded-2xl bg-gradient-to-b from-violet-50/60 to-white p-5 space-y-4 relative shadow-sm';
+        div.innerHTML = `
+            <button type="button" onclick="this.closest('[id^=custStep_]').remove()"
+                class="absolute -top-3 -right-3 w-7 h-7 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow border border-gray-200 hover:border-red-200 transition-all z-10">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                    Step
+                </span>
+                <input type="text" name="customization_steps[${si}][name]" value="${stepName}"
+                    placeholder="Step name — e.g. Gender"
+                    class="flex-1 px-4 py-2.5 bg-white border border-violet-200 rounded-xl text-sm font-semibold placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all">
+            </div>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between px-1">
+                    <span class="text-xs font-semibold text-gray-500">Options <span class="text-gray-300 font-normal">(e.g. Boy / Girl)</span></span>
+                    <button type="button" onclick="addCustomizationOption(${si})"
+                        class="inline-flex items-center gap-1 text-xs font-bold text-violet-600 hover:text-violet-800 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Option
+                    </button>
+                </div>
+                <div id="custOptions_${si}" class="space-y-3"></div>
+            </div>
+        `;
+        container.appendChild(div);
+
+        if (data && data.options) {
+            data.options.forEach(opt => addCustomizationOption(si, opt));
+        }
+    }
+
+    let customOptIdx = 0;
+
+    function addCustomizationOption(si, data = null) {
+        const container = document.getElementById(`custOptions_${si}`);
+        if (!container) return;
+        const oi       = customOptIdx++;
+        const optName  = data ? (data.name || '') : '';
+        const isDef    = data ? data.is_default : false;
+        const existImg  = data ? (data.image_url  || '') : '';  // for preview display
+        const existPath = data ? (data.image_path || '') : '';  // for DB save (relative path)
+        const selOpts  = buildCatOpts(optName);
+
+        const div = document.createElement('div');
+        div.id = `custOpt_${si}_${oi}`;
+        div.className = 'rounded-xl border border-pink-100 bg-white shadow-sm overflow-hidden';
+        div.innerHTML = `
+            <div class="flex items-center gap-2 px-3 py-2.5 bg-pink-50/50 border-b border-pink-100">
+                <span class="text-[10px] font-bold text-pink-600 bg-pink-100 px-2 py-0.5 rounded-full whitespace-nowrap">Option</span>
+                <select name="customization_steps[${si}][options][${oi}][name]"
+                    class="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-pink-400 cursor-pointer">${selOpts}</select>
+                <label class="flex items-center gap-1.5 cursor-pointer flex-shrink-0 ml-1">
+                    <input type="checkbox" name="customization_steps[${si}][options][${oi}][is_default]" value="1" ${isDef ? 'checked' : ''}
+                        class="w-3.5 h-3.5 text-pink-600 border-gray-300 rounded focus:ring-pink-400">
+                    <span class="text-xs font-semibold text-gray-600 whitespace-nowrap">Default</span>
+                </label>
+                <button type="button" onclick="this.closest('[id^=custOpt_]').remove()"
+                    class="ml-1 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all flex-shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-3 space-y-3">
+                <div class="flex items-start gap-3">
+                    <label class="flex-shrink-0 cursor-pointer">
+                        <input type="file" name="customization_steps[${si}][options][${oi}][image]" accept="image/*"
+                            class="sr-only" onchange="handleCustOptImage(event,'opt_${si}_${oi}')">
+                        <div id="custOptBtn_opt_${si}_${oi}" class="w-24 h-24 rounded-xl border-2 border-dashed border-pink-200 bg-pink-50/40 flex flex-col items-center justify-center gap-1 hover:border-pink-400 hover:bg-pink-50 transition-all ${existImg ? 'hidden' : ''}">
+                            <svg class="w-7 h-7 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span class="text-[10px] font-semibold text-pink-400">Image</span>
+                        </div>
+                        <div id="custOptPreview_opt_${si}_${oi}" class="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 shadow-sm ${existImg ? '' : 'hidden'}">
+                            <img id="custOptImg_opt_${si}_${oi}" src="${existImg}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                                <span class="text-white text-[9px] font-bold">Change</span>
+                            </div>
+                        </div>
+                    </label>
+                    <input type="hidden" name="customization_steps[${si}][options][${oi}][existing_image]" id="custOptExist_opt_${si}_${oi}" value="${existPath}">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-gray-500 mb-1">Option Image</p>
+                        <p class="text-[10px] text-gray-400 leading-relaxed">Upload the overlay image for this option. Click the box to choose a file.</p>
+                    </div>
+                </div>
+                <div class="border-t border-gray-50 pt-2 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-semibold text-gray-500">Sub-steps <span class="text-gray-300 font-normal">(e.g. Hair Color, Eye Color)</span></span>
+                        <button type="button" onclick="addCustomizationSubstep(${si},${oi})"
+                            class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Add Sub-step
+                        </button>
+                    </div>
+                    <div id="custSubsteps_${si}_${oi}" class="space-y-2"></div>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+
+        if (data && data.sub_steps) {
+            data.sub_steps.forEach(ss => addCustomizationSubstep(si, oi, ss));
+        }
+    }
+
+    let customSsIdx = 0;
+
+    function addCustomizationSubstep(si, oi, data = null) {
+        const container = document.getElementById(`custSubsteps_${si}_${oi}`);
+        if (!container) return;
+        const ssi    = customSsIdx++;
+        const ssName = data ? (data.name || '') : '';
+        const ssOpts = buildCatOpts(ssName);
+
+        const div = document.createElement('div');
+        div.id = `custSS_${si}_${oi}_${ssi}`;
+        div.className = 'rounded-xl border border-indigo-100 bg-indigo-50/30 overflow-hidden';
+        div.innerHTML = `
+            <div class="flex items-center gap-2 px-3 py-2 border-b border-indigo-100/60 bg-indigo-50/60">
+                <svg class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <span class="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full whitespace-nowrap">Sub-step</span>
+                <select name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][name]"
+                    class="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">${ssOpts}</select>
+                <button type="button" onclick="this.closest('[id^=custSS_]').remove()"
+                    class="ml-auto w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all flex-shrink-0">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-3 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-gray-500">Sub-options <span class="text-gray-300 font-normal">(e.g. Red, Black)</span></span>
+                    <button type="button" onclick="addCustomizationSuboption(${si},${oi},${ssi})"
+                        class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-800 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add
+                    </button>
+                </div>
+                <div id="custSubOpts_${si}_${oi}_${ssi}" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+            </div>
+        `;
+        container.appendChild(div);
+
+        if (data && data.sub_options) {
+            data.sub_options.forEach(so => addCustomizationSuboption(si, oi, ssi, so));
+        }
+    }
+
+    let customSoIdx = 0;
+
+    function addCustomizationSuboption(si, oi, ssi, data = null) {
+        const container = document.getElementById(`custSubOpts_${si}_${oi}_${ssi}`);
+        if (!container) return;
+        const soi      = customSoIdx++;
+        const soName   = data ? (data.name || '') : '';
+        const isDef    = data ? data.is_default : false;
+        const existImg  = data ? (data.image_url  || '') : '';  // for preview display
+        const existPath = data ? (data.image_path || '') : '';  // for DB save (relative path)
+        const soOpts   = buildCatOpts(soName);
+        const soKey    = `${si}_${oi}_${ssi}_${soi}`;
+
+        const div = document.createElement('div');
+        div.className = 'rounded-xl border border-amber-100 bg-white overflow-hidden shadow-sm';
+        div.innerHTML = `
+            <label class="block cursor-pointer">
+                <input type="file"
+                    name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][image]"
+                    accept="image/*" class="sr-only"
+                    onchange="handleCustSOImage(event,'${soKey}')">
+                <div id="custSOBtn_${soKey}" class="h-20 border-b-2 border-dashed border-amber-200 bg-amber-50/40 flex flex-col items-center justify-center gap-1 hover:border-amber-400 hover:bg-amber-50 transition-all ${existImg ? 'hidden' : ''}">
+                    <svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span class="text-[9px] font-semibold text-amber-400">Upload</span>
+                </div>
+                <div id="custSOPrev_${soKey}" class="relative h-20 overflow-hidden ${existImg ? '' : 'hidden'}">
+                    <img id="custSOImg_${soKey}" src="${existImg}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                        <span class="text-white text-[9px] font-bold">Change</span>
+                    </div>
+                </div>
+            </label>
+            <input type="hidden" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][existing_image]"
+                id="custSOExist_${soKey}" value="${existPath}">
+            <div class="p-2 space-y-1">
+                <select name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][name]"
+                    class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer">${soOpts}</select>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox"
+                            name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][is_default]"
+                            value="1" ${isDef ? 'checked' : ''}
+                            class="w-3 h-3 text-amber-500 border-gray-300 rounded focus:ring-amber-400">
+                        <span class="text-[10px] font-semibold text-gray-500">Default</span>
+                    </label>
+                    <button type="button" onclick="this.closest('.rounded-xl').remove()"
+                        class="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-red-500 rounded transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    function handleCustOptImage(event, key) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById(`custOptImg_${key}`).src = e.target.result;
+            document.getElementById(`custOptPreview_${key}`).classList.remove('hidden');
+            document.getElementById(`custOptBtn_${key}`).classList.add('hidden');
+            const exist = document.getElementById(`custOptExist_${key}`);
+            if (exist) exist.value = '';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function handleCustSOImage(event, key) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById(`custSOImg_${key}`).src = e.target.result;
+            document.getElementById(`custSOPrev_${key}`).classList.remove('hidden');
+            document.getElementById(`custSOBtn_${key}`).classList.add('hidden');
+            const exist = document.getElementById(`custSOExist_${key}`);
+            if (exist) exist.value = '';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function previewCustImage(event, key) {
+        // legacy fallback
+        handleCustOptImage(event, key);
+    }
+
+    function resetCustomizationSteps() {
+        const c = document.getElementById('customizationStepsContainer');
+        if (c) c.innerHTML = '';
+        customStepIdx = 0;
+        customOptIdx  = 0;
+        customSsIdx   = 0;
+        customSoIdx   = 0;
+    }
+
+    async function prefillCustomizationSteps(productId) {
+        try {
+            const res  = await fetch(`/admin/products/${productId}/customization`);
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+                resetCustomizationSteps();
+                json.data.forEach(step => addCustomizationStep(step));
+            }
+        } catch (e) {
+            console.error('Failed to load customization data', e);
+        }
     }
 </script>
 

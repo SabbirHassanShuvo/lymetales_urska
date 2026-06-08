@@ -7,6 +7,10 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Category;
 use App\Models\Subcategory;
+use App\Models\ProductCustomizationStep;
+use App\Models\ProductCustomizationOption;
+use App\Models\ProductCustomizationSubstep;
+use App\Models\ProductCustomizationSuboption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +20,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'subcategory', 'primaryImage', 'images', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory'])
+        $products = Product::with(['category', 'subcategory', 'primaryImage', 'images', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -187,6 +191,67 @@ class ProductController extends Controller
                         'option_type'    => $catImg['option_type'] ?? 'box',
                         'option_value'   => ($catImg['option_type'] ?? 'box') === 'color' ? ($catImg['option_value'] ?? null) : null,
                     ]);
+                }
+            }
+
+            // ── Save customization steps ───────────────────────────────────
+            if ($request->has('customization_steps') && is_array($request->customization_steps)) {
+                foreach ($request->customization_steps as $si => $stepData) {
+                    if (empty($stepData['name'])) continue;
+
+                    $step = $product->customizationSteps()->create([
+                        'name'       => $stepData['name'],
+                        'sort_order' => $si,
+                    ]);
+
+                    foreach (($stepData['options'] ?? []) as $oi => $optData) {
+                        if (empty($optData['name'])) continue;
+
+                        $imagePath = null;
+                        if ($request->hasFile("customization_steps.{$si}.options.{$oi}.image")) {
+                            $imagePath = $this->saveUploadedFile(
+                                $request->file("customization_steps.{$si}.options.{$oi}.image"), 'copt'
+                            );
+                        } elseif (!empty($optData['image_url'])) {
+                            $imagePath = $optData['image_url'];
+                        }
+
+                        $option = $step->options()->create([
+                            'name'       => $optData['name'],
+                            'image_path' => $imagePath,
+                            'is_default' => !empty($optData['is_default']),
+                            'sort_order' => $oi,
+                        ]);
+
+                        foreach (($optData['sub_steps'] ?? []) as $ssi => $ssData) {
+                            if (empty($ssData['name'])) continue;
+
+                            $subStep = $option->subSteps()->create([
+                                'name'       => $ssData['name'],
+                                'sort_order' => $ssi,
+                            ]);
+
+                            foreach (($ssData['sub_options'] ?? []) as $soi => $soData) {
+                                if (empty($soData['name'])) continue;
+
+                                $soImagePath = null;
+                                if ($request->hasFile("customization_steps.{$si}.options.{$oi}.sub_steps.{$ssi}.sub_options.{$soi}.image")) {
+                                    $soImagePath = $this->saveUploadedFile(
+                                        $request->file("customization_steps.{$si}.options.{$oi}.sub_steps.{$ssi}.sub_options.{$soi}.image"), 'csub'
+                                    );
+                                } elseif (!empty($soData['image_url'])) {
+                                    $soImagePath = $soData['image_url'];
+                                }
+
+                                $subStep->subOptions()->create([
+                                    'name'       => $soData['name'],
+                                    'image_path' => $soImagePath,
+                                    'is_default' => !empty($soData['is_default']),
+                                    'sort_order' => $soi,
+                                ]);
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -453,13 +518,130 @@ class ProductController extends Controller
                     $delImg->delete();
                 }
             }
+
+            // ── Update customization steps ─────────────────────────────────
+            if ($request->has('customization_steps')) {
+                // Delete all existing and recreate (simplest for nested structure)
+                foreach ($product->customizationSteps()->with('options.subSteps.subOptions')->get() as $oldStep) {
+                    foreach ($oldStep->options as $oldOpt) {
+                        if ($oldOpt->image_path) $this->deleteFile($oldOpt->image_path);
+                        foreach ($oldOpt->subSteps as $oldSS) {
+                            foreach ($oldSS->subOptions as $oldSO) {
+                                if ($oldSO->image_path) $this->deleteFile($oldSO->image_path);
+                            }
+                        }
+                    }
+                    $oldStep->delete(); // cascades options → substeps → suboptions
+                }
+
+                if (is_array($request->customization_steps)) {
+                    foreach ($request->customization_steps as $si => $stepData) {
+                        if (empty($stepData['name'])) continue;
+
+                        $step = $product->customizationSteps()->create([
+                            'name'       => $stepData['name'],
+                            'sort_order' => $si,
+                        ]);
+
+                        foreach (($stepData['options'] ?? []) as $oi => $optData) {
+                            if (empty($optData['name'])) continue;
+
+                            $imagePath = $optData['existing_image'] ?? null;
+                            if ($request->hasFile("customization_steps.{$si}.options.{$oi}.image")) {
+                                $imagePath = $this->saveUploadedFile(
+                                    $request->file("customization_steps.{$si}.options.{$oi}.image"), 'copt'
+                                );
+                            } elseif (!empty($optData['image_url'])) {
+                                $imagePath = $optData['image_url'];
+                            }
+
+                            $option = $step->options()->create([
+                                'name'       => $optData['name'],
+                                'image_path' => $imagePath,
+                                'is_default' => !empty($optData['is_default']),
+                                'sort_order' => $oi,
+                            ]);
+
+                            foreach (($optData['sub_steps'] ?? []) as $ssi => $ssData) {
+                                if (empty($ssData['name'])) continue;
+
+                                $subStep = $option->subSteps()->create([
+                                    'name'       => $ssData['name'],
+                                    'sort_order' => $ssi,
+                                ]);
+
+                                foreach (($ssData['sub_options'] ?? []) as $soi => $soData) {
+                                    if (empty($soData['name'])) continue;
+
+                                    $soImagePath = $soData['existing_image'] ?? null;
+                                    if ($request->hasFile("customization_steps.{$si}.options.{$oi}.sub_steps.{$ssi}.sub_options.{$soi}.image")) {
+                                        $soImagePath = $this->saveUploadedFile(
+                                            $request->file("customization_steps.{$si}.options.{$oi}.sub_steps.{$ssi}.sub_options.{$soi}.image"), 'csub'
+                                        );
+                                    } elseif (!empty($soData['image_url'])) {
+                                        $soImagePath = $soData['image_url'];
+                                    }
+
+                                    $subStep->subOptions()->create([
+                                        'name'       => $soData['name'],
+                                        'image_path' => $soImagePath,
+                                        'is_default' => !empty($soData['is_default']),
+                                        'sort_order' => $soi,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         return redirect()->route('admin.products.index')->with('success', 'Book updated successfully.');
     }
 
-    public function destroy(string $id)
+    /**
+     * GET /admin/products/{product}/customization
+     * Returns existing customization JSON for edit modal pre-fill
+     */
+    public function getCustomization(string $id)
     {
+        $product = Product::with('customizationSteps.options.subSteps.subOptions')->findOrFail($id);
+
+        $data = $product->customizationSteps->map(fn ($step) => [
+            'id'         => $step->id,
+            'name'       => $step->name,
+            'sort_order' => $step->sort_order,
+            'options'    => $step->options->map(fn ($opt) => [
+                'id'          => $opt->id,
+                'name'        => $opt->name,
+                'image_path'  => $opt->image_path,
+                'image_url'   => $opt->image_path ? (
+                    str_starts_with($opt->image_path, 'http') ? $opt->image_path : asset(ltrim($opt->image_path, '/'))
+                ) : null,
+                'is_default'  => $opt->is_default,
+                'sort_order'  => $opt->sort_order,
+                'sub_steps'   => $opt->subSteps->map(fn ($ss) => [
+                    'id'          => $ss->id,
+                    'name'        => $ss->name,
+                    'sort_order'  => $ss->sort_order,
+                    'sub_options' => $ss->subOptions->map(fn ($so) => [
+                        'id'         => $so->id,
+                        'name'       => $so->name,
+                        'image_path' => $so->image_path,
+                        'image_url'  => $so->image_path ? (
+                            str_starts_with($so->image_path, 'http') ? $so->image_path : asset(ltrim($so->image_path, '/'))
+                        ) : null,
+                        'is_default' => $so->is_default,
+                        'sort_order' => $so->sort_order,
+                    ])->values(),
+                ])->values(),
+            ])->values(),
+        ])->values();
+
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+
+    public function destroy(string $id)    {
         $product = Product::with('images')->findOrFail($id);
 
         foreach ($product->images as $img) {
@@ -475,6 +657,18 @@ class ProductController extends Controller
         foreach ($product->categoryImages as $catImg) {
             if ($catImg->image_path) {
                 $this->deleteFile($catImg->image_path);
+            }
+        }
+
+        // Customization image cleanup
+        foreach ($product->customizationSteps()->with('options.subSteps.subOptions')->get() as $step) {
+            foreach ($step->options as $opt) {
+                if ($opt->image_path) $this->deleteFile($opt->image_path);
+                foreach ($opt->subSteps as $ss) {
+                    foreach ($ss->subOptions as $so) {
+                        if ($so->image_path) $this->deleteFile($so->image_path);
+                    }
+                }
             }
         }
 
