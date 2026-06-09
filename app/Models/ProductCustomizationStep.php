@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductCustomizationStep extends Model
 {
-    protected $fillable = ['product_id', 'name', 'sort_order'];
+    protected $fillable = ['product_id', 'name', 'type', 'color_value', 'sort_order'];
 
     public function product()
     {

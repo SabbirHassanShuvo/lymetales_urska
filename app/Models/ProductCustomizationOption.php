@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductCustomizationOption extends Model
 {
-    protected $fillable = ['step_id', 'name', 'image_path', 'is_default', 'sort_order'];
+    protected $fillable = ['step_id', 'name', 'type', 'color_value', 'image_path', 'is_default', 'sort_order'];
 
     protected $casts = ['is_default' => 'boolean'];
 

@@ -199,9 +199,12 @@ class ProductController extends Controller
                 foreach ($request->customization_steps as $si => $stepData) {
                     if (empty($stepData['name'])) continue;
 
+                    $stepType = in_array($stepData['type'] ?? '', ['dropdown','box','color']) ? $stepData['type'] : 'dropdown';
                     $step = $product->customizationSteps()->create([
-                        'name'       => $stepData['name'],
-                        'sort_order' => $si,
+                        'name'        => $stepData['name'],
+                        'type'        => $stepType,
+                        'color_value' => $stepType === 'color' ? ($stepData['color_value'] ?? null) : null,
+                        'sort_order'  => $si,
                     ]);
 
                     foreach (($stepData['options'] ?? []) as $oi => $optData) {
@@ -216,23 +219,31 @@ class ProductController extends Controller
                             $imagePath = $optData['image_url'];
                         }
 
+                        $optType = in_array($optData['type'] ?? '', ['dropdown','box','color']) ? $optData['type'] : 'dropdown';
                         $option = $step->options()->create([
-                            'name'       => $optData['name'],
-                            'image_path' => $imagePath,
-                            'is_default' => !empty($optData['is_default']),
-                            'sort_order' => $oi,
+                            'name'        => $optData['name'],
+                            'type'        => $optType,
+                            'color_value' => $optType === 'color' ? ($optData['color_value'] ?? null) : null,
+                            'image_path'  => $imagePath,
+                            'is_default'  => !empty($optData['is_default']),
+                            'sort_order'  => $oi,
                         ]);
 
                         foreach (($optData['sub_steps'] ?? []) as $ssi => $ssData) {
                             if (empty($ssData['name'])) continue;
 
+                            $ssType = in_array($ssData['type'] ?? '', ['dropdown','box','color']) ? $ssData['type'] : 'dropdown';
                             $subStep = $option->subSteps()->create([
-                                'name'       => $ssData['name'],
-                                'sort_order' => $ssi,
+                                'name'        => $ssData['name'],
+                                'type'        => $ssType,
+                                'color_value' => $ssType === 'color' ? ($ssData['color_value'] ?? null) : null,
+                                'sort_order'  => $ssi,
                             ]);
 
                             foreach (($ssData['sub_options'] ?? []) as $soi => $soData) {
-                                if (empty($soData['name'])) continue;
+                                // Allow empty name for colour-type sub-options (name = hex value)
+                                // Only skip if truly nothing useful was submitted
+                                if (empty($soData['name']) && empty($soData['color_value'])) continue;
 
                                 $soImagePath = null;
                                 if ($request->hasFile("customization_steps.{$si}.options.{$oi}.sub_steps.{$ssi}.sub_options.{$soi}.image")) {
@@ -243,11 +254,16 @@ class ProductController extends Controller
                                     $soImagePath = $soData['image_url'];
                                 }
 
+                                $soType = in_array($soData['type'] ?? '', ['dropdown','box','color']) ? $soData['type'] : 'dropdown';
+                                // For colour-type sub-options the name is stored as the hex value
+                                $soName = !empty($soData['name']) ? $soData['name'] : ($soData['color_value'] ?? null);
                                 $subStep->subOptions()->create([
-                                    'name'       => $soData['name'],
-                                    'image_path' => $soImagePath,
-                                    'is_default' => !empty($soData['is_default']),
-                                    'sort_order' => $soi,
+                                    'name'        => $soName,
+                                    'type'        => $soType,
+                                    'color_value' => $soType === 'color' ? ($soData['color_value'] ?? null) : null,
+                                    'image_path'  => $soImagePath,
+                                    'is_default'  => !empty($soData['is_default']),
+                                    'sort_order'  => $soi,
                                 ]);
                             }
                         }
@@ -521,32 +537,42 @@ class ProductController extends Controller
 
             // ── Update customization steps ─────────────────────────────────
             if ($request->has('customization_steps')) {
-                // Delete all existing and recreate (simplest for nested structure)
+                // Collect all existing image paths before deleting so we can
+                // preserve any that are reused via existing_image in the request.
+                $oldImagePaths = [];
                 foreach ($product->customizationSteps()->with('options.subSteps.subOptions')->get() as $oldStep) {
                     foreach ($oldStep->options as $oldOpt) {
-                        if ($oldOpt->image_path) $this->deleteFile($oldOpt->image_path);
+                        if ($oldOpt->image_path) $oldImagePaths[] = $oldOpt->image_path;
                         foreach ($oldOpt->subSteps as $oldSS) {
                             foreach ($oldSS->subOptions as $oldSO) {
-                                if ($oldSO->image_path) $this->deleteFile($oldSO->image_path);
+                                if ($oldSO->image_path) $oldImagePaths[] = $oldSO->image_path;
                             }
                         }
                     }
                     $oldStep->delete(); // cascades options → substeps → suboptions
                 }
 
+                // Track which old paths are being reused so they are NOT deleted
+                $reusedImagePaths = [];
+
                 if (is_array($request->customization_steps)) {
                     foreach ($request->customization_steps as $si => $stepData) {
                         if (empty($stepData['name'])) continue;
 
+                        $stepType = in_array($stepData['type'] ?? '', ['dropdown','box','color']) ? $stepData['type'] : 'dropdown';
                         $step = $product->customizationSteps()->create([
-                            'name'       => $stepData['name'],
-                            'sort_order' => $si,
+                            'name'        => $stepData['name'],
+                            'type'        => $stepType,
+                            'color_value' => $stepType === 'color' ? ($stepData['color_value'] ?? null) : null,
+                            'sort_order'  => $si,
                         ]);
 
                         foreach (($stepData['options'] ?? []) as $oi => $optData) {
                             if (empty($optData['name'])) continue;
 
                             $imagePath = $optData['existing_image'] ?? null;
+                            if (!empty($imagePath)) $reusedImagePaths[] = $imagePath;
+
                             if ($request->hasFile("customization_steps.{$si}.options.{$oi}.image")) {
                                 $imagePath = $this->saveUploadedFile(
                                     $request->file("customization_steps.{$si}.options.{$oi}.image"), 'copt'
@@ -555,25 +581,35 @@ class ProductController extends Controller
                                 $imagePath = $optData['image_url'];
                             }
 
+                            $optType = in_array($optData['type'] ?? '', ['dropdown','box','color']) ? $optData['type'] : 'dropdown';
                             $option = $step->options()->create([
-                                'name'       => $optData['name'],
-                                'image_path' => $imagePath,
-                                'is_default' => !empty($optData['is_default']),
-                                'sort_order' => $oi,
+                                'name'        => $optData['name'],
+                                'type'        => $optType,
+                                'color_value' => $optType === 'color' ? ($optData['color_value'] ?? null) : null,
+                                'image_path'  => $imagePath,
+                                'is_default'  => !empty($optData['is_default']),
+                                'sort_order'  => $oi,
                             ]);
 
                             foreach (($optData['sub_steps'] ?? []) as $ssi => $ssData) {
                                 if (empty($ssData['name'])) continue;
 
+                                $ssType = in_array($ssData['type'] ?? '', ['dropdown','box','color']) ? $ssData['type'] : 'dropdown';
                                 $subStep = $option->subSteps()->create([
-                                    'name'       => $ssData['name'],
-                                    'sort_order' => $ssi,
+                                    'name'        => $ssData['name'],
+                                    'type'        => $ssType,
+                                    'color_value' => $ssType === 'color' ? ($ssData['color_value'] ?? null) : null,
+                                    'sort_order'  => $ssi,
                                 ]);
 
                                 foreach (($ssData['sub_options'] ?? []) as $soi => $soData) {
-                                    if (empty($soData['name'])) continue;
+                                    // Allow empty name for colour-type sub-options (name = hex value)
+                                    // Only skip if truly nothing useful was submitted
+                                    if (empty($soData['name']) && empty($soData['color_value'])) continue;
 
                                     $soImagePath = $soData['existing_image'] ?? null;
+                                    if (!empty($soImagePath)) $reusedImagePaths[] = $soImagePath;
+
                                     if ($request->hasFile("customization_steps.{$si}.options.{$oi}.sub_steps.{$ssi}.sub_options.{$soi}.image")) {
                                         $soImagePath = $this->saveUploadedFile(
                                             $request->file("customization_steps.{$si}.options.{$oi}.sub_steps.{$ssi}.sub_options.{$soi}.image"), 'csub'
@@ -582,15 +618,27 @@ class ProductController extends Controller
                                         $soImagePath = $soData['image_url'];
                                     }
 
+                                    $soType = in_array($soData['type'] ?? '', ['dropdown','box','color']) ? $soData['type'] : 'dropdown';
+                                    // For colour-type sub-options the name is stored as the hex value
+                                    $soName = !empty($soData['name']) ? $soData['name'] : ($soData['color_value'] ?? null);
                                     $subStep->subOptions()->create([
-                                        'name'       => $soData['name'],
-                                        'image_path' => $soImagePath,
-                                        'is_default' => !empty($soData['is_default']),
-                                        'sort_order' => $soi,
+                                        'name'        => $soName,
+                                        'type'        => $soType,
+                                        'color_value' => $soType === 'color' ? ($soData['color_value'] ?? null) : null,
+                                        'image_path'  => $soImagePath,
+                                        'is_default'  => !empty($soData['is_default']),
+                                        'sort_order'  => $soi,
                                     ]);
                                 }
                             }
                         }
+                    }
+                }
+
+                // Delete only image files that were NOT reused in the new structure
+                foreach ($oldImagePaths as $oldPath) {
+                    if (!in_array($oldPath, $reusedImagePaths)) {
+                        $this->deleteFile($oldPath);
                     }
                 }
             }
@@ -608,12 +656,16 @@ class ProductController extends Controller
         $product = Product::with('customizationSteps.options.subSteps.subOptions')->findOrFail($id);
 
         $data = $product->customizationSteps->map(fn ($step) => [
-            'id'         => $step->id,
-            'name'       => $step->name,
-            'sort_order' => $step->sort_order,
-            'options'    => $step->options->map(fn ($opt) => [
+            'id'          => $step->id,
+            'name'        => $step->name,
+            'type'        => $step->type ?? 'dropdown',
+            'color_value' => $step->color_value,
+            'sort_order'  => $step->sort_order,
+            'options'     => $step->options->map(fn ($opt) => [
                 'id'          => $opt->id,
                 'name'        => $opt->name,
+                'type'        => $opt->type ?? 'dropdown',
+                'color_value' => $opt->color_value,
                 'image_path'  => $opt->image_path,
                 'image_url'   => $opt->image_path ? (
                     str_starts_with($opt->image_path, 'http') ? $opt->image_path : asset(ltrim($opt->image_path, '/'))
@@ -623,16 +675,20 @@ class ProductController extends Controller
                 'sub_steps'   => $opt->subSteps->map(fn ($ss) => [
                     'id'          => $ss->id,
                     'name'        => $ss->name,
+                    'type'        => $ss->type ?? 'dropdown',
+                    'color_value' => $ss->color_value,
                     'sort_order'  => $ss->sort_order,
                     'sub_options' => $ss->subOptions->map(fn ($so) => [
-                        'id'         => $so->id,
-                        'name'       => $so->name,
-                        'image_path' => $so->image_path,
-                        'image_url'  => $so->image_path ? (
+                        'id'          => $so->id,
+                        'name'        => $so->name,
+                        'type'        => $so->type ?? 'dropdown',
+                        'color_value' => $so->color_value,
+                        'image_path'  => $so->image_path,
+                        'image_url'   => $so->image_path ? (
                             str_starts_with($so->image_path, 'http') ? $so->image_path : asset(ltrim($so->image_path, '/'))
                         ) : null,
-                        'is_default' => $so->is_default,
-                        'sort_order' => $so->sort_order,
+                        'is_default'  => $so->is_default,
+                        'sort_order'  => $so->sort_order,
                     ])->values(),
                 ])->values(),
             ])->values(),

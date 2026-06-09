@@ -1615,10 +1615,25 @@
 
     let customStepIdx = 0;
 
+    function buildTypeSelect(nameAttr, selectedType, colorInputId) {
+        const types = ['dropdown', 'box', 'color'];
+        let opts = types.map(t => `<option value="${t}" ${selectedType === t ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('');
+        return `<select name="${nameAttr}" onchange="toggleColorInput(this,'${colorInputId}')"
+            class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer">${opts}</select>`;
+    }
+
+    function toggleColorInput(selectEl, colorInputId) {
+        const wrap = document.getElementById(colorInputId);
+        if (!wrap) return;
+        wrap.classList.toggle('hidden', selectEl.value !== 'color');
+    }
+
     function addCustomizationStep(data = null) {
         const container = document.getElementById('customizationStepsContainer');
         const si = customStepIdx++;
-        const stepName = data ? data.name : '';
+        const stepName  = data ? data.name : '';
+        const stepType  = data ? (data.type || 'dropdown') : 'dropdown';
+        const stepColor = data ? (data.color_value || '') : '';
 
         const div = document.createElement('div');
         div.id = `custStep_${si}`;
@@ -1628,14 +1643,24 @@
                 class="absolute -top-3 -right-3 w-7 h-7 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full flex items-center justify-center shadow border border-gray-200 hover:border-red-200 transition-all z-10">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-wrap">
                 <span class="inline-flex items-center gap-1 text-xs font-bold text-violet-700 bg-violet-100 px-2.5 py-1 rounded-full whitespace-nowrap">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
                     Step
                 </span>
                 <input type="text" name="customization_steps[${si}][name]" value="${stepName}"
                     placeholder="Step name — e.g. Gender"
-                    class="flex-1 px-4 py-2.5 bg-white border border-violet-200 rounded-xl text-sm font-semibold placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all">
+                    class="flex-1 min-w-0 px-4 py-2.5 bg-white border border-violet-200 rounded-xl text-sm font-semibold placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 transition-all">
+                ${buildTypeSelect('customization_steps['+si+'][type]', stepType, 'stepColorWrap_'+si)}
+                <div id="stepColorWrap_${si}" class="${stepType === 'color' ? '' : 'hidden'} flex items-center gap-1.5">
+                    <input type="color" name="customization_steps[${si}][color_value]" value="${stepColor || '#000000'}"
+                        class="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0.5">
+                    <input type="text" id="stepColorText_${si}"
+                        value="${stepColor}"
+                        placeholder="#000000"
+                        oninput="syncCustColorPicker(this,'customization_steps[${si}][color_value]')"
+                        class="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-violet-400">
+                </div>
             </div>
             <div class="space-y-2">
                 <div class="flex items-center justify-between px-1">
@@ -1661,21 +1686,31 @@
     function addCustomizationOption(si, data = null) {
         const container = document.getElementById(`custOptions_${si}`);
         if (!container) return;
-        const oi       = customOptIdx++;
-        const optName  = data ? (data.name || '') : '';
-        const isDef    = data ? data.is_default : false;
-        const existImg  = data ? (data.image_url  || '') : '';  // for preview display
-        const existPath = data ? (data.image_path || '') : '';  // for DB save (relative path)
-        const selOpts  = buildCatOpts(optName);
+        const oi        = customOptIdx++;
+        const optName   = data ? (data.name || '') : '';
+        const optType   = data ? (data.type || 'dropdown') : 'dropdown';
+        const optColor  = data ? (data.color_value || '') : '';
+        const isDef     = data ? data.is_default : false;
+        const existImg  = data ? (data.image_url  || '') : '';
+        const existPath = data ? (data.image_path || '') : '';
+        const selOpts   = buildCatOpts(optName);
 
         const div = document.createElement('div');
         div.id = `custOpt_${si}_${oi}`;
         div.className = 'rounded-xl border border-pink-100 bg-white shadow-sm overflow-hidden';
         div.innerHTML = `
-            <div class="flex items-center gap-2 px-3 py-2.5 bg-pink-50/50 border-b border-pink-100">
+            <div class="flex items-center gap-2 px-3 py-2.5 bg-pink-50/50 border-b border-pink-100 flex-wrap">
                 <span class="text-[10px] font-bold text-pink-600 bg-pink-100 px-2 py-0.5 rounded-full whitespace-nowrap">Option</span>
                 <select name="customization_steps[${si}][options][${oi}][name]"
-                    class="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-pink-400 cursor-pointer">${selOpts}</select>
+                    class="flex-1 min-w-0 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-pink-400 cursor-pointer">${selOpts}</select>
+                ${buildTypeSelect('customization_steps['+si+'][options]['+oi+'][type]', optType, 'optColorWrap_'+si+'_'+oi)}
+                <div id="optColorWrap_${si}_${oi}" class="${optType === 'color' ? '' : 'hidden'} flex items-center gap-1.5 flex-shrink-0">
+                    <input type="color" name="customization_steps[${si}][options][${oi}][color_value]" value="${optColor || '#000000'}"
+                        class="w-7 h-7 rounded border border-gray-200 cursor-pointer p-0.5">
+                    <input type="text" value="${optColor}" placeholder="#000000"
+                        oninput="syncCustColorPicker(this,'customization_steps[${si}][options][${oi}][color_value]')"
+                        class="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-pink-400">
+                </div>
                 <label class="flex items-center gap-1.5 cursor-pointer flex-shrink-0 ml-1">
                     <input type="checkbox" name="customization_steps[${si}][options][${oi}][is_default]" value="1" ${isDef ? 'checked' : ''}
                         class="w-3.5 h-3.5 text-pink-600 border-gray-300 rounded focus:ring-pink-400">
@@ -1733,19 +1768,29 @@
     function addCustomizationSubstep(si, oi, data = null) {
         const container = document.getElementById(`custSubsteps_${si}_${oi}`);
         if (!container) return;
-        const ssi    = customSsIdx++;
-        const ssName = data ? (data.name || '') : '';
-        const ssOpts = buildCatOpts(ssName);
+        const ssi     = customSsIdx++;
+        const ssName  = data ? (data.name || '') : '';
+        const ssType  = data ? (data.type || 'dropdown') : 'dropdown';
+        const ssOpts  = buildCatOpts(ssName);
+
+        // Sub-step shows only a type selector (no color picker/input here).
+        // When type === 'color', sub-options will render a color picker instead of a name select.
+        const types = ['dropdown', 'box', 'color'];
+        const ssTypeOpts = types.map(t => `<option value="${t}" ${ssType === t ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('');
+        const ssTypeSelect = `<select id="ssType_${si}_${oi}_${ssi}" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][type]"
+            onchange="onSubstepTypeChange(${si},${oi},${ssi})"
+            class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-violet-400 cursor-pointer">${ssTypeOpts}</select>`;
 
         const div = document.createElement('div');
         div.id = `custSS_${si}_${oi}_${ssi}`;
         div.className = 'rounded-xl border border-indigo-100 bg-indigo-50/30 overflow-hidden';
         div.innerHTML = `
-            <div class="flex items-center gap-2 px-3 py-2 border-b border-indigo-100/60 bg-indigo-50/60">
+            <div class="flex items-center gap-2 px-3 py-2 border-b border-indigo-100/60 bg-indigo-50/60 flex-wrap">
                 <svg class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 <span class="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full whitespace-nowrap">Sub-step</span>
                 <select name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][name]"
-                    class="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">${ssOpts}</select>
+                    class="flex-1 min-w-0 px-3 py-1.5 bg-white border border-indigo-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">${ssOpts}</select>
+                ${ssTypeSelect}
                 <button type="button" onclick="this.closest('[id^=custSS_]').remove()"
                     class="ml-auto w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all flex-shrink-0">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1770,44 +1815,88 @@
         }
     }
 
+    // Called when sub-step type changes — re-render all existing sub-options to match new type
+    function onSubstepTypeChange(si, oi, ssi) {
+        const container = document.getElementById(`custSubOpts_${si}_${oi}_${ssi}`);
+        if (!container) return;
+        const existingCards = container.querySelectorAll(':scope > div');
+        const existing = [];
+        existingCards.forEach(card => {
+            const nameSelect = card.querySelector('select[name*="[name]"]');
+            const nameHidden = card.querySelector('input[id^="soNameHidden_"]');
+            const defEl      = card.querySelector('input[type="checkbox"]');
+            const imgEl      = card.querySelector('img');
+            const existEl    = card.querySelector('input[name*="[existing_image]"]');
+            const colorHid   = card.querySelector('input[id^="soColorHidden_"]');
+            existing.push({
+                name:        nameSelect ? nameSelect.value : (nameHidden ? nameHidden.value : ''),
+                is_default:  defEl   ? defEl.checked : false,
+                image_url:   (imgEl && imgEl.src && !imgEl.src.endsWith('/')) ? imgEl.src : '',
+                image_path:  existEl ? existEl.value : '',
+                color_value: colorHid ? colorHid.value : '',
+            });
+        });
+        container.innerHTML = '';
+        existing.forEach(d => addCustomizationSuboption(si, oi, ssi, d));
+    }
+
     let customSoIdx = 0;
 
     function addCustomizationSuboption(si, oi, ssi, data = null) {
         const container = document.getElementById(`custSubOpts_${si}_${oi}_${ssi}`);
         if (!container) return;
         const soi      = customSoIdx++;
-        const soName   = data ? (data.name || '') : '';
+        const soColor  = data ? (data.color_value || '#000000') : '#000000';
         const isDef    = data ? data.is_default : false;
-        const existImg  = data ? (data.image_url  || '') : '';  // for preview display
-        const existPath = data ? (data.image_path || '') : '';  // for DB save (relative path)
-        const soOpts   = buildCatOpts(soName);
+        const existImg  = data ? (data.image_url  || '') : '';
+        const existPath = data ? (data.image_path || '') : '';
         const soKey    = `${si}_${oi}_${ssi}_${soi}`;
+
+        // Determine sub-step type to decide how to render this sub-option
+        const ssTypeEl = document.getElementById(`ssType_${si}_${oi}_${ssi}`);
+        const ssType   = ssTypeEl ? ssTypeEl.value : 'dropdown';
+        const isColor  = ssType === 'color';
+
+        // Name: color type → color picker; other types → category select
+        const soName   = data ? (data.name || (isColor ? soColor : '')) : '';
+        const soOpts   = buildCatOpts(soName);
 
         const div = document.createElement('div');
         div.className = 'rounded-xl border border-amber-100 bg-white overflow-hidden shadow-sm';
-        div.innerHTML = `
-            <label class="block cursor-pointer">
-                <input type="file"
-                    name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][image]"
-                    accept="image/*" class="sr-only"
-                    onchange="handleCustSOImage(event,'${soKey}')">
-                <div id="custSOBtn_${soKey}" class="h-20 border-b-2 border-dashed border-amber-200 bg-amber-50/40 flex flex-col items-center justify-center gap-1 hover:border-amber-400 hover:bg-amber-50 transition-all ${existImg ? 'hidden' : ''}">
-                    <svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span class="text-[9px] font-semibold text-amber-400">Upload</span>
-                </div>
-                <div id="custSOPrev_${soKey}" class="relative h-20 overflow-hidden ${existImg ? '' : 'hidden'}">
-                    <img id="custSOImg_${soKey}" src="${existImg}" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
-                        <span class="text-white text-[9px] font-bold">Change</span>
+
+        if (isColor) {
+            // Color type: image upload + color picker only, NO select option
+            div.innerHTML = `
+                <label class="block cursor-pointer">
+                    <input type="file"
+                        name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][image]"
+                        accept="image/*" class="sr-only"
+                        onchange="handleCustSOImage(event,'${soKey}')">
+                    <div id="custSOBtn_${soKey}" class="h-20 border-b-2 border-dashed border-amber-200 bg-amber-50/40 flex flex-col items-center justify-center gap-1 hover:border-amber-400 hover:bg-amber-50 transition-all ${existImg ? 'hidden' : ''}">
+                        <svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span class="text-[9px] font-semibold text-amber-400">Upload</span>
                     </div>
+                    <div id="custSOPrev_${soKey}" class="relative h-20 overflow-hidden ${existImg ? '' : 'hidden'}">
+                        <img id="custSOImg_${soKey}" src="${existImg}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                            <span class="text-white text-[9px] font-bold">Change</span>
+                        </div>
+                    </div>
+                </label>
+                <input type="hidden" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][existing_image]" id="custSOExist_${soKey}" value="${existPath}">
+                <input type="hidden" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][type]" value="color">
+                <input type="hidden" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][name]" id="soNameHidden_${soKey}" value="${soColor}">
+                <div class="flex items-center gap-2 px-2 py-2">
+                    <input type="color"
+                        id="soColorPicker_${soKey}"
+                        value="${soColor}"
+                        oninput="syncSOColor('${soKey}')"
+                        class="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0.5 flex-shrink-0">
+                    <input type="hidden"
+                        name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][color_value]"
+                        id="soColorHidden_${soKey}" value="${soColor}">
                 </div>
-            </label>
-            <input type="hidden" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][existing_image]"
-                id="custSOExist_${soKey}" value="${existPath}">
-            <div class="p-2 space-y-1">
-                <select name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][name]"
-                    class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer">${soOpts}</select>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between px-2 pb-2">
                     <label class="flex items-center gap-1 cursor-pointer">
                         <input type="checkbox"
                             name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][is_default]"
@@ -1820,9 +1909,72 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // Non-color type: image upload + category select
+            div.innerHTML = `
+                <label class="block cursor-pointer">
+                    <input type="file"
+                        name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][image]"
+                        accept="image/*" class="sr-only"
+                        onchange="handleCustSOImage(event,'${soKey}')">
+                    <div id="custSOBtn_${soKey}" class="h-20 border-b-2 border-dashed border-amber-200 bg-amber-50/40 flex flex-col items-center justify-center gap-1 hover:border-amber-400 hover:bg-amber-50 transition-all ${existImg ? 'hidden' : ''}">
+                        <svg class="w-6 h-6 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span class="text-[9px] font-semibold text-amber-400">Upload</span>
+                    </div>
+                    <div id="custSOPrev_${soKey}" class="relative h-20 overflow-hidden ${existImg ? '' : 'hidden'}">
+                        <img id="custSOImg_${soKey}" src="${existImg}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                            <span class="text-white text-[9px] font-bold">Change</span>
+                        </div>
+                    </div>
+                </label>
+                <input type="hidden" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][existing_image]" id="custSOExist_${soKey}" value="${existPath}">
+                <input type="hidden" name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][type]" value="${ssType}">
+                <div class="px-2 pt-1">
+                    <select name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][name]"
+                        class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer">${soOpts}</select>
+                </div>
+                <div class="flex items-center justify-between px-2 py-1.5">
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox"
+                            name="customization_steps[${si}][options][${oi}][sub_steps][${ssi}][sub_options][${soi}][is_default]"
+                            value="1" ${isDef ? 'checked' : ''}
+                            class="w-3 h-3 text-amber-500 border-gray-300 rounded focus:ring-amber-400">
+                        <span class="text-[10px] font-semibold text-gray-500">Default</span>
+                    </label>
+                    <button type="button" onclick="this.closest('.rounded-xl').remove()"
+                        class="w-5 h-5 flex items-center justify-center text-gray-300 hover:text-red-500 rounded transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            `;
+        }
         container.appendChild(div);
+    }
+
+    function syncSOColor(soKey) {
+        const picker  = document.getElementById(`soColorPicker_${soKey}`);
+        if (!picker) return;
+        const hex     = picker.value;
+        const colorEl = document.getElementById(`soColorHidden_${soKey}`);
+        const nameEl  = document.getElementById(`soNameHidden_${soKey}`);
+        if (colorEl) colorEl.value = hex;
+        if (nameEl)  nameEl.value  = hex;
+    }
+
+    function syncSOColorFromText(soKey) {
+        // text input removed — no-op kept for safety
+    }
+
+    function syncCustColorPicker(textInput, colorInputName) {
+        const val = textInput.value.trim();
+        // Find the color input by name within the same parent container
+        const form = textInput.closest('form') || document;
+        const colorInput = form.querySelector(`input[type="color"][name="${CSS.escape(colorInputName)}"]`);
+        if (colorInput && /^#[0-9a-fA-F]{6}$/.test(val)) {
+            colorInput.value = val;
+        }
     }
 
     function handleCustOptImage(event, key) {
