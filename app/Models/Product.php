@@ -13,6 +13,8 @@ class Product extends Model
     protected $fillable = [
         'category_id',
         'subcategory_id',
+        'site_category_id',
+        'site_subcategory_id',
         'title',
         'slug',
         'description',
@@ -36,6 +38,7 @@ class Product extends Model
         'is_recommended',
         'status',
         'domain',
+        'featured_image_id',
     ];
 
     protected $casts = [
@@ -72,6 +75,16 @@ class Product extends Model
     public function subcategory()
     {
         return $this->belongsTo(Subcategory::class, 'subcategory_id');
+    }
+
+    public function siteCategory()
+    {
+        return $this->belongsTo(SiteCategory::class, 'site_category_id');
+    }
+
+    public function siteSubcategory()
+    {
+        return $this->belongsTo(SiteSubcategory::class, 'site_subcategory_id');
     }
 
     /** Special sections */
@@ -131,6 +144,25 @@ class Product extends Model
     /** Returns the URL of the primary image, or null */
     public function getImageUrlAttribute(): ?string
     {
+        if ($this->featured_image_id) {
+            $featuredId = (int) $this->featured_image_id;
+            
+            // Check galleryImages first (since it's eager loaded in index)
+            $img = null;
+            if ($this->relationLoaded('galleryImages')) {
+                $img = $this->galleryImages->firstWhere('id', $featuredId);
+            }
+            if (!$img) {
+                $img = $this->relationLoaded('images')
+                    ? $this->images->firstWhere('id', $featuredId)
+                    : $this->images()->where('id', $featuredId)->first();
+            }
+            
+            if ($img) {
+                return $img->url;
+            }
+        }
+
         $img = $this->relationLoaded('primaryImage')
             ? $this->primaryImage
             : $this->primaryImage()->first();

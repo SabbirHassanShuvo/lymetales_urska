@@ -177,6 +177,17 @@ Route::prefix('admin')->group(function () {
         Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)->names('admin.categories');
         Route::patch('subcategories/{subcategory}/status', [\App\Http\Controllers\Admin\SubcategoryController::class, 'toggleStatus'])->name('admin.subcategories.status');
         Route::resource('subcategories', \App\Http\Controllers\Admin\SubcategoryController::class)->except(['index', 'create', 'show', 'edit'])->names('admin.subcategories');
+
+        // Site Categories
+        Route::patch('site-categories/{id}/status', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'toggleStatus'])->name('admin.site-categories.status');
+        Route::patch('site-subcategories/{id}/status', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'toggleSubcategoryStatus'])->name('admin.site-subcategories.status');
+        Route::get('site-categories', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'index'])->name('admin.site-categories.index');
+        Route::post('site-categories', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'store'])->name('admin.site-categories.store');
+        Route::put('site-categories/{id}', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'update'])->name('admin.site-categories.update');
+        Route::delete('site-categories/{id}', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'destroy'])->name('admin.site-categories.destroy');
+        Route::post('site-subcategories', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'storeSubcategory'])->name('admin.site-subcategories.store');
+        Route::put('site-subcategories/{id}', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'updateSubcategory'])->name('admin.site-subcategories.update');
+        Route::delete('site-subcategories/{id}', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'destroySubcategory'])->name('admin.site-subcategories.destroy');
         Route::patch('coupons/{coupon}/status', [\App\Http\Controllers\Admin\CouponController::class, 'toggleStatus'])->name('admin.coupons.status');
         Route::resource('coupons', \App\Http\Controllers\Admin\CouponController::class)->names('admin.coupons');
 

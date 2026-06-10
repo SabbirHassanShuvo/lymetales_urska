@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Category;
 use App\Models\Subcategory;
+use App\Models\SiteCategory;
 use App\Models\ProductCustomizationStep;
 use App\Models\ProductCustomizationOption;
 use App\Models\ProductCustomizationSubstep;
@@ -20,7 +21,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'subcategory', 'primaryImage', 'images', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions'])
+        $products = Product::with(['category', 'subcategory', 'siteCategory', 'siteSubcategory', 'primaryImage', 'images', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -32,9 +33,10 @@ class ProductController extends Controller
 
         $categories    = Category::with(['subcategories.children'])->orderBy('name')->get();
         $subcategories = Subcategory::with('children')->whereNull('parent_id')->orderBy('name')->get();
+        $siteCategories = SiteCategory::with('subcategories')->where('status', true)->orderBy('name')->get();
 
         return view('admin.products.index', compact(
-            'products', 'categories', 'subcategories',
+            'products', 'categories', 'subcategories', 'siteCategories',
             'totalCount', 'bestsellersCount', 'recommendedCount', 'activeCount'
         ));
     }
@@ -55,24 +57,27 @@ class ProductController extends Controller
             'paper_type'         => 'nullable|string|max:255',
             'rating'             => 'nullable|numeric|between:0,5',
             'reviews_count'      => 'nullable|integer|min:0',
-            'image'              => 'nullable|image|max:4096',
-            'image_url'          => 'nullable|string|max:2048',
-            'gallery_files.*'    => 'nullable|image|max:4096',
+            'image'              => 'nullable|image',
+            'image_url'          => 'nullable|string',
+            'gallery_files.*'    => 'nullable|image',
             'gallery_urls'       => 'nullable|string',
             'category_images'                   => 'nullable|array',
             'category_images.*.category_id'    => 'nullable|exists:categories,id',
             'category_images.*.subcategory_id' => 'nullable|exists:subcategories,id',
-            'category_images.*.image'          => 'nullable|image|max:4096',
+            'category_images.*.image'          => 'nullable|image',
             'category_images.*.option_type'    => 'nullable|in:box,drop,color',
-            'category_images.*.option_value'   => 'nullable|string|max:20',
+            'category_images.*.option_value'   => 'nullable|string',
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
             'domain'             => 'nullable|in:domain1,domain2',
+            'featured_image_id'  => 'nullable|string',
+            'site_category_id'    => 'nullable|exists:site_categories,id',
+            'site_subcategory_id' => 'nullable|exists:site_subcategories,id',
             'special_sections.*.subtitle'  => 'nullable|string|max:255',
             'special_sections.*.description' => 'nullable|string',
-            'special_sections.*.image'     => 'nullable|image|max:4096',
+            'special_sections.*.image'     => 'nullable|image',
             'name_text'        => 'nullable|string|max:255',
             'name_font_family' => 'nullable|string|max:100',
             'name_top'         => 'nullable|string|max:20',
@@ -83,9 +88,11 @@ class ProductController extends Controller
 
         DB::transaction(function () use ($request) {
             $product = Product::create([
-                'title'          => $request->title,
-                'category_id'    => $request->filled('category_id') ? $request->category_id : null,
-                'subcategory_id' => $request->filled('subcategory_id') ? $request->subcategory_id : null,
+                'title'               => $request->title,
+                'category_id'         => $request->filled('category_id') ? $request->category_id : null,
+                'subcategory_id'      => $request->filled('subcategory_id') ? $request->subcategory_id : null,
+                'site_category_id'    => $request->filled('site_category_id') ? $request->site_category_id : null,
+                'site_subcategory_id' => $request->filled('site_subcategory_id') ? $request->site_subcategory_id : null,
                 'description'    => $request->description,
                 'price'          => $request->price,
                 'pages'          => $request->pages,
@@ -102,6 +109,7 @@ class ProductController extends Controller
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
                 'domain'         => $request->filled('domain') ? $request->domain : null,
+                'featured_image_id' => is_numeric($request->featured_image_id) ? $request->featured_image_id : null,
                 'name_text'        => $request->name_text,
                 'name_font_family' => $request->name_font_family ?: 'PetitCochon',
                 'name_top'         => $request->name_top ?: '2%',
@@ -166,12 +174,16 @@ class ProductController extends Controller
 
             // Gallery — uploaded files
             if ($request->hasFile('gallery_files')) {
-                foreach ($request->file('gallery_files') as $file) {
-                    $product->images()->create([
+                foreach ($request->file('gallery_files') as $index => $file) {
+                    $img = $product->images()->create([
                         'image_path' => $this->saveUploadedFile($file, 'gal'),
                         'is_main'    => false,
                         'sort_order' => $sortOrder++,
                     ]);
+                    
+                    if ($request->featured_image_id === 'new_' . $index) {
+                        $product->update(['featured_image_id' => $img->id]);
+                    }
                 }
             }
 
@@ -293,29 +305,32 @@ class ProductController extends Controller
             'paper_type'         => 'nullable|string|max:255',
             'rating'             => 'nullable|numeric|between:0,5',
             'reviews_count'      => 'nullable|integer|min:0',
-            'image'              => 'nullable|image|max:4096',
-            'image_url'          => 'nullable|string|max:2048',
-            'gallery_files.*'    => 'nullable|image|max:4096',
+            'image'              => 'nullable|image',
+            'image_url'          => 'nullable|string',
+            'gallery_files.*'    => 'nullable|image',
             'gallery_urls'       => 'nullable|string',
             'category_images'                   => 'nullable|array',
             'category_images.*.id'             => 'nullable|exists:product_category_images,id',
             'category_images.*.category_id'    => 'nullable|exists:categories,id',
             'category_images.*.subcategory_id' => 'nullable|exists:subcategories,id',
-            'category_images.*.image'          => 'nullable|image|max:4096',
+            'category_images.*.image'          => 'nullable|image',
             'category_images.*.existing_image' => 'nullable|string',
             'category_images.*.option_type'    => 'nullable|in:box,drop,color',
-            'category_images.*.option_value'   => 'nullable|string|max:20',
+            'category_images.*.option_value'   => 'nullable|string',
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
             'domain'             => 'nullable|in:domain1,domain2',
+            'featured_image_id'  => 'nullable|string',
+            'site_category_id'    => 'nullable|exists:site_categories,id',
+            'site_subcategory_id' => 'nullable|exists:site_subcategories,id',
             'special_sections'             => 'nullable|array',
             'special_sections.*.id'        => 'nullable|exists:product_special_sections,id',
             'special_sections.*.title'     => 'nullable|string|max:255',
             'special_sections.*.subtitle'  => 'nullable|string|max:255',
             'special_sections.*.description' => 'nullable|string',
-            'special_sections.*.image'     => 'nullable|image|max:4096',
+            'special_sections.*.image'     => 'nullable|image',
             'special_sections.*.existing_image' => 'nullable|string',
             'name_text'        => 'nullable|string|max:255',
             'name_font_family' => 'nullable|string|max:100',
@@ -327,9 +342,11 @@ class ProductController extends Controller
 
         DB::transaction(function () use ($request, $product) {
             $product->update([
-                'title'          => $request->title,
-                'category_id'    => $request->filled('category_id') ? $request->category_id : null,
-                'subcategory_id' => $request->filled('subcategory_id') ? $request->subcategory_id : null,
+                'title'               => $request->title,
+                'category_id'         => $request->filled('category_id') ? $request->category_id : null,
+                'subcategory_id'      => $request->filled('subcategory_id') ? $request->subcategory_id : null,
+                'site_category_id'    => $request->filled('site_category_id') ? $request->site_category_id : null,
+                'site_subcategory_id' => $request->filled('site_subcategory_id') ? $request->site_subcategory_id : null,
                 'description'    => $request->description,
                 'price'          => $request->price,
                 'pages'          => $request->pages,
@@ -346,6 +363,7 @@ class ProductController extends Controller
                 'status'         => $request->boolean('status'),
                 'slug'           => Str::slug($request->title),
                 'domain'         => $request->filled('domain') ? $request->domain : null,
+                'featured_image_id' => is_numeric($request->featured_image_id) ? $request->featured_image_id : null,
                 'name_text'        => $request->name_text,
                 'name_font_family' => $request->name_font_family ?: $product->name_font_family ?: 'PetitCochon',
                 'name_top'         => $request->name_top ?: $product->name_top ?: '2%',
@@ -463,12 +481,16 @@ class ProductController extends Controller
             }
 
             if ($request->hasFile('gallery_files')) {
-                foreach ($request->file('gallery_files') as $file) {
-                    $product->images()->create([
+                foreach ($request->file('gallery_files') as $index => $file) {
+                    $img = $product->images()->create([
                         'image_path' => $this->saveUploadedFile($file, 'gal'),
                         'is_main'    => false,
                         'sort_order' => $sortOrder++,
                     ]);
+                    
+                    if ($request->featured_image_id === 'new_' . $index) {
+                        $product->update(['featured_image_id' => $img->id]);
+                    }
                 }
             }
 

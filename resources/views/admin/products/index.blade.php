@@ -318,10 +318,27 @@
 
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Domain</label>
-                                <select name="domain" id="prodDomain" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                <select name="domain" id="prodDomain" onchange="loadDomainCategories(this.value)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                     <option value="">— No specific domain —</option>
                                     <option value="domain1">Domain 1</option>
                                     <option value="domain2">Domain 2</option>
+                                </select>
+                            </div>
+
+                            <div id="prodCategoryWrapper">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                                <select name="site_category_id" id="prodCategory" onchange="loadProductSubcategories(this.value)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                    <option value="">— No category —</option>
+                                    @foreach($siteCategories as $cat)
+                                        <option value="{{ $cat->id }}" data-has-sub="{{ $cat->subcategories->count() > 0 ? 'true' : 'false' }}">{{ $cat->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div id="prodSubcategoryWrapper" class="hidden">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory</label>
+                                <select name="site_subcategory_id" id="prodSubcategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                    <option value="">— No subcategory —</option>
                                 </select>
                             </div>
 
@@ -422,6 +439,8 @@
                                 <div id="galleryPreviewContainer" class="flex flex-wrap gap-2 mt-3"></div>
                                 <div id="existingGalleryContainer" class="flex flex-wrap gap-2 mt-2 hidden"></div>
                                 <input type="hidden" name="deleted_image_ids" id="deletedImageIds" value="[]">
+                                <input type="hidden" name="featured_image_id" id="featuredImageId" value="">
+                                <p id="featuredHint" class="text-xs text-indigo-600 font-semibold mt-1 hidden"></p>
                                 <input type="text" name="gallery_urls" id="prodGalleryUrls" placeholder="Or enter comma-separated Image URLs..." class="w-full px-4 py-2 mt-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-xs">
                                 <!-- Replace Gallery checkbox for editing -->
                                 <label id="replaceGalleryGroup" class="hidden items-center space-x-2 mt-2 cursor-pointer">
@@ -751,8 +770,9 @@
 </form>
 
 <script>
-    const categoriesData = @json($categories);
+    const categoriesData    = @json($categories);
     const subcategoriesData = @json($subcategories);  // L1 subcategories with children[]
+    const siteCategoriesData = @json($siteCategories); // site_categories with subcategories[]
 
     /**
      * Build <option> HTML for subcategory select.
@@ -778,6 +798,83 @@
     let specialSectionIndex = 0;
     let categoryImageIndex = 0;
 
+    // ── Gallery Featured Image ────────────────────────────────────────────────
+
+    /**
+     * Mark an existing gallery image as featured.
+     * The selected image's ID is stored in the hidden input and will be
+     * sent to the server so it appears first in the API response.
+     */
+    function setFeaturedGalleryImage(imageId, clickedDiv) {
+        // Clear all existing featured styles
+        document.querySelectorAll('#existingGalleryContainer > div, #galleryPreviewContainer > div').forEach(d => {
+            d.classList.remove('border-indigo-500');
+            d.classList.add('border-gray-200');
+            const badge = d.querySelector('.featured-badge');
+            if (badge) badge.remove();
+        });
+
+        const current = document.getElementById('featuredImageId').value;
+        if (String(current) === String(imageId)) {
+            // Clicking the already-featured image deselects it
+            document.getElementById('featuredImageId').value = '';
+            return;
+        }
+
+        // Set new featured
+        document.getElementById('featuredImageId').value = imageId;
+        clickedDiv.classList.remove('border-gray-200');
+        clickedDiv.classList.add('border-indigo-500');
+        const badge = document.createElement('span');
+        badge.className = 'featured-badge absolute bottom-0 left-0 right-0 bg-indigo-500 text-white text-[9px] font-bold text-center py-0.5';
+        badge.textContent = 'Featured';
+        clickedDiv.appendChild(badge);
+        document.getElementById('featuredHint').classList.remove('hidden');
+    }
+
+    // ── Domain → Category → Subcategory helpers ──────────────────────────────
+
+    /**
+     * When domain changes, filter category options to show only matching ones.
+     * (Currently all categories are shown regardless of domain — extend if needed)
+     */
+    function loadDomainCategories(domain) {
+        // Category is shown regardless of domain; just reset subcategory
+        document.getElementById('prodCategory').value = '';
+        document.getElementById('prodSubcategoryWrapper').classList.add('hidden');
+        document.getElementById('prodSubcategory').innerHTML = '<option value="">— No subcategory —</option>';
+    }
+
+    /**
+     * When a category is selected, load its L1 subcategories.
+     * If none exist, hide the subcategory field.
+     */
+    function loadProductSubcategories(catId, selectedSubId = null) {
+        const wrapper = document.getElementById('prodSubcategoryWrapper');
+        const sel     = document.getElementById('prodSubcategory');
+        sel.innerHTML = '<option value="">— No subcategory —</option>';
+
+        if (!catId) {
+            wrapper.classList.add('hidden');
+            return;
+        }
+
+        const cat = siteCategoriesData.find(c => String(c.id) === String(catId));
+        const subs = cat ? (cat.subcategories || []) : [];
+
+        if (subs.length === 0) {
+            wrapper.classList.add('hidden');
+            return;
+        }
+
+        subs.forEach(sub => {
+            const sel_attr = selectedSubId && String(sub.id) === String(selectedSubId) ? 'selected' : '';
+            sel.innerHTML += `<option value="${sub.id}" ${sel_attr}>${sub.name}</option>`;
+        });
+
+        wrapper.classList.remove('hidden');
+    }
+
     function toggleModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal.classList.contains('hidden')) {
@@ -800,6 +897,15 @@
         if (document.getElementById('prodParentCategory')) document.getElementById('prodParentCategory').value = "";
         if (document.getElementById('prodSubCategory')) document.getElementById('prodSubCategory').value = "";
         if (document.getElementById('subCategoryContainer')) document.getElementById('subCategoryContainer').classList.add('hidden');
+        // Reset product category/subcategory
+        if (document.getElementById('prodCategory')) document.getElementById('prodCategory').value = '';
+        if (document.getElementById('prodSubcategoryWrapper')) {
+            document.getElementById('prodSubcategoryWrapper').classList.add('hidden');
+            document.getElementById('prodSubcategory').innerHTML = '<option value="">— No subcategory —</option>';
+        }
+        // Reset featured image
+        document.getElementById('featuredImageId').value = '';
+        document.getElementById('featuredHint').classList.add('hidden');
         document.getElementById('prodPrice').value = "";
         document.getElementById('prodPages').value = "";
         document.getElementById('prodAgeRange').value = "";
@@ -870,7 +976,17 @@
 
         document.getElementById('prodTitle').value = product.title;
         if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = product.domain || "";
-        
+
+        // Populate Site Category & Subcategory
+        if (document.getElementById('prodCategory')) {
+            document.getElementById('prodCategory').value = product.site_category_id || '';
+            loadProductSubcategories(product.site_category_id, product.site_subcategory_id);
+        }
+
+        // Populate featured image
+        document.getElementById('featuredImageId').value = product.featured_image_id || '';
+        document.getElementById('featuredHint').classList.remove('hidden');
+
         document.getElementById('prodPrice').value = product.price;
         document.getElementById('prodPages').value = product.pages || "";
         document.getElementById('prodAgeRange').value = product.age_range || "";
@@ -953,14 +1069,21 @@
             galleryImgs.forEach(img => {
                 const imgUrl = img.image_path.startsWith('http') ? img.image_path : window.location.origin + '/' + img.image_path.replace(/^\//, '');
                 const div = document.createElement('div');
-                div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group';
+                div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200 flex-shrink-0 group cursor-pointer';
                 div.dataset.imageId = img.id;
+                const isFeatured = product.featured_image_id && String(img.id) === String(product.featured_image_id);
+                if (isFeatured) div.classList.replace('border-gray-200', 'border-indigo-500');
                 div.innerHTML = `
                     <img src="${imgUrl}" class="w-full h-full object-cover">
-                    <button type="button" onclick="markImageDeleted(${img.id}, this.closest('div'))" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
+                    ${isFeatured ? '<span class="absolute bottom-0 left-0 right-0 bg-indigo-500 text-white text-[9px] font-bold text-center py-0.5">Featured</span>' : ''}
+                    <button type="button" onclick="markImageDeleted(${img.id}, this.closest('div'))" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10" title="Remove">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 `;
+                div.addEventListener('click', function(e) {
+                    if (e.target.closest('button')) return;
+                    setFeaturedGalleryImage(img.id, div);
+                });
                 existingContainer.appendChild(div);
             });
         } else {
@@ -1201,14 +1324,25 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const div = document.createElement('div');
-                div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group';
+                div.className = 'relative w-16 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0 group cursor-pointer';
                 div.setAttribute('data-index', index);
+                
+                const isFeatured = document.getElementById('featuredImageId').value === 'new_' + index;
+                if (isFeatured) div.classList.replace('border-gray-200', 'border-indigo-500');
+                
                 div.innerHTML = `
                     <img src="${e.target.result}" class="w-full h-full object-cover">
-                    <button type="button" onclick="removeGalleryImage(${index})" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Remove">
+                    ${isFeatured ? '<span class="featured-badge absolute bottom-0 left-0 right-0 bg-indigo-500 text-white text-[9px] font-bold text-center py-0.5">Featured</span>' : ''}
+                    <button type="button" onclick="removeGalleryImage(${index})" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10" title="Remove">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 `;
+                
+                div.addEventListener('click', function(evt) {
+                    if (evt.target.closest('button')) return;
+                    setFeaturedGalleryImage('new_' + index, div);
+                });
+                
                 container.appendChild(div);
             };
             reader.readAsDataURL(file);

@@ -10,7 +10,7 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
             </div>
             <div>
-                <h3 class="text-sm font-semibold text-gray-500">Categories</h3>
+                <h3 class="text-sm font-semibold text-gray-500">Product Categories</h3>
                 <p class="text-2xl font-bold text-gray-800">{{ $parentCategories->count() }}</p>
             </div>
         </div>
@@ -19,7 +19,7 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
             </div>
             <div>
-                <h3 class="text-sm font-semibold text-gray-500">Subcategories</h3>
+                <h3 class="text-sm font-semibold text-gray-500">Product Subcategories</h3>
                 <p class="text-2xl font-bold text-gray-800">{{ $parentCategories->sum(fn($p) => $p->subcategories->count()) }}</p>
             </div>
         </div>
@@ -28,7 +28,7 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             </div>
             <div>
-                <h3 class="text-sm font-semibold text-gray-500">Sub-subcategories</h3>
+                <h3 class="text-sm font-semibold text-gray-500">Product Sub-subcategories</h3>
                 <p class="text-2xl font-bold text-gray-800">{{ $parentCategories->sum(fn($p) => $p->subcategories->sum(fn($s) => $s->children->count())) }}</p>
             </div>
         </div>
@@ -37,7 +37,7 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.907c.961 0 1.371 1.24.588 1.81l-3.97 2.883a1 1 0 00-.364 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.971-2.883a1 1 0 00-1.18 0l-3.97 2.883c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.364-1.118L2.98 10.12c-.783-.57-.38-1.81.588-1.81h4.907a1 1 0 00.95-.69l1.519-4.674z"></path></svg>
             </div>
             <div>
-                <h3 class="text-sm font-semibold text-gray-500">Special Categories</h3>
+                <h3 class="text-sm font-semibold text-gray-500">Special Product Categories</h3>
                 <p class="text-2xl font-bold text-gray-800">{{ $specialCategories->count() }}</p>
             </div>
         </div>
@@ -50,10 +50,10 @@
         <div class="px-8 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex space-x-1">
                 <button onclick="switchTab('parent')" id="tabBtn-parent" class="tab-btn px-4 py-2 text-sm font-bold rounded-lg transition-all focus:outline-none">
-                    Categories
+                    Product Categories
                 </button>
                 <button onclick="switchTab('sub')" id="tabBtn-sub" class="tab-btn px-4 py-2 text-sm font-medium rounded-lg transition-all focus:outline-none">
-                    Subcategories
+                    Product Subcategories
                 </button>
             </div>
             <div class="flex items-center space-x-4">
