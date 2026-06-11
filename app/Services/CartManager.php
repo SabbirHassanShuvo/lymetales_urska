@@ -61,6 +61,13 @@ class CartManager
 
         $cart = $this->getCart();
 
+        // Check if the product is already in the cart
+        foreach ($cart as $item) {
+            if ($item['product_id'] === $productId) {
+                throw new CartException('This product is already in your cart.');
+            }
+        }
+
         // Cart key: if personalisation is provided, make item unique per personalisation
         // so the same product can appear multiple times with different names/options.
         $cartKey = $personalisation
@@ -95,21 +102,35 @@ class CartManager
      *
      * Removes the item if quantity is ≤ 0. Caps at 99.
      */
-    public function update(int $productId, int $quantity): void
+    public function update(int $productId, int $quantity, ?array $personalisation = null): void
     {
         $cart = $this->getCart();
 
-        if (! isset($cart[$productId])) {
+        $cartKey = $personalisation
+            ? $productId . '_' . md5(json_encode($personalisation))
+            : $productId;
+
+        // If the specific key is not found, fallback to search by prefix if no specific personalisation is provided
+        if (!isset($cart[$cartKey]) && !$personalisation) {
+            foreach (array_keys($cart) as $key) {
+                if ($key == $productId || str_starts_with((string) $key, $productId . '_')) {
+                    $cartKey = $key;
+                    break;
+                }
+            }
+        }
+
+        if (!isset($cart[$cartKey])) {
             return;
         }
 
         if ($quantity <= 0) {
-            unset($cart[$productId]);
+            unset($cart[$cartKey]);
         } else {
             $quantity = min($quantity, self::MAX_QUANTITY);
 
-            $cart[$productId]['quantity']   = $quantity;
-            $cart[$productId]['line_total'] = round($cart[$productId]['unit_price'] * $quantity, 2);
+            $cart[$cartKey]['quantity']   = $quantity;
+            $cart[$cartKey]['line_total'] = round($cart[$cartKey]['unit_price'] * $quantity, 2);
         }
 
         $this->putCart($cart);
@@ -118,11 +139,24 @@ class CartManager
     /**
      * Remove a single item from the cart by product ID.
      */
-    public function remove(int $productId): void
+    public function remove(int $productId, ?array $personalisation = null): void
     {
         $cart = $this->getCart();
 
-        unset($cart[$productId]);
+        $cartKey = $personalisation
+            ? $productId . '_' . md5(json_encode($personalisation))
+            : $productId;
+
+        if (isset($cart[$cartKey])) {
+            unset($cart[$cartKey]);
+        } else if (!$personalisation) {
+            // Remove all items matching the product ID if no specific personalisation is given
+            foreach (array_keys($cart) as $key) {
+                if ($key == $productId || str_starts_with((string) $key, $productId . '_')) {
+                    unset($cart[$key]);
+                }
+            }
+        }
 
         $this->putCart($cart);
     }
@@ -134,7 +168,44 @@ class CartManager
      */
     public function items(): array
     {
-        return array_values($this->getCart());
+        $items = $this->getCart();
+        foreach ($items as &$item) {
+            $product = Product::find($item['product_id']);
+            $item['description'] = $product ? $product->description : '';
+
+            if (!empty($item['personalisation']) && !empty($item['personalisation']['preview_image'])) {
+                $path = $item['personalisation']['preview_image'];
+                if (!str_starts_with($path, 'http://') && !str_starts_with($path, 'https://')) {
+                    $normalised = '/' . ltrim($path, '/');
+                    if (app()->runningInConsole() || !request()->getHost()) {
+                        $item['image'] = rtrim(config('app.url'), '/') . $normalised;
+                    } else {
+                        $item['image'] = request()->getSchemeAndHttpHost() . $normalised;
+                    }
+                } else {
+                    $item['image'] = $path;
+                }
+            } else {
+                $defaultImage = $product ? $product->imageUrl : ($item['image'] ?? '');
+                if (!empty($defaultImage)) {
+                    $path = $defaultImage;
+                    if (!str_starts_with($path, 'http://') && !str_starts_with($path, 'https://')) {
+                        $normalised = '/' . ltrim($path, '/');
+                        if (app()->runningInConsole() || !request()->getHost()) {
+                            $item['image'] = rtrim(config('app.url'), '/') . $normalised;
+                        } else {
+                            $item['image'] = request()->getSchemeAndHttpHost() . $normalised;
+                        }
+                    } else {
+                        $item['image'] = $path;
+                    }
+                } else {
+                    $item['image'] = '';
+                }
+            }
+            unset($item['personalisation']);
+        }
+        return array_values($items);
     }
 
     /**

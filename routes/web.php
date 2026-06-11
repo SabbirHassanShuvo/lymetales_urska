@@ -213,6 +213,9 @@ Route::prefix('admin')->group(function () {
         Route::post('/home-content/faq', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFaq'])->name('admin.home-content.faq.store');
         Route::delete('/home-content/faq/{faq}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFaq'])->name('admin.home-content.faq.destroy');
 
+        // Gifts Management
+        Route::resource('gifts', \App\Http\Controllers\Admin\GiftController::class)->names('admin.gifts');
+
         // Contact Messages
         Route::resource('contact-messages', \App\Http\Controllers\Admin\ContactMessageController::class)->only(['index', 'show', 'destroy'])->names('admin.contact-messages');
     });

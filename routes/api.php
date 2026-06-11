@@ -68,6 +68,9 @@ Route::prefix('shop')->group(function () {
     // Home Content (Hero, Gifts, FAQs)
     Route::get('/home-content', [HomeContentController::class, 'index']);
 
+    // Gifts
+    Route::get('/gifts', [\App\Http\Controllers\API\GiftController::class, 'index']);
+
     // Global Search 
     Route::get('/search', [SearchController::class, 'search']);
 });

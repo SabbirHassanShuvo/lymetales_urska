@@ -152,6 +152,15 @@
                     <span class="flex-1">Home Content</span>
                 </a>
 
+                {{-- Gifts --}}
+                <a href="{{ route('admin.gifts.index') }}"
+                    class="flex items-center px-4 py-3 {{ request()->routeIs('admin.gifts.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span class="flex-1">Gifts</span>
+                </a>
+
                 {{-- Messages --}}
                 <a href="{{ route('admin.contact-messages.index') }}"
                     class="flex items-center px-4 py-3 {{ request()->routeIs('admin.contact-messages.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">

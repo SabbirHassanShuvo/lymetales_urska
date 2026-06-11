@@ -165,8 +165,8 @@ class CheckoutController extends Controller
 
         // 3. Redirect URLs (Next.js pages)
         $frontendUrl = rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/');
-        $successUrl  = $frontendUrl . '/payment/success?session_id={CHECKOUT_SESSION_ID}&order=' . $order->order_number;
-        $cancelUrl   = $frontendUrl . '/payment/cancel?order=' . $order->order_number;
+        $successUrl  = $frontendUrl . '/shop/order-confirmed?session_id={CHECKOUT_SESSION_ID}&order=' . $order->order_number;
+        $cancelUrl   = $frontendUrl . '/shop/order-failed?order=' . $order->order_number;
 
         // 4. Create Stripe Checkout Session
         try {

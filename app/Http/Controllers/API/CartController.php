@@ -117,13 +117,15 @@ class CartController extends Controller
     public function update(Request $request): JsonResponse
     {
         $request->validate([
-            'product_id' => ['required', 'integer', 'min:1'],
-            'quantity'   => ['required', 'integer'],
+            'product_id'      => ['required', 'integer', 'min:1'],
+            'quantity'        => ['required', 'integer'],
+            'personalisation' => ['sometimes', 'nullable', 'array'],
         ]);
 
         $this->cart->update(
             (int) $request->input('product_id'),
-            (int) $request->input('quantity')
+            (int) $request->input('quantity'),
+            $request->input('personalisation')
         );
 
         $symbol      = config('shop.currency_symbol', '€');
@@ -179,10 +181,14 @@ class CartController extends Controller
     public function remove(Request $request): JsonResponse
     {
         $request->validate([
-            'product_id' => ['required', 'integer', 'min:1'],
+            'product_id'      => ['required', 'integer', 'min:1'],
+            'personalisation' => ['sometimes', 'nullable', 'array'],
         ]);
 
-        $this->cart->remove((int) $request->input('product_id'));
+        $this->cart->remove(
+            (int) $request->input('product_id'),
+            $request->input('personalisation')
+        );
 
         $symbol      = config('shop.currency_symbol', '€');
         $shippingFee = (float) Setting::getVal('shipping_charge', config('shop.shipping_fee', 5.95));
