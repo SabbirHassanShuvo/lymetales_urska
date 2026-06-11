@@ -100,7 +100,9 @@ class ProductController extends Controller
             'title'          => $p->title,
             'slug'           => $p->slug,
             'price'          => (float) $p->price,
-            'image'          => $this->resolveImageUrl($p->imageUrl),
+            'image'          => ($detailed && $p->primaryImage)
+                                ? $this->resolveImageUrl($p->primaryImage->image_path)
+                                : $this->resolveImageUrl($p->imageUrl),
             'rating'         => (float) $p->rating,
             'reviews_count'  => $p->reviews_count,
             'is_bestseller'  => (bool) $p->is_bestseller,
@@ -206,23 +208,50 @@ class ProductController extends Controller
                 'gallery_thumbnails' => (function () use ($p) {
                     $thumbnails = collect();
 
-                    // Primary/cover image always comes first
+                    // Gather all images (primary and gallery)
+                    $allImages = collect();
                     if ($p->primaryImage) {
-                        $thumbnails->push([
-                            'id'         => $p->primaryImage->id,
-                            'url'        => $this->resolveImageUrl($p->primaryImage->image_path),
-                            'is_primary' => true,
-                            'sort_order' => 0,
-                        ]);
+                        $allImages->push($p->primaryImage);
                     }
-
-                    // Then all non-primary gallery images
                     if ($p->galleryImages) {
                         foreach ($p->galleryImages as $img) {
+                            $allImages->push($img);
+                        }
+                    }
+
+                    // Find the featured/selected image if any is set
+                    $featuredImage = null;
+                    if ($p->featured_image_id) {
+                        $featuredImage = $allImages->firstWhere('id', (int) $p->featured_image_id);
+                    }
+
+                    if ($featuredImage) {
+                        // Push the featured image first
+                        $thumbnails->push([
+                            'id'         => $featuredImage->id,
+                            'url'        => $this->resolveImageUrl($featuredImage->image_path),
+                            'is_primary' => (bool) $featuredImage->is_main,
+                            'sort_order' => $featuredImage->sort_order,
+                        ]);
+
+                        // Then push all other images in their original sequence
+                        foreach ($allImages as $img) {
+                            if ($img->id !== $featuredImage->id) {
+                                $thumbnails->push([
+                                    'id'         => $img->id,
+                                    'url'        => $this->resolveImageUrl($img->image_path),
+                                    'is_primary' => (bool) $img->is_main,
+                                    'sort_order' => $img->sort_order,
+                                ]);
+                            }
+                        }
+                    } else {
+                        // If no featured image is set, fall back to standard order (primary first)
+                        foreach ($allImages as $img) {
                             $thumbnails->push([
                                 'id'         => $img->id,
                                 'url'        => $this->resolveImageUrl($img->image_path),
-                                'is_primary' => false,
+                                'is_primary' => (bool) $img->is_main,
                                 'sort_order' => $img->sort_order,
                             ]);
                         }

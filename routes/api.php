@@ -70,6 +70,7 @@ Route::prefix('shop')->group(function () {
 
     // Gifts
     Route::get('/gifts', [\App\Http\Controllers\API\GiftController::class, 'index']);
+    Route::get('/offers', [\App\Http\Controllers\API\OfferController::class, 'index']);
 
     // Global Search 
     Route::get('/search', [SearchController::class, 'search']);

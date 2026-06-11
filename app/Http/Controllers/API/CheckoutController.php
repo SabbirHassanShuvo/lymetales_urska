@@ -32,17 +32,47 @@ class CheckoutController extends Controller
         $shippingFee = (float) config('shop.shipping_fee', 5.95);
         $fastFee     = (float) config('shop.fast_production_fee', 9.95);
         $subtotal    = $this->cart->subtotal();
+
+        // Calculate subtotal of products (excluding gifts) for offer discount calculation
+        $productsSubtotal = 0.0;
+        $totalProductQuantity = 0;
+        foreach ($this->cart->items() as $item) {
+            if (($item['type'] ?? 'product') === 'product') {
+                $productsSubtotal += $item['line_total'];
+                $totalProductQuantity += $item['quantity'];
+            }
+        }
+
+        // Coupon discount
         $coupon      = session(config('shop.coupon_session_key'));
         $discount    = $coupon ? (float) ($coupon['discount'] ?? 0) : 0.0;
+
+        // Offer discount
+        $offerDiscount = 0.0;
+        $appliedOffer = null;
+        $activeOffer = \App\Models\Offer::where('is_active', true)
+            ->where('min_quantity', '<', $totalProductQuantity)
+            ->first();
+        if ($activeOffer) {
+            $offerDiscount = round($productsSubtotal * ($activeOffer->discount_percentage / 100), 2);
+            $appliedOffer = $activeOffer;
+        }
+
         $freeShip    = $coupon && ($coupon['free_shipping'] ?? false);
         $shipping    = $freeShip ? 0.0 : $shippingFee;
         $fastProdFee = $fastProduction ? $fastFee : 0.0;
-        $total       = round($subtotal - $discount + $shipping + $fastProdFee, 2);
+
+        $totalDiscount = $discount + $offerDiscount;
+        $total       = round($subtotal - $totalDiscount + $shipping + $fastProdFee, 2);
+        if ($total < 0) {
+            $total = 0.0;
+        }
 
         return compact(
             'subtotal', 'shippingFee', 'fastFee',
             'discount', 'freeShip', 'shipping',
-            'fastProdFee', 'total', 'coupon'
+            'fastProdFee', 'total', 'coupon',
+            'offerDiscount', 'appliedOffer'
         );
     }
 
@@ -100,8 +130,10 @@ class CheckoutController extends Controller
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
 
+            session()->put('last_order_number', $order->order_number);
             $this->cart->clear();
             session()->forget(config('shop.coupon_session_key'));
+            session()->save();
 
             return response()->json([
                 'success'        => true,
@@ -177,6 +209,15 @@ class CheckoutController extends Controller
                 $cancelUrl,
                 ['order_number' => $order->order_number]
             );
+
+            // Save the session ID to the order
+            $order->update([
+                'stripe_payment_intent_id' => $result['session_id'],
+            ]);
+
+            // Save the last order number to the session
+            session()->put('last_order_number', $order->order_number);
+            session()->save();
         } catch (StripeException $e) {
             $order->delete(); // rollback
             return response()->json([
@@ -184,10 +225,6 @@ class CheckoutController extends Controller
                 'error'   => 'Payment service unavailable: ' . $e->getMessage(),
             ], 500);
         }
-
-        // 5. Clear cart
-        $this->cart->clear();
-        session()->forget(config('shop.coupon_session_key'));
 
         return response()->json([
             'success'        => true,

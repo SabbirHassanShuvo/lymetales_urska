@@ -190,6 +190,8 @@ Route::prefix('admin')->group(function () {
         Route::delete('site-subcategories/{id}', [\App\Http\Controllers\Admin\SiteCategoryController::class, 'destroySubcategory'])->name('admin.site-subcategories.destroy');
         Route::patch('coupons/{coupon}/status', [\App\Http\Controllers\Admin\CouponController::class, 'toggleStatus'])->name('admin.coupons.status');
         Route::resource('coupons', \App\Http\Controllers\Admin\CouponController::class)->names('admin.coupons');
+        Route::patch('offers/{offer}/status', [\App\Http\Controllers\Admin\OfferController::class, 'toggleStatus'])->name('admin.offers.status');
+        Route::resource('offers', \App\Http\Controllers\Admin\OfferController::class)->names('admin.offers');
 
         // Orders
         Route::get('/orders', [\App\Http\Controllers\Admin\OrderController::class, 'index'])->name('admin.orders.index');

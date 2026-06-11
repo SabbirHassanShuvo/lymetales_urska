@@ -4,10 +4,16 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\CartManager;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Stripe\Checkout\Session as StripeSession;
+use Stripe\Stripe;
 
 class ConfirmationController extends Controller
 {
+    public function __construct(private CartManager $cart) {}
+
     /**
      * GET /api/shop/confirmation/{orderNumber}
      */
@@ -22,15 +28,43 @@ class ConfirmationController extends Controller
             ], 404);
         }
 
+        // If payment status is pending for Stripe order, try to verify with Stripe directly
+        if ($order->payment_method === 'stripe' && $order->payment_status !== 'paid') {
+            $sessionId = $order->stripe_payment_intent_id;
+            if ($sessionId && str_starts_with($sessionId, 'cs_')) {
+                try {
+                    Stripe::setApiKey(config('services.stripe.secret'));
+                    $session = StripeSession::retrieve($sessionId);
+                    if ($session && $session->payment_status === 'paid') {
+                        $order->update([
+                            'payment_status'           => 'paid',
+                            'stripe_payment_intent_id' => $session->payment_intent,
+                        ]);
+                        $order->refresh();
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Stripe session retrieval failed in confirmation: ' . $e->getMessage());
+                }
+            }
+        }
+
+        // If order is paid or is a COD order, clear the cart in the user's session
+        if ($order->payment_status === 'paid' || $order->payment_method === 'cod') {
+            $this->cart->clear();
+            session()->forget(config('shop.coupon_session_key'));
+        }
+
         return response()->json([
-            'success'      => true,
-            'order_number' => $order->order_number,
-            'status'       => $order->status,
-            'email'        => $order->email,
-            'full_name'    => $order->full_name,
-            'total'        => config('shop.currency_symbol', '€') . number_format($order->total, 2),
-            'items'        => $order->items,
-            'created_at'   => $order->created_at->toDateTimeString(),
+            'success'        => true,
+            'order_number'   => $order->order_number,
+            'status'         => $order->payment_status, // Return payment status for backward compatibility
+            'payment_status' => $order->payment_status,
+            'order_status'   => $order->order_status,
+            'email'          => $order->email,
+            'full_name'      => $order->full_name,
+            'total'          => config('shop.currency_symbol', '€') . number_format($order->total, 2),
+            'items'          => $order->items,
+            'created_at'     => $order->created_at->toDateTimeString(),
         ]);
     }
 }

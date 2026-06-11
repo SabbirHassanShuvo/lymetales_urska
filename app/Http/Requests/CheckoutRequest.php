@@ -18,7 +18,7 @@ class CheckoutRequest extends FormRequest
             'email'          => ['required', 'email:rfc,dns'],
             'full_name'      => ['required', 'string', 'max:100'],
             'address'        => ['required', 'string', 'max:255'],
-            'city'           => ['required', 'string', Rule::in(config('shop.cities', []))],
+            'city'           => ['required', 'string', 'max:100'],
             'postal_code'    => ['required', 'string', 'max:20'],
             'country'        => ['required', 'string', 'max:100'],
             'phone'          => ['required', 'regex:/^[+\d\s\-]{1,20}$/'],
@@ -35,7 +35,6 @@ class CheckoutRequest extends FormRequest
         return [
             'payment_method.required' => 'Please select a payment method.',
             'payment_method.in'       => 'Please select a payment method.',
-            'city.in'                 => 'Please select a valid city.',
         ];
     }
 }

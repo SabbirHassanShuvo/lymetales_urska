@@ -54,15 +54,39 @@ class OrderGenerator
 
         // Calculate financials
         $subtotal          = round(array_sum(array_column($cartItems, 'line_total')), 2);
+
+        // Calculate subtotal of products (excluding gifts) for offer discount calculation
+        $productsSubtotal = 0.0;
+        $totalProductQuantity = 0;
+        foreach ($cartItems as $item) {
+            if (($item['type'] ?? 'product') === 'product') {
+                $productsSubtotal += $item['line_total'];
+                $totalProductQuantity += $item['quantity'];
+            }
+        }
+
+        // Offer discount
+        $offerDiscount = 0.0;
+        $activeOffer = \App\Models\Offer::where('is_active', true)
+            ->where('min_quantity', '<', $totalProductQuantity)
+            ->first();
+        if ($activeOffer) {
+            $offerDiscount = round($productsSubtotal * ($activeOffer->discount_percentage / 100), 2);
+        }
+
         $shippingFee       = ($coupon && ($coupon['free_shipping'] ?? false))
                                 ? 0.00
                                 : round((float) config('shop.shipping_fee', 5.95), 2);
         $fastProductionFee = ! empty($checkoutData['fast_production'])
                                 ? round((float) config('shop.fast_production_fee', 9.95), 2)
                                 : 0.00;
-        $discount          = $coupon ? round((float) ($coupon['discount'] ?? 0), 2) : 0.00;
+        $couponDiscount    = $coupon ? round((float) ($coupon['discount'] ?? 0), 2) : 0.00;
+        $discount          = round($couponDiscount + $offerDiscount, 2);
         $couponCode        = $coupon ? ($coupon['code'] ?? null) : null;
         $total             = round($subtotal - $discount + $shippingFee + $fastProductionFee, 2);
+        if ($total < 0) {
+            $total = 0.00;
+        }
 
         try {
             $order = DB::transaction(function () use (
