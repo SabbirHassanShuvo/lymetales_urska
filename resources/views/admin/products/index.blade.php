@@ -81,7 +81,6 @@
                     <tr class="bg-gray-50 text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
                         <th class="px-5 py-3.5">Book</th>
                         <th class="px-5 py-3.5">Domain</th>
-                        <th class="px-5 py-3.5">Category</th>
                         <th class="px-5 py-3.5">Price</th>
                         <th class="px-5 py-3.5">Specs</th>
                         <th class="px-5 py-3.5">Badges</th>
@@ -128,7 +127,7 @@
                             </td>
 
                             {{-- Category --}}
-                            <td class="px-5 py-3.5">
+                            <!-- <td class="px-5 py-3.5">
                                 @if($product->categoryImages && $product->categoryImages->count() > 0)
                                     <div class="flex flex-col gap-1">
                                         @foreach($product->categoryImages->unique('category_id')->take(2) as $catImg)
@@ -153,7 +152,7 @@
                                 @else
                                     <span class="text-gray-300 text-xs italic">None</span>
                                 @endif
-                            </td>
+                            </td> -->
 
                             {{-- Price --}}
                             <td class="px-5 py-3.5">
@@ -702,13 +701,124 @@
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Font Family</label>
-                        <select id="configNameFont" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" onchange="updateOverlayPreview()">
+                        <select id="configNameFont" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold" onchange="updateOverlayPreview()">
                             <option value="PetitCochon">PetitCochon</option>
                             <option value="Arial, sans-serif">Arial</option>
                             <option value="'Courier New', Courier, monospace">Courier New</option>
                             <option value="'Times New Roman', Times, serif">Times New Roman</option>
                             <option value="'Comic Sans MS', cursive, sans-serif">Comic Sans MS</option>
                             <option value="Impact, fantasy">Impact</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Dancing Script">Dancing Script</option>
+                            <option value="Satisfy">Satisfy</option>
+                            <option value="Lobster">Lobster</option>
+                            <option value="Caveat">Caveat</option>
+                            <option value="Permanent Marker">Permanent Marker</option>
+                            <option value="Architects Daughter">Architects Daughter</option>
+                            <option value="Indie Flower">Indie Flower</option>
+                            <option value="Shadows Into Light">Shadows Into Light</option>
+                            <option value="Patrick Hand">Patrick Hand</option>
+                            <option value="Kalam">Kalam</option>
+                            <option value="Amatic SC">Amatic SC</option>
+                            <option value="Courgette">Courgette</option>
+                            <option value="Great Vibes">Great Vibes</option>
+                            <option value="Sacramento">Sacramento</option>
+                            <option value="Yellowtail">Yellowtail</option>
+                            <option value="Righteous">Righteous</option>
+                            <option value="Fredoka One">Fredoka One</option>
+                            <option value="Boogaloo">Boogaloo</option>
+                            <option value="Chewy">Chewy</option>
+                            <option value="Josefin Sans">Josefin Sans</option>
+                            <option value="Raleway">Raleway</option>
+                            <option value="Cinzel">Cinzel</option>
+                            <option value="Playfair Display">Playfair Display</option>
+                            <option value="Abril Fatface">Abril Fatface</option>
+                            <option value="Alfa Slab One">Alfa Slab One</option>
+                            <option value="Bangers">Bangers</option>
+                            <option value="Black Han Sans">Black Han Sans</option>
+                            <option value="Bree Serif">Bree Serif</option>
+                            <option value="Cabin Sketch">Cabin Sketch</option>
+                            <option value="Changa One">Changa One</option>
+                            <option value="Cinzel Decorative">Cinzel Decorative</option>
+                            <option value="Comfortaa">Comfortaa</option>
+                            <option value="Cookie">Cookie</option>
+                            <option value="Covered By Your Grace">Covered By Your Grace</option>
+                            <option value="Crafty Girls">Crafty Girls</option>
+                            <option value="Creepster">Creepster</option>
+                            <option value="Damion">Damion</option>
+                            <option value="Delius">Delius</option>
+                            <option value="Diplomata SC">Diplomata SC</option>
+                            <option value="Dynalight">Dynalight</option>
+                            <option value="Fascinate">Fascinate</option>
+                            <option value="Finger Paint">Finger Paint</option>
+                            <option value="Fondamento">Fondamento</option>
+                            <option value="Fruktur">Fruktur</option>
+                            <option value="Galada">Galada</option>
+                            <option value="Galdeano">Galdeano</option>
+                            <option value="Geostar">Geostar</option>
+                            <option value="Give You Glory">Give You Glory</option>
+                            <option value="Gloria Hallelujah">Gloria Hallelujah</option>
+                            <option value="Handlee">Handlee</option>
+                            <option value="Henny Penny">Henny Penny</option>
+                            <option value="Homemade Apple">Homemade Apple</option>
+                            <option value="Hurricane">Hurricane</option>
+                            <option value="Just Another Hand">Just Another Hand</option>
+                            <option value="Kaushan Script">Kaushan Script</option>
+                            <option value="Kranky">Kranky</option>
+                            <option value="Kristi">Kristi</option>
+                            <option value="La Belle Aurore">La Belle Aurore</option>
+                            <option value="Lacquer">Lacquer</option>
+                            <option value="League Script">League Script</option>
+                            <option value="Leckerli One">Leckerli One</option>
+                            <option value="Lilita One">Lilita One</option>
+                            <option value="Limelight">Limelight</option>
+                            <option value="Loved by the King">Loved by the King</option>
+                            <option value="Luckiest Guy">Luckiest Guy</option>
+                            <option value="Mystery Quest">Mystery Quest</option>
+                            <option value="Niconne">Niconne</option>
+                            <option value="Nothing You Could Do">Nothing You Could Do</option>
+                            <option value="Offside">Offside</option>
+                            <option value="Oregano">Oregano</option>
+                            <option value="Oswald">Oswald</option>
+                            <option value="Philosopher">Philosopher</option>
+                            <option value="Pinyon Script">Pinyon Script</option>
+                            <option value="Plaster">Plaster</option>
+                            <option value="Press Start 2P">Press Start 2P</option>
+                            <option value="Princess Sofia">Princess Sofia</option>
+                            <option value="Puritan">Puritan</option>
+                            <option value="Qwigley">Qwigley</option>
+                            <option value="Rancho">Rancho</option>
+                            <option value="Reenie Beanie">Reenie Beanie</option>
+                            <option value="Rock Salt">Rock Salt</option>
+                            <option value="Rouge Script">Rouge Script</option>
+                            <option value="Ruge Boogie">Ruge Boogie</option>
+                            <option value="Ruluko">Ruluko</option>
+                            <option value="Ruslan Display">Ruslan Display</option>
+                            <option value="Sail">Sail</option>
+                            <option value="Schoolbell">Schoolbell</option>
+                            <option value="Sevillana">Sevillana</option>
+                            <option value="Shrikhand">Shrikhand</option>
+                            <option value="Sigmar One">Sigmar One</option>
+                            <option value="Special Elite">Special Elite</option>
+                            <option value="Stalemate">Stalemate</option>
+                            <option value="Stint Ultra Expanded">Stint Ultra Expanded</option>
+                            <option value="Sunshiney">Sunshiney</option>
+                            <option value="Supermercado One">Supermercado One</option>
+                            <option value="Syne Mono">Syne Mono</option>
+                            <option value="Taprom">Taprom</option>
+                            <option value="Tinos">Tinos</option>
+                            <option value="Trade Winds">Trade Winds</option>
+                            <option value="Uncial Antiqua">Uncial Antiqua</option>
+                            <option value="Vampiro One">Vampiro One</option>
+                            <option value="Vast Shadow">Vast Shadow</option>
+                            <option value="Vibur">Vibur</option>
+                            <option value="Voltaire">Voltaire</option>
+                            <option value="Walter Turncoat">Walter Turncoat</option>
+                            <option value="Warnes">Warnes</option>
+                            <option value="Wellfleet">Wellfleet</option>
+                            <option value="Wendy One">Wendy One</option>
+                            <option value="Wire One">Wire One</option>
+                            <option value="Zeyada">Zeyada</option>
                         </select>
                     </div>
 
@@ -1689,9 +1799,31 @@
         }, 300);
     }
 
+    function loadGoogleFont(fontName) {
+        if (!fontName) return;
+        // Skip default local fonts
+        const skipFonts = ['PetitCochon', 'Arial', 'Courier New', 'Times New Roman', 'Comic Sans MS', 'Impact', 'sans-serif', 'serif', 'monospace', 'fantasy', 'cursive'];
+        if (skipFonts.some(f => fontName.includes(f))) {
+            return;
+        }
+        
+        const fontId = 'gfont-' + fontName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        if (!document.getElementById(fontId)) {
+            const link = document.createElement('link');
+            link.id = fontId;
+            link.rel = 'stylesheet';
+            link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}&display=swap`;
+            document.head.appendChild(link);
+        }
+    }
+
     function updateOverlayPreview() {
         let text = document.getElementById('configNameText').value || 'Your Name';
         let font = document.getElementById('configNameFont').value;
+        
+        // Load font dynamically if it's a Google Font
+        loadGoogleFont(font);
+
         let color = document.getElementById('configNameColor').value;
         let fontSize = document.getElementById('configNameFontSize').value + 'px';
         let top = document.getElementById('configNameTop').value + '%';

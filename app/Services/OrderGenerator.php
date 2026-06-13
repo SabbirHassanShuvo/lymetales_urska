@@ -68,7 +68,8 @@ class OrderGenerator
         // Offer discount
         $offerDiscount = 0.0;
         $activeOffer = \App\Models\Offer::where('is_active', true)
-            ->where('min_quantity', '<', $totalProductQuantity)
+            ->where('min_quantity', '<=', $totalProductQuantity)
+            ->orderBy('min_quantity', 'desc')
             ->first();
         if ($activeOffer) {
             $offerDiscount = round($productsSubtotal * ($activeOffer->discount_percentage / 100), 2);

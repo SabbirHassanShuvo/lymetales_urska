@@ -19,6 +19,7 @@ class OfferController extends Controller
             return [
                 'id' => $offer->id,
                 'title' => $offer->title,
+                'short_description' => $offer->short_description,
                 'min_quantity' => $offer->min_quantity,
                 'discount_percentage' => (float) $offer->discount_percentage,
                 'created_at' => $offer->created_at,

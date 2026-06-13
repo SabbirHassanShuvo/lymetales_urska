@@ -14,10 +14,12 @@ class SiteCategory extends Model
         'name',
         'slug',
         'description',
+        'is_special',
         'status',
     ];
 
     protected $casts = [
+        'is_special' => 'boolean',
         'status' => 'boolean',
     ];
 

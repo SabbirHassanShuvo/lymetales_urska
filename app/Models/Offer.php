@@ -11,6 +11,7 @@ class Offer extends Model
 
     protected $fillable = [
         'title',
+        'short_description',
         'min_quantity',
         'discount_percentage',
         'is_active',

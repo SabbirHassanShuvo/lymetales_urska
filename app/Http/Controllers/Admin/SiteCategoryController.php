@@ -24,6 +24,7 @@ class SiteCategoryController extends Controller
         $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
+            'is_special'  => 'boolean',
             'status'      => 'nullable|in:0,1',
         ]);
 
@@ -31,6 +32,7 @@ class SiteCategoryController extends Controller
             'name'        => $request->name,
             'slug'        => Str::slug($request->name),
             'description' => $request->description,
+            'is_special'  => $request->boolean('is_special'),
             'status'      => $request->boolean('status'),
         ]);
 
@@ -46,6 +48,7 @@ class SiteCategoryController extends Controller
         $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
+            'is_special'  => 'boolean',
             'status'      => 'nullable|in:0,1',
         ]);
 
@@ -53,6 +56,7 @@ class SiteCategoryController extends Controller
             'name'        => $request->name,
             'slug'        => Str::slug($request->name),
             'description' => $request->description,
+            'is_special'  => $request->boolean('is_special'),
             'status'      => $request->boolean('status'),
         ]);
 

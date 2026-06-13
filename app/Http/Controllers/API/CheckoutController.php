@@ -51,7 +51,8 @@ class CheckoutController extends Controller
         $offerDiscount = 0.0;
         $appliedOffer = null;
         $activeOffer = \App\Models\Offer::where('is_active', true)
-            ->where('min_quantity', '<', $totalProductQuantity)
+            ->where('min_quantity', '<=', $totalProductQuantity)
+            ->orderBy('min_quantity', 'desc')
             ->first();
         if ($activeOffer) {
             $offerDiscount = round($productsSubtotal * ($activeOffer->discount_percentage / 100), 2);
@@ -86,17 +87,17 @@ class CheckoutController extends Controller
             return response()->json(['success' => false, 'message' => 'Your cart is empty.'], 422);
         }
 
-        $t      = $this->calculateTotals();
-        $symbol = config('shop.currency_symbol', '€');
+        $isFastProd = session('shop.cart_fast_production', false);
+        $t          = $this->calculateTotals($isFastProd);
 
         return response()->json([
             'items'               => $this->cart->items(),
-            'subtotal'            => $symbol . number_format($t['subtotal'], 2),
-            'shipping_fee'        => $t['freeShip'] ? 'Free' : $symbol . number_format($t['shippingFee'], 2),
-            'fast_production_fee' => $symbol . number_format($t['fastFee'], 2),
-            'discount'            => $t['discount'] > 0 ? $symbol . number_format($t['discount'], 2) : null,
+            'subtotal'            => number_format($t['subtotal'], 2, '.', ''),
+            'shipping_fee'        => number_format($t['shipping'] + $t['fastProdFee'], 2, '.', ''),
+            'fast_production_fee' => number_format($t['fastFee'], 2, '.', ''),
+            'discount'            => $t['discount'] > 0 ? number_format($t['discount'], 2, '.', '') : null,
             'coupon'              => $t['coupon'],
-            'total'               => $symbol . number_format($t['total'], 2),
+            'total'               => number_format($t['total'], 2, '.', ''),
             'cities'              => config('shop.cities', []),
         ]);
     }

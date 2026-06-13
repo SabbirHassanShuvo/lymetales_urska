@@ -87,7 +87,12 @@
                     <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                         @forelse($categories as $cat)
                             <tr class="hover:bg-gray-50/55 transition-colors category-row" data-name="{{ strtolower($cat->name) }}">
-                                <td class="px-6 py-4 font-semibold text-gray-800">{{ $cat->name }}</td>
+                                <td class="px-6 py-4 font-semibold text-gray-800">
+                                    {{ $cat->name }}
+                                    @if($cat->is_special)
+                                        <span class="ml-1 text-amber-500 font-bold" title="Special Category">★</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 text-xs font-mono text-gray-500">{{ $cat->slug }}</td>
                                 <td class="px-6 py-4 text-xs text-gray-500 max-w-xs truncate">{{ $cat->description ?: '—' }}</td>
                                 <td class="px-6 py-4">
@@ -180,10 +185,16 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                         <textarea name="description" id="catDesc" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"></textarea>
                     </div>
-                    <label class="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" name="status" id="catStatus" value="1" checked class="w-4 h-4 text-teal-600 border-gray-300 rounded">
-                        <span class="text-sm font-semibold text-gray-700">Active</span>
-                    </label>
+                    <div class="flex items-center space-x-6">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="is_special" id="catIsSpecial" value="1" class="w-4 h-4 text-amber-500 border-gray-300 rounded">
+                            <span class="text-sm font-semibold text-gray-700">★ Special Category</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="status" id="catStatus" value="1" checked class="w-4 h-4 text-teal-600 border-gray-300 rounded">
+                            <span class="text-sm font-semibold text-gray-700">Active</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="bg-gray-50 px-8 py-4 flex justify-end space-x-3 rounded-b-2xl">
                     <button type="button" onclick="closeModal('catModal')" class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl">Cancel</button>
@@ -306,6 +317,7 @@ function openCatModal() {
     document.getElementById('catModalTitle').textContent = 'Create Category';
     document.getElementById('catName').value = '';
     document.getElementById('catDesc').value = '';
+    document.getElementById('catIsSpecial').checked = false;
     document.getElementById('catStatus').checked = true;
     document.getElementById('catModal').classList.remove('hidden');
 }
@@ -316,6 +328,7 @@ function openEditCatModal(data) {
     document.getElementById('catModalTitle').textContent = 'Edit Category';
     document.getElementById('catName').value = data.name;
     document.getElementById('catDesc').value = data.description || '';
+    document.getElementById('catIsSpecial').checked = !!data.is_special;
     document.getElementById('catStatus').checked = !!data.status;
     document.getElementById('catModal').classList.remove('hidden');
 }

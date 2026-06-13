@@ -38,6 +38,10 @@ Route::prefix('shop')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories', [CategoryController::class, 'show']);
 
+    // ── Site Categories ────────────────────────────────────────────────────
+    Route::get('/site-categories', [\App\Http\Controllers\API\SiteCategoryController::class, 'index']);
+    Route::get('/site-categories/{id}', [\App\Http\Controllers\API\SiteCategoryController::class, 'show']);
+
     // Cart
     Route::get('/cart',          [CartController::class, 'index']);
     Route::post('/cart/add',     [CartController::class, 'add']);

@@ -15,14 +15,33 @@ class ProductController extends Controller
     {
         $perPage = min((int) $request->input('per_page', 12), 48);
 
-        $query = Product::with(['category:id,name,slug', 'subcategory:id,category_id,name,slug', 'primaryImage', 'galleryImages'])
-            ->where('status', true);
+        $query = Product::with([
+            'category:id,name,slug',
+            'subcategory:id,category_id,name,slug',
+            'siteCategory:id,name,slug',
+            'siteSubcategory:id,site_category_id,name',
+            'primaryImage',
+            'galleryImages'
+        ])
+        ->where('status', true);
 
         // Category / Subcategory filter
         if ($request->filled('subcategory_id')) {
             $query->where('subcategory_id', $request->subcategory_id);
         } elseif ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+
+        // Site Category / Site Subcategory filter
+        if ($request->filled('site_subcategory_id')) {
+            $query->where('site_subcategory_id', $request->site_subcategory_id);
+        } elseif ($request->filled('site_category_id')) {
+            $siteCategoryId = $request->site_category_id;
+            $subcategoryIds = \App\Models\SiteSubcategory::where('site_category_id', $siteCategoryId)->pluck('id');
+            $query->where(function ($q) use ($siteCategoryId, $subcategoryIds) {
+                $q->where('site_category_id', $siteCategoryId)
+                  ->orWhereIn('site_subcategory_id', $subcategoryIds);
+            });
         }
 
         if ($request->boolean('is_bestseller'))  $query->where('is_bestseller', true);
@@ -74,6 +93,8 @@ class ProductController extends Controller
             'category:id,name,slug',
             'subcategory:id,category_id,parent_id,name',
             'subcategory.parent:id,name',
+            'siteCategory:id,name,slug',
+            'siteSubcategory:id,site_category_id,name',
             'primaryImage',
             'galleryImages',
             'images',
@@ -119,6 +140,15 @@ class ProductController extends Controller
                 'id'        => $p->subcategory->id,
                 'name'      => $p->subcategory->name,
                 'slug'      => $p->subcategory->slug,
+            ] : null,
+            'site_category'  => $p->siteCategory ? [
+                'id'        => $p->siteCategory->id,
+                'name'      => $p->siteCategory->name,
+                'slug'      => $p->siteCategory->slug,
+            ] : null,
+            'site_subcategory' => $p->siteSubcategory ? [
+                'id'        => $p->siteSubcategory->id,
+                'name'      => $p->siteSubcategory->name,
             ] : null,
         ];
 
@@ -208,11 +238,8 @@ class ProductController extends Controller
                 'gallery_thumbnails' => (function () use ($p) {
                     $thumbnails = collect();
 
-                    // Gather all images (primary and gallery)
+                    // Gather only gallery images (excluding primary/cover image)
                     $allImages = collect();
-                    if ($p->primaryImage) {
-                        $allImages->push($p->primaryImage);
-                    }
                     if ($p->galleryImages) {
                         foreach ($p->galleryImages as $img) {
                             $allImages->push($img);

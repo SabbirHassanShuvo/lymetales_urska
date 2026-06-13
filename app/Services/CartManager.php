@@ -101,24 +101,23 @@ class CartManager
             $cart = $this->getCart();
             $cartKey = 'gift_' . $productId;
 
-            // Check if the gift is already in the cart
-            foreach ($cart as $item) {
-                if (($item['type'] ?? 'product') === 'gift' && $item['product_id'] === $productId) {
-                    throw new CartException('This gift product is already in your cart.');
-                }
+            if (isset($cart[$cartKey])) {
+                $newQuantity = $cart[$cartKey]['quantity'] + $quantity;
+                $newQuantity = min($newQuantity, self::MAX_QUANTITY);
+                $cart[$cartKey]['quantity']   = $newQuantity;
+                $cart[$cartKey]['line_total'] = round($cart[$cartKey]['unit_price'] * $newQuantity, 2);
+            } else {
+                $unitPrice = round((float) $gift->price, 2);
+                $cart[$cartKey] = [
+                    'product_id'      => $gift->id,
+                    'title'           => $gift->title,
+                    'image'           => $gift->image_path ?? '',
+                    'unit_price'      => $unitPrice,
+                    'quantity'        => min($quantity, self::MAX_QUANTITY),
+                    'line_total'      => round($unitPrice * min($quantity, self::MAX_QUANTITY), 2),
+                    'type'            => 'gift',
+                ];
             }
-
-            $unitPrice = round((float) $gift->price, 2);
-
-            $cart[$cartKey] = [
-                'product_id'      => $gift->id,
-                'title'           => $gift->title,
-                'image'           => $gift->image_path ?? '',
-                'unit_price'      => $unitPrice,
-                'quantity'        => min($quantity, self::MAX_QUANTITY),
-                'line_total'      => round($unitPrice * min($quantity, self::MAX_QUANTITY), 2),
-                'type'            => 'gift',
-            ];
 
             $this->putCart($cart);
             return;
@@ -135,13 +134,6 @@ class CartManager
         }
 
         $cart = $this->getCart();
-
-        // Check if the product is already in the cart
-        foreach ($cart as $item) {
-            if (($item['type'] ?? 'product') === 'product' && $item['product_id'] === $productId) {
-                throw new CartException('This product is already in your cart.');
-            }
-        }
 
         // Cart key: if personalisation is provided, make item unique per personalisation
         // so the same product can appear multiple times with different names/options.

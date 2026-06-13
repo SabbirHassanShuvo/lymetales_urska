@@ -24,12 +24,17 @@ class OfferController extends Controller
     {
         $validated = $request->validate([
             'title'               => 'required|string|max:255',
+            'short_description'   => 'nullable|string|max:500',
             'min_quantity'        => 'required|integer|min:1',
             'discount_percentage' => 'required|numeric|min:0|max:100',
             'is_active'           => 'boolean',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
+
+        if ($validated['is_active']) {
+            Offer::where('is_active', true)->update(['is_active' => false]);
+        }
 
         Offer::create($validated);
 
@@ -45,12 +50,17 @@ class OfferController extends Controller
 
         $validated = $request->validate([
             'title'               => 'required|string|max:255',
+            'short_description'   => 'nullable|string|max:500',
             'min_quantity'        => 'required|integer|min:1',
             'discount_percentage' => 'required|numeric|min:0|max:100',
             'is_active'           => 'boolean',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
+
+        if ($validated['is_active']) {
+            Offer::where('id', '!=', $offer->id)->where('is_active', true)->update(['is_active' => false]);
+        }
 
         $offer->update($validated);
 
@@ -76,6 +86,9 @@ class OfferController extends Controller
         try {
             $offer = Offer::findOrFail($id);
             $offer->is_active = !$offer->is_active;
+            if ($offer->is_active) {
+                Offer::where('id', '!=', $offer->id)->where('is_active', true)->update(['is_active' => false]);
+            }
             $offer->save();
 
             return response()->json([

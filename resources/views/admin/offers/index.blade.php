@@ -76,9 +76,12 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                     @forelse($offers as $offer)
-                        <tr class="hover:bg-gray-50/50 transition-colors offer-row" data-title="{{ strtolower($offer->title) }}">
-                            <td class="px-6 py-4 font-semibold text-gray-900">
-                                {{ $offer->title }}
+                        <tr class="hover:bg-gray-50/50 transition-colors offer-row" data-title="{{ strtolower($offer->title) }} {{ strtolower($offer->short_description) }}">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900">{{ $offer->title }}</div>
+                                @if($offer->short_description)
+                                    <div class="text-xs text-gray-500 mt-1">{{ $offer->short_description }}</div>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 Buy strictly more than <span class="font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md">{{ $offer->min_quantity }}</span> items
@@ -154,6 +157,12 @@
                             class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Short Description</label>
+                        <textarea name="short_description" id="offShortDesc" placeholder="e.g. Get 20% off on your entire cart when you purchase 3 or more products." rows="2"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm"></textarea>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Min Quantity Threshold *</label>
@@ -212,6 +221,7 @@
         document.getElementById('formMethod').value = 'POST';
         document.getElementById('modalTitle').textContent = "Create Quantity Offer";
         document.getElementById('offTitle').value = '';
+        document.getElementById('offShortDesc').value = '';
         document.getElementById('offMinQty').value = '2';
         document.getElementById('offDiscount').value = '20.00';
         document.getElementById('offStatus').checked = true;
@@ -222,10 +232,11 @@
         document.getElementById('formMethod').value = 'PUT';
         document.getElementById('modalTitle').textContent = "Edit Quantity Offer";
 
-        document.getElementById('offTitle').value    = offer.title;
-        document.getElementById('offMinQty').value   = offer.min_quantity;
-        document.getElementById('offDiscount').value = offer.discount_percentage;
-        document.getElementById('offStatus').checked = offer.is_active == 1;
+        document.getElementById('offTitle').value     = offer.title;
+        document.getElementById('offShortDesc').value = offer.short_description || '';
+        document.getElementById('offMinQty').value    = offer.min_quantity;
+        document.getElementById('offDiscount').value  = offer.discount_percentage;
+        document.getElementById('offStatus').checked  = offer.is_active == 1;
 
         toggleModal('offerModal');
     }

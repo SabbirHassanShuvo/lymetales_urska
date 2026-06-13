@@ -67,7 +67,8 @@ class CartController extends Controller
         $offerDiscount = 0.0;
         $offerMessage = null;
         $activeOffer = \App\Models\Offer::where('is_active', true)
-            ->where('min_quantity', '<', $totalProductQuantity)
+            ->where('min_quantity', '<=', $totalProductQuantity)
+            ->orderBy('min_quantity', 'desc')
             ->first();
         if ($activeOffer) {
             $offerDiscount = round($productsSubtotal * ($activeOffer->discount_percentage / 100), 2);
@@ -83,19 +84,21 @@ class CartController extends Controller
         $appliedFastFee = $isFastProd ? $fastFee : 0.0;
         $total          = $subtotal - $totalDiscount + $shippingFee + $appliedFastFee;
 
+        $displayShippingFee = ($freeShip ? 0.0 : $shippingFee) + $appliedFastFee;
+
         return response()->json([
             'items'               => $this->cart->items(),
             'count'               => $this->cart->count(),
-            'subtotal'            => $symbol . number_format($subtotal, 2),
-            'global_discount'     => $globalDiscount > 0 ? '-' . $symbol . number_format($globalDiscount, 2) : null,
-            'coupon_discount'     => $couponDiscount > 0 ? '-' . $symbol . number_format($couponDiscount, 2) : null,
-            'offer_discount'      => $offerDiscount > 0 ? '-' . $symbol . number_format($offerDiscount, 2) : null,
+            'subtotal'            => number_format($subtotal, 2, '.', ''),
+            'global_discount'     => $globalDiscount > 0 ? '-' . number_format($globalDiscount, 2, '.', '') : null,
+            'coupon_discount'     => $couponDiscount > 0 ? '-' . number_format($couponDiscount, 2, '.', '') : null,
+            'offer_discount'      => $offerDiscount > 0 ? '-' . number_format($offerDiscount, 2, '.', '') : null,
             'offer_message'       => $offerMessage,
             'coupon'              => $coupon ? ['code' => $coupon['code'], 'type' => $coupon['type'], 'free_shipping' => $freeShip] : null,
-            'shipping_fee'        => $freeShip ? 'Free' : $symbol . number_format($shippingFee, 2),
-            'fast_production_fee' => $symbol . number_format($fastFee, 2),
+            'shipping_fee'        => number_format($displayShippingFee, 2, '.', ''),
+            'fast_production_fee' => number_format($fastFee, 2, '.', ''),
             'is_fast_production'  => $isFastProd,
-            'total'               => $symbol . number_format($total, 2),
+            'total'               => number_format($total, 2, '.', ''),
             'is_empty'            => $this->cart->isEmpty(),
         ]);
     }
@@ -156,11 +159,10 @@ class CartController extends Controller
 
         $cartData = $this->index()->getData(true);
         
-        $symbol = config('shop.currency_symbol', '€');
-        $itemTotal = $symbol . '0.00';
+        $itemTotal = '0.00';
         foreach ($cartData['items'] ?? [] as $item) {
             if ($item['product_id'] === (int) $request->input('product_id') && ($item['type'] ?? 'product') === $request->input('type', 'product')) {
-                $itemTotal = $symbol . number_format($item['line_total'], 2);
+                $itemTotal = number_format($item['line_total'], 2, '.', '');
                 break;
             }
         }
