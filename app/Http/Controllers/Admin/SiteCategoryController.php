@@ -67,7 +67,8 @@ class SiteCategoryController extends Controller
 
     public function destroy(string $id)
     {
-        SiteCategory::findOrFail($id)->delete();
+        $category = SiteCategory::findOrFail($id);
+        $category->delete();
 
         return redirect()
             ->route('admin.site-categories.index')
@@ -98,82 +99,30 @@ class SiteCategoryController extends Controller
 
     public function storeSubcategory(Request $request)
     {
-        $request->validate([
-            'site_category_id' => 'required|exists:site_categories,id',
-            'names'            => 'required|array|min:1',
-            'names.*'          => 'required|string|max:255',
-            'description'      => 'nullable|string',
-            'status'           => 'nullable|in:0,1',
-        ]);
-
-        $count = 0;
-        foreach ($request->names as $name) {
-            $name = trim($name);
-            if ($name === '') continue;
-
-            SiteSubcategory::create([
-                'site_category_id' => $request->site_category_id,
-                'name'             => $name,
-                'description'      => $request->description,
-                'status'           => $request->boolean('status'),
-            ]);
-            $count++;
-        }
-
         return redirect()
             ->route('admin.site-categories.index', ['tab' => 'sub'])
-            ->with('success', "$count subcategory(ies) created successfully.");
+            ->with('error', 'Subcategories are fixed and cannot be modified.');
     }
 
     public function updateSubcategory(Request $request, string $id)
     {
-        $subcategory = SiteSubcategory::findOrFail($id);
-
-        $request->validate([
-            'site_category_id' => 'required|exists:site_categories,id',
-            'name'             => 'required|string|max:255',
-            'description'      => 'nullable|string',
-            'status'           => 'nullable|in:0,1',
-        ]);
-
-        $subcategory->update([
-            'site_category_id' => $request->site_category_id,
-            'name'             => $request->name,
-            'description'      => $request->description,
-            'status'           => $request->boolean('status'),
-        ]);
-
         return redirect()
             ->route('admin.site-categories.index', ['tab' => 'sub'])
-            ->with('success', 'Subcategory updated successfully.');
+            ->with('error', 'Subcategories are fixed and cannot be modified.');
     }
 
     public function destroySubcategory(string $id)
     {
-        SiteSubcategory::findOrFail($id)->delete();
-
         return redirect()
             ->route('admin.site-categories.index', ['tab' => 'sub'])
-            ->with('success', 'Subcategory deleted successfully.');
+            ->with('error', 'Subcategories are fixed and cannot be modified.');
     }
 
     public function toggleSubcategoryStatus(Request $request, string $id)
     {
-        try {
-            $subcategory         = SiteSubcategory::findOrFail($id);
-            $subcategory->status = !$subcategory->status;
-            $subcategory->save();
-
-            return response()->json([
-                'success' => true,
-                'status'  => $subcategory->status,
-                'message' => 'Subcategory status updated successfully.',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Subcategories are fixed and status cannot be modified.',
+        ], 403);
     }
 }

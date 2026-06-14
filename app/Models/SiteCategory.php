@@ -32,6 +32,26 @@ class SiteCategory extends Model
                 $category->slug = Str::slug($category->name);
             }
         });
+
+        static::created(function ($category) {
+            $category->subcategories()->createMany([
+                [
+                    'name'        => 'NEWBORNS',
+                    'description' => 'Books for newborns',
+                    'status'      => true,
+                ],
+                [
+                    'name'        => 'KIDS',
+                    'description' => 'Books for kids',
+                    'status'      => true,
+                ],
+                [
+                    'name'        => 'ADULT',
+                    'description' => 'Books for adults',
+                    'status'      => true,
+                ],
+            ]);
+        });
     }
 
     public function subcategories()

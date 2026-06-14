@@ -6,8 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\HeroSection;
 use App\Models\GiftCard;
 use App\Models\Faq;
+use App\Models\HomeFeature;
+use App\Models\HomePromo;
+use App\Models\GiftGiver;
+use App\Models\Subscriber;
+use App\Models\FooterSection;
+use App\Models\FooterItem;
+use App\Models\Setting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 
 class HomeContentController extends Controller
@@ -17,23 +23,67 @@ class HomeContentController extends Controller
         $heroSections = HeroSection::all();
         $giftCards = GiftCard::all();
         $faqs = Faq::all();
+        
+        $features = HomeFeature::all();
+        
+        $promo = HomePromo::first();
+        if (!$promo) {
+            $promo = new HomePromo();
+        }
 
-        return view('admin.home-content.index', compact('heroSections', 'giftCards', 'faqs'));
+        $giftGiver = GiftGiver::first();
+        if (!$giftGiver) {
+            $giftGiver = new GiftGiver();
+        }
+
+        $subscribers = Subscriber::orderBy('created_at', 'desc')->get();
+        $footerSections = FooterSection::with('items')->orderBy('sort_order')->get();
+
+        $newsletterTitle = Setting::getVal('newsletter_title', 'Get 10% off your first order');
+        $newsletterDescription = Setting::getVal('newsletter_description', 'Join our community and create magical moments for the children you love.');
+
+        $footerBrandDescription = Setting::getVal('footer_brand_description', 'Crafting personalized stories that celebrate the magic of childhood and the bonds of family.');
+        $footerLogoPath = Setting::getVal('footer_logo_path', '');
+        $footerCopyright = Setting::getVal('footer_copyright', '© ' . date('Y') . ' Lymetales HQ, Inc. All Rights Reserved.');
+        $socialInstagram = Setting::getVal('social_instagram', '');
+        $socialTiktok = Setting::getVal('social_tiktok', '');
+        $socialFacebook = Setting::getVal('social_facebook', '');
+
+        return view('admin.home-content.index', compact(
+            'heroSections', 
+            'giftCards', 
+            'faqs',
+            'features',
+            'promo',
+            'giftGiver',
+            'subscribers',
+            'footerSections',
+            'newsletterTitle',
+            'newsletterDescription',
+            'footerBrandDescription',
+            'footerLogoPath',
+            'footerCopyright',
+            'socialInstagram',
+            'socialTiktok',
+            'socialFacebook'
+        ));
     }
 
     public function storeHero(Request $request)
     {
+        // Requirement 1: Only title, image, 2 button texts
         $request->validate([
             'title' => 'required|string|max:255',
-            'subtitle' => 'nullable|string|max:255',
             'button_one_text' => 'nullable|string|max:255',
-            'button_one_link' => 'nullable|string|max:255',
             'button_two_text' => 'nullable|string|max:255',
-            'button_two_link' => 'nullable|string|max:255',
             'image' => 'nullable|image|max:2048',
         ]);
 
-        $data = $request->except('image');
+        $data = [
+            'title' => $request->input('title'),
+            'button_one_text' => $request->input('button_one_text'),
+            'button_two_text' => $request->input('button_two_text'),
+        ];
 
         if ($request->hasFile('image')) {
             $imageName = time() . '_' . $request->file('image')->getClientOriginalName();
@@ -57,14 +107,17 @@ class HomeContentController extends Controller
 
     public function storeGift(Request $request)
     {
+        // Requirement 3: Link omitted
         $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
-            'link' => 'nullable|string|max:255',
             'image' => 'nullable|image|max:2048',
         ]);
 
-        $data = $request->except('image');
+        $data = [
+            'title' => $request->input('title'),
+            'subtitle' => $request->input('subtitle'),
+        ];
 
         if ($request->hasFile('image')) {
             $imageName = time() . '_' . $request->file('image')->getClientOriginalName();
@@ -102,5 +155,251 @@ class HomeContentController extends Controller
     {
         $faq->delete();
         return back()->with('success', 'FAQ deleted successfully.');
+    }
+
+    // --- Highlight Features (Requirement 2) ---
+    public function storeFeature(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+
+        HomeFeature::create($request->all());
+
+        return back()->with('success', 'Feature added successfully.');
+    }
+
+    public function destroyFeature(HomeFeature $feature)
+    {
+        $feature->delete();
+        return back()->with('success', 'Feature deleted successfully.');
+    }
+
+    // --- Middle Promo Section (Requirement 4) ---
+    public function updatePromo(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'button_text' => 'required|string|max:255',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        $promo = HomePromo::first();
+        if (!$promo) {
+            $promo = new HomePromo();
+        }
+
+        $promo->title = $request->input('title');
+        $promo->description = $request->input('description');
+        $promo->button_text = $request->input('button_text');
+
+        if ($request->hasFile('image')) {
+            // Delete old image
+            if ($promo->image_path && File::exists(public_path($promo->image_path))) {
+                File::delete(public_path($promo->image_path));
+            }
+            $imageName = 'promo_' . time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('uploads/home'), $imageName);
+            $promo->image_path = 'uploads/home/' . $imageName;
+        }
+
+        $promo->save();
+
+        return back()->with('success', 'Promo section updated successfully.');
+    }
+
+    // --- Legendary Gift Giver Section (Requirement 5) ---
+    public function updateGiftGiver(Request $request)
+    {
+        $request->validate([
+            'subtitle' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
+            'step_1_text' => 'required|string|max:255',
+            'step_2_text' => 'required|string|max:255',
+            'step_3_text' => 'required|string|max:255',
+            'step_1_image' => 'nullable|image|max:2048',
+            'step_2_image' => 'nullable|image|max:2048',
+            'step_3_image' => 'nullable|image|max:2048',
+        ]);
+
+        $giver = GiftGiver::first();
+        if (!$giver) {
+            $giver = new GiftGiver();
+        }
+
+        $giver->subtitle = $request->input('subtitle');
+        $giver->title = $request->input('title');
+        $giver->step_1_text = $request->input('step_1_text');
+        $giver->step_2_text = $request->input('step_2_text');
+        $giver->step_3_text = $request->input('step_3_text');
+
+        // Handle step 1 image
+        if ($request->hasFile('step_1_image')) {
+            if ($giver->step_1_image && File::exists(public_path($giver->step_1_image))) {
+                File::delete(public_path($giver->step_1_image));
+            }
+            $imgName = 'step1_' . time() . '_' . $request->file('step_1_image')->getClientOriginalName();
+            $request->file('step_1_image')->move(public_path('uploads/home'), $imgName);
+            $giver->step_1_image = 'uploads/home/' . $imgName;
+        }
+
+        // Handle step 2 image
+        if ($request->hasFile('step_2_image')) {
+            if ($giver->step_2_image && File::exists(public_path($giver->step_2_image))) {
+                File::delete(public_path($giver->step_2_image));
+            }
+            $imgName = 'step2_' . time() . '_' . $request->file('step_2_image')->getClientOriginalName();
+            $request->file('step_2_image')->move(public_path('uploads/home'), $imgName);
+            $giver->step_2_image = 'uploads/home/' . $imgName;
+        }
+
+        // Handle step 3 image
+        if ($request->hasFile('step_3_image')) {
+            if ($giver->step_3_image && File::exists(public_path($giver->step_3_image))) {
+                File::delete(public_path($giver->step_3_image));
+            }
+            $imgName = 'step3_' . time() . '_' . $request->file('step_3_image')->getClientOriginalName();
+            $request->file('step_3_image')->move(public_path('uploads/home'), $imgName);
+            $giver->step_3_image = 'uploads/home/' . $imgName;
+        }
+
+        $giver->save();
+
+        return back()->with('success', 'Legendary Gift-Giver section updated successfully.');
+    }
+
+    // --- Newsletter & Subscriptions (Requirement 7) ---
+    public function updateNewsletter(Request $request)
+    {
+        $request->validate([
+            'newsletter_title' => 'required|string|max:255',
+            'newsletter_description' => 'required|string',
+        ]);
+
+        Setting::updateOrCreate(
+            ['key' => 'newsletter_title'],
+            ['value' => $request->input('newsletter_title')]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'newsletter_description'],
+            ['value' => $request->input('newsletter_description')]
+        );
+
+        return back()->with('success', 'Newsletter settings updated successfully.');
+    }
+
+    public function destroySubscriber(Subscriber $subscriber)
+    {
+        $subscriber->delete();
+        return back()->with('success', 'Subscriber removed successfully.');
+    }
+
+    // --- Footer Settings (Requirement 8) ---
+    public function storeFooterSection(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $maxSort = FooterSection::max('sort_order') ?? 0;
+
+        FooterSection::create([
+            'title' => $request->input('title'),
+            'sort_order' => $maxSort + 1,
+        ]);
+
+        return back()->with('success', 'Footer section added successfully.');
+    }
+
+    public function destroyFooterSection(FooterSection $section)
+    {
+        $section->delete(); // Cascading delete will handle items
+        return back()->with('success', 'Footer section deleted successfully.');
+    }
+
+    public function storeFooterItem(Request $request)
+    {
+        $request->validate([
+            'footer_section_id' => 'required|exists:footer_sections,id',
+            'label' => 'required|string|max:255',
+            'url' => 'required|string|max:255',
+        ]);
+
+        $maxSort = FooterItem::where('footer_section_id', $request->input('footer_section_id'))->max('sort_order') ?? 0;
+
+        FooterItem::create([
+            'footer_section_id' => $request->input('footer_section_id'),
+            'label' => $request->input('label'),
+            'url' => $request->input('url'),
+            'sort_order' => $maxSort + 1,
+        ]);
+
+        return back()->with('success', 'Footer item link added successfully.');
+    }
+
+    public function destroyFooterItem(FooterItem $item)
+    {
+        $item->delete();
+        return back()->with('success', 'Footer item link deleted successfully.');
+    }
+
+    // --- Footer Brand Info, Logo & Social Links ---
+    public function updateFooterBrandSocials(Request $request)
+    {
+        // Sanitize social media link inputs to support usernames, handles, and protocol-less URLs
+        $socialFields = [
+            'social_instagram' => ['domain' => 'instagram.com', 'prefix' => 'instagram.com/'],
+            'social_tiktok'    => ['domain' => 'tiktok.com',    'prefix' => 'tiktok.com/@'],
+            'social_facebook'  => ['domain' => 'facebook.com',  'prefix' => 'facebook.com/'],
+        ];
+
+        foreach ($socialFields as $field => $config) {
+            if ($request->filled($field)) {
+                $val = trim($request->input($field));
+                if (!preg_match('/^https?:\/\//i', $val)) {
+                    if (stripos($val, $config['domain']) === false) {
+                        // Just a handle/username
+                        $username = ltrim($val, '@/ ');
+                        $val = 'https://' . $config['prefix'] . $username;
+                    } else {
+                        // Domain is present but protocol is missing (e.g. instagram.com/user)
+                        $val = 'https://' . ltrim($val, '@/ ');
+                    }
+                }
+                $request->merge([$field => $val]);
+            }
+        }
+
+        $request->validate([
+            'footer_brand_description' => 'nullable|string|max:500',
+            'footer_copyright'         => 'nullable|string|max:255',
+            'footer_logo'              => 'nullable|image|max:2048',
+            'social_instagram'         => 'nullable|url|max:255',
+            'social_tiktok'            => 'nullable|url|max:255',
+            'social_facebook'          => 'nullable|url|max:255',
+        ]);
+
+        Setting::updateOrCreate(['key' => 'footer_brand_description'], ['value' => $request->input('footer_brand_description', '')]);
+        Setting::updateOrCreate(['key' => 'footer_copyright'],         ['value' => $request->input('footer_copyright', '')]);
+        Setting::updateOrCreate(['key' => 'social_instagram'],         ['value' => $request->input('social_instagram', '')]);
+        Setting::updateOrCreate(['key' => 'social_tiktok'],            ['value' => $request->input('social_tiktok', '')]);
+        Setting::updateOrCreate(['key' => 'social_facebook'],          ['value' => $request->input('social_facebook', '')]);
+
+        // Handle logo upload
+        if ($request->hasFile('footer_logo')) {
+            // Delete old logo if it was a local file
+            $oldLogo = Setting::getVal('footer_logo_path', '');
+            if ($oldLogo && !filter_var($oldLogo, FILTER_VALIDATE_URL) && File::exists(public_path($oldLogo))) {
+                File::delete(public_path($oldLogo));
+            }
+            $logoName = 'footer_logo_' . time() . '.' . $request->file('footer_logo')->getClientOriginalExtension();
+            $request->file('footer_logo')->move(public_path('uploads/home'), $logoName);
+            Setting::updateOrCreate(['key' => 'footer_logo_path'], ['value' => 'uploads/home/' . $logoName]);
+        }
+
+        return back()->with('success', 'Footer brand info and social links updated successfully.');
     }
 }

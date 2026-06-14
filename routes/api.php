@@ -9,7 +9,7 @@ use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\WebhookController;
 use App\Http\Controllers\API\PageController;
 use App\Http\Controllers\API\ContactController;
-use App\Http\Controllers\API\HomeContentController;
+use App\Http\Controllers\API\HomeContentControllerNew;
 use App\Http\Controllers\API\SearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 |
 | POST /api/shop/checkout with payment_method=cod    → COD order
 | POST /api/shop/checkout with payment_method=stripe → Stripe checkout link
+|
 */
 
 Route::prefix('shop')->group(function () {
@@ -68,9 +69,12 @@ Route::prefix('shop')->group(function () {
 
     // Contact Form
     Route::post('/contact', [ContactController::class, 'store']);
-    
-    // Home Content (Hero, Gifts, FAQs)
-    Route::get('/home-content', [HomeContentController::class, 'index']);
+
+    // Newsletter Subscribe
+    Route::post('/subscribe', [\App\Http\Controllers\API\SubscriberController::class, 'store']);
+
+    // Home Content (Hero, Features, Gifts, FAQs)
+    Route::get('/home-content', [HomeContentControllerNew::class, 'index']);
 
     // Gifts
     Route::get('/gifts', [\App\Http\Controllers\API\GiftController::class, 'index']);

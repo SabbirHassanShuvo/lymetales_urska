@@ -15,16 +15,25 @@ class SiteCategoryController extends Controller
      */
     public function index()
     {
-        $categories = SiteCategory::with(['subcategories' => function ($q) {
-                $q->active();
-            }])
-            ->where('status', true)
-            ->orderBy('name')
-            ->get();
+        $categories = SiteCategory::where('status', true)->orderBy('name')->get();
+        $subcategories = \App\Models\SiteSubcategory::where('status', true)->orderBy('name')->get();
 
         return response()->json([
             'success' => true,
-            'data'    => $categories->map(fn ($c) => $this->formatCategory($c, withChildren: true)),
+            'data'    => [
+                'subcategories' => $subcategories->unique('name')->values()->map(fn ($sub) => [
+                    'id'          => $sub->id,
+                    'name'        => $sub->name,
+                    'description' => $sub->description,
+                ])->values(),
+                'categories' => $categories->map(fn ($c) => [
+                    'id'          => $c->id,
+                    'name'        => $c->name,
+                    'description' => $c->description,
+                    'is_special'  => (bool) $c->is_special,
+                    'slug'        => $c->slug,
+                ])->values(),
+            ]
         ]);
     }
 

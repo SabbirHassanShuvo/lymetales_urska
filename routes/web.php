@@ -2,8 +2,67 @@
 
 use Illuminate\Support\Facades\Route;
 
+// --- Cache Clearing Route ---
+Route::get('/clear-cache', function() {
+    $res = [];
+    if (function_exists('opcache_reset')) {
+        $res['opcache_reset'] = opcache_reset();
+    } else {
+        $res['opcache_reset'] = 'not available';
+    }
+    
+    // Invalidate migration files from OPCache
+    $migrationDir = database_path('migrations');
+    if (file_exists($migrationDir)) {
+        $invalidated = 0;
+        foreach (scandir($migrationDir) as $file) {
+            if ($file == '.' || $file == '..') continue;
+            $path = $migrationDir . DIRECTORY_SEPARATOR . $file;
+            if (function_exists('opcache_invalidate')) {
+                if (@opcache_invalidate($path, true)) {
+                    $invalidated++;
+                }
+            }
+        }
+        $res['invalidated_migrations'] = $invalidated;
+    }
+
+    // Invalidate seeder files from OPCache
+    $seederDir = database_path('seeders');
+    if (file_exists($seederDir)) {
+        $invalidatedSeeders = 0;
+        foreach (scandir($seederDir) as $file) {
+            if ($file == '.' || $file == '..') continue;
+            $path = $seederDir . DIRECTORY_SEPARATOR . $file;
+            if (function_exists('opcache_invalidate')) {
+                if (@opcache_invalidate($path, true)) {
+                    $invalidatedSeeders++;
+                }
+            }
+        }
+        $res['invalidated_seeders'] = $invalidatedSeeders;
+    }
+    
+    try {
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+        $res['optimize_clear'] = \Illuminate\Support\Facades\Artisan::output();
+    } catch(\Exception $e) {
+        $res['optimize_clear'] = $e->getMessage();
+    }
+    return response()->json($res);
+});
+
 // --- Temporary Database, File, and View Cleanup Script ---
 Route::get('/run-cleanup', function () {
+    if (function_exists('opcache_reset')) {
+        opcache_reset();
+    }
+    
+    $oldMigration = database_path('migrations/2026_06_10_100002_add_featured_image_id_to_products_table.php');
+    if (file_exists($oldMigration)) {
+        @unlink($oldMigration);
+    }
+    
     $log = [];
     
     // 1. Delete Old Models
@@ -77,7 +136,7 @@ Route::get('/run-cleanup', function () {
     $migrationDir = database_path('migrations');
     if (file_exists($migrationDir)) {
         $patterns = [
-            'safety', 'document', 'toolbox', 'contact', 'emergency', 
+            'safety', 'document', 'toolbox', 'emergency', 
             'workplace_inspections', 'complaints', 'ideas', 'incident_reports', 'handbooks'
         ];
         foreach (scandir($migrationDir) as $file) {
@@ -92,10 +151,9 @@ Route::get('/run-cleanup', function () {
         }
     }
 
-    // 6. Delete Sanctum config and API routes if they exist
-    @unlink(base_path('routes/api.php'));
+    // 6. Delete Sanctum config if it exists
     @unlink(config_path('sanctum.php'));
-    $log[] = "Deleted api routes and sanctum config!";
+    $log[] = "Deleted sanctum config!";
 
     // 7. Pre-load seeders to bypass Composer classmap autoload cache
     try {
@@ -206,7 +264,7 @@ Route::prefix('admin')->group(function () {
         // Dynamic Pages
         Route::resource('pages', \App\Http\Controllers\Admin\PageController::class)->names('admin.pages');
 
-        // Home Content (Hero, Gifts, FAQs)
+        // Home Content (Hero, Gifts, FAQs, Features, Promo, Gift Giver, Newsletter, Footer)
         Route::get('/home-content', [\App\Http\Controllers\Admin\HomeContentController::class, 'index'])->name('admin.home-content.index');
         Route::post('/home-content/hero', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeHero'])->name('admin.home-content.hero.store');
         Route::delete('/home-content/hero/{hero}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyHero'])->name('admin.home-content.hero.destroy');
@@ -214,6 +272,29 @@ Route::prefix('admin')->group(function () {
         Route::delete('/home-content/gift/{gift}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyGift'])->name('admin.home-content.gift.destroy');
         Route::post('/home-content/faq', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFaq'])->name('admin.home-content.faq.store');
         Route::delete('/home-content/faq/{faq}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFaq'])->name('admin.home-content.faq.destroy');
+        
+        // Highlight Features
+        Route::post('/home-content/feature', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFeature'])->name('admin.home-content.feature.store');
+        Route::delete('/home-content/feature/{feature}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFeature'])->name('admin.home-content.feature.destroy');
+
+        // Promo Section
+        Route::post('/home-content/promo', [\App\Http\Controllers\Admin\HomeContentController::class, 'updatePromo'])->name('admin.home-content.promo.update');
+
+        // Legendary Gift Giver Section
+        Route::post('/home-content/gift-giver', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateGiftGiver'])->name('admin.home-content.gift-giver.update');
+
+        // Newsletter Text Settings & Subscribers
+        Route::post('/home-content/newsletter', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateNewsletter'])->name('admin.home-content.newsletter.update');
+        Route::delete('/home-content/subscriber/{subscriber}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroySubscriber'])->name('admin.home-content.subscriber.destroy');
+
+        // Footer Section & Items
+        Route::post('/home-content/footer-section', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFooterSection'])->name('admin.home-content.footer-section.store');
+        Route::delete('/home-content/footer-section/{section}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFooterSection'])->name('admin.home-content.footer-section.destroy');
+        Route::post('/home-content/footer-item', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFooterItem'])->name('admin.home-content.footer-item.store');
+        Route::delete('/home-content/footer-item/{item}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFooterItem'])->name('admin.home-content.footer-item.destroy');
+
+        // Footer Brand Info & Social Links
+        Route::post('/home-content/footer-brand-socials', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateFooterBrandSocials'])->name('admin.home-content.footer-brand-socials.update');
 
         // Gifts Management
         Route::resource('gifts', \App\Http\Controllers\Admin\GiftController::class)->names('admin.gifts');

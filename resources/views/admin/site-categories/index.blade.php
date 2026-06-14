@@ -56,10 +56,6 @@
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Add Category
                 </button>
-                <button onclick="openSubModal()" class="inline-flex items-center px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all duration-200">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Add Subcategory
-                </button>
             </div>
         </div>
 
@@ -67,6 +63,12 @@
         @if(session('success'))
             <div class="mx-6 mt-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">
                 {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="mx-6 mt-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
+                {{ session('error') }}
             </div>
         @endif
 
@@ -127,7 +129,6 @@
                             <th class="px-6 py-4">Category</th>
                             <th class="px-6 py-4">Description</th>
                             <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
@@ -140,20 +141,15 @@
                                     <td class="px-6 py-4"><span class="px-2 py-1 bg-teal-50 text-teal-700 text-xs font-bold rounded-lg">{{ $cat->name }}</span></td>
                                     <td class="px-6 py-4 text-xs text-gray-500 max-w-xs truncate">{{ $sub->description ?: '—' }}</td>
                                     <td class="px-6 py-4">
-                                        <button onclick="toggleSubStatus({{ $sub->id }}, {{ $sub->status ? 'true' : 'false' }})"
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors {{ $sub->status ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100' }}">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $sub->status ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }}">
                                             {{ $sub->status ? 'Active' : 'Inactive' }}
-                                        </button>
-                                    </td>
-                                    <td class="px-6 py-4 text-right space-x-2">
-                                        <button onclick="openEditSubModal({{ json_encode(array_merge($sub->toArray(), ['site_category_id' => $cat->id])) }})" class="text-teal-600 hover:text-teal-900 font-semibold text-xs">Edit</button>
-                                        <button onclick="confirmDelete('{{ route('admin.site-subcategories.destroy', $sub->id) }}')" class="text-red-500 hover:text-red-800 font-semibold text-xs">Delete</button>
+                                        </span>
                                     </td>
                                 </tr>
                             @endforeach
                         @endforeach
                         @unless($hasAny)
-                            <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400 text-sm">No subcategories found.</td></tr>
+                            <tr><td colspan="4" class="px-6 py-10 text-center text-gray-400 text-sm">No subcategories found.</td></tr>
                         @endunless
                     </tbody>
                 </table>
@@ -407,10 +403,29 @@ function toggleSubStatus(id, current) {
 
 // ── Delete ───────────────────────────────────────────────────────────────────
 function confirmDelete(action) {
-    if (!confirm('Are you sure you want to delete this? This action cannot be undone.')) return;
-    const form = document.getElementById('deleteForm');
-    form.action = action;
-    form.submit();
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "This action cannot be undone and will delete the category.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0d9488', // teal-600
+        cancelButtonColor: '#ef4444', // red-500
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        background: '#ffffff',
+        borderRadius: '1rem',
+        customClass: {
+            popup: 'rounded-2xl border border-gray-100 shadow-xl',
+            confirmButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105',
+            cancelButton: 'px-5 py-2.5 rounded-xl text-white font-semibold transition-all hover:scale-105'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.getElementById('deleteForm');
+            form.action = action;
+            form.submit();
+        }
+    });
 }
 </script>
 @endsection

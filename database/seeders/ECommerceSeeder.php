@@ -17,6 +17,17 @@ class ECommerceSeeder extends Seeder
      */
     public function run(): void
     {
+        // 0. Seed Site Category & Subcategories
+        $siteCat = \App\Models\SiteCategory::create([
+            'name' => 'Age Group',
+            'slug' => 'age-group',
+            'description' => 'Filter books by age group',
+            'is_special' => false,
+            'status' => true,
+        ]);
+
+        $subKids = $siteCat->subcategories()->where('name', 'KIDS')->first();
+
         // 1. Seed Categories & Subcategories
         $cat1 = Category::create([
             'name' => 'Personalised Books',
@@ -62,6 +73,8 @@ class ECommerceSeeder extends Seeder
         $product1 = Product::create([
             'category_id' => $cat1->id,
             'subcategory_id' => $sub1_1->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
             'title' => 'My First Easter Egg Hunt',
             'slug' => 'my-first-easter-egg-hunt',
             'description' => 'A magical personalised Easter adventure where your child hunts for colorful eggs in the enchanted forest, meeting friendly bunnies and solving fun spring puzzles.',
@@ -97,6 +110,8 @@ class ECommerceSeeder extends Seeder
         $product2 = Product::create([
             'category_id' => $cat1->id,
             'subcategory_id' => $sub1_2->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
             'title' => 'The Birthday Adventure Kept Safe',
             'slug' => 'the-birthday-adventure-kept-safe',
             'description' => 'Celebrate your child\'s special day with an action-packed journey across stars and oceans to retrieve the missing candles. Beautifully illustrated and deeply memorable.',
@@ -132,6 +147,8 @@ class ECommerceSeeder extends Seeder
         $product3 = Product::create([
             'category_id' => $cat2->id,
             'subcategory_id' => $sub2_1->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
             'title' => 'Coloring My Wild Kingdom',
             'slug' => 'coloring-my-wild-kingdom',
             'description' => 'A customizable coloring book featuring wild animals matching your child\'s name initials. Over 40 unique drawings of lions, elephants, and magical birds.',
