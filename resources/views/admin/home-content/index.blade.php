@@ -1,7 +1,10 @@
 @extends('layouts.admin', ['title' => 'Home Content'])
 
 @section('content')
-<div x-data="{ activeTab: localStorage.getItem('home_content_active_tab') || 'hero' }" x-init="$watch('activeTab', value => localStorage.setItem('home_content_active_tab', value))" class="w-full">
+<div x-data="{ 
+    activeTab: localStorage.getItem('home_content_active_tab') || 'hero',
+    socialLinks: {{ json_encode($socialLinks) }}
+}" x-init="$watch('activeTab', value => localStorage.setItem('home_content_active_tab', value))" class="w-full">
     <!-- Navigation Tabs -->
     <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-8 pb-px">
         <button @click="activeTab = 'hero'" :class="{ 'border-indigo-600 text-indigo-600 font-semibold bg-indigo-50/50': activeTab === 'hero', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'hero' }" class="py-2.5 px-4 border-b-2 font-medium text-sm transition-all rounded-t-lg">
@@ -575,35 +578,40 @@
 
                     {{-- Social Links --}}
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Social Media Links</label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4 text-pink-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                                        Instagram URL
-                                    </span>
-                                </label>
-                                <input type="url" name="social_instagram" value="{{ $socialInstagram }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600" placeholder="https://instagram.com/yourpage">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4 text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.55V6.79a4.85 4.85 0 01-1.07-.1z"/></svg>
-                                        TikTok URL
-                                    </span>
-                                </label>
-                                <input type="url" name="social_tiktok" value="{{ $socialTiktok }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600" placeholder="https://tiktok.com/@yourpage">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                                        Facebook URL
-                                    </span>
-                                </label>
-                                <input type="url" name="social_facebook" value="{{ $socialFacebook }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600" placeholder="https://facebook.com/yourpage">
-                            </div>
+                        <div class="flex items-center justify-between mb-4">
+                            <label class="block text-sm font-semibold text-gray-700">Social Media Links</label>
+                            <button type="button" @click="socialLinks.push({ label: '', url: '' })" class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition text-xs font-semibold">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Add Link
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" name="social_media_links" :value="JSON.stringify(socialLinks)">
+                        
+                        <div class="space-y-3">
+                            <template x-for="(link, index) in socialLinks" :key="index">
+                                <div class="flex items-start gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Platform / Label</label>
+                                            <input type="text" x-model="link.label" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600" placeholder="e.g. Instagram, TikTok, Facebook" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">URL or Username</label>
+                                            <input type="text" x-model="link.url" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600" placeholder="e.g. https://instagram.com/user or just username" required>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 pt-5">
+                                        <button type="button" @click="socialLinks.splice(index, 1)" class="bg-red-50 text-red-600 p-2 rounded-lg border border-red-100 hover:bg-red-100 hover:text-red-700 transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                            
+                            <template x-if="socialLinks.length === 0">
+                                <p class="text-gray-400 text-xs italic py-2 text-center bg-gray-50 rounded-xl border border-gray-200 border-dashed">No social links added yet.</p>
+                            </template>
                         </div>
                     </div>
                 </div>

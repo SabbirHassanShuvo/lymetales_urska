@@ -101,12 +101,20 @@ class HomeContentControllerNew extends Controller
         $giftGiverSection = $giverModel ? [
             'subtitle'    => $giverModel->subtitle,
             'title'       => $giverModel->title,
-            'step_1_image'=> $formatImage($giverModel->step_1_image),
-            'step_1_text' => $giverModel->step_1_text,
-            'step_2_image'=> $formatImage($giverModel->step_2_image),
-            'step_2_text' => $giverModel->step_2_text,
-            'step_3_image'=> $formatImage($giverModel->step_3_image),
-            'step_3_text' => $giverModel->step_3_text,
+            'steps'       => [
+                [
+                    'image' => $formatImage($giverModel->step_1_image),
+                    'text'  => $giverModel->step_1_text,
+                ],
+                [
+                    'image' => $formatImage($giverModel->step_2_image),
+                    'text'  => $giverModel->step_2_text,
+                ],
+                [
+                    'image' => $formatImage($giverModel->step_3_image),
+                    'text'  => $giverModel->step_3_text,
+                ],
+            ]
         ] : null;
 
         // 5b. Reviews — approved, sorted by rating desc
@@ -170,11 +178,66 @@ class HomeContentControllerNew extends Controller
             'copyright'   => Setting::getVal('footer_copyright', '© ' . date('Y') . ' Lymetales HQ, Inc. All Rights Reserved.'),
         ];
 
-        $socialLinks = [
-            'instagram' => Setting::getVal('social_instagram', ''),
-            'tiktok'    => Setting::getVal('social_tiktok', ''),
-            'facebook'  => Setting::getVal('social_facebook', ''),
+        $socialLinksJson = Setting::getVal('social_media_links', null);
+        $socialLinks = [];
+        if ($socialLinksJson) {
+            $socialLinks = json_decode($socialLinksJson, true);
+        } else {
+            $inst = Setting::getVal('social_instagram', '');
+            if ($inst) $socialLinks[] = ['label' => 'Instagram', 'url' => $inst];
+            $tktk = Setting::getVal('social_tiktok', '');
+            if ($tktk) $socialLinks[] = ['label' => 'TikTok', 'url' => $tktk];
+            $fb = Setting::getVal('social_facebook', '');
+            if ($fb) $socialLinks[] = ['label' => 'Facebook', 'url' => $fb];
+        }
+
+        // Map icons dynamically
+        $socialLinksList = array_map(function ($link) {
+            $label = $link['label'] ?? '';
+            $url = $link['url'] ?? '';
+            
+            $cleanLabel = strtolower(trim($label));
+            $icon = 'FaShareAlt';
+            if (strpos($cleanLabel, 'instagram') !== false) {
+                $icon = 'FaInstagram';
+            } elseif (strpos($cleanLabel, 'tiktok') !== false) {
+                $icon = 'FaTiktok';
+            } elseif (strpos($cleanLabel, 'facebook') !== false) {
+                $icon = 'FaFacebook';
+            } elseif (strpos($cleanLabel, 'youtube') !== false) {
+                $icon = 'FaYoutube';
+            } elseif (strpos($cleanLabel, 'twitter') !== false || $cleanLabel === 'x') {
+                $icon = 'FaTwitter';
+            } elseif (strpos($cleanLabel, 'linkedin') !== false) {
+                $icon = 'FaLinkedin';
+            } elseif (strpos($cleanLabel, 'pinterest') !== false) {
+                $icon = 'FaPinterest';
+            }
+
+            return [
+                'label' => $label,
+                'url'   => $url,
+                'icon'  => $icon,
+            ];
+        }, $socialLinks);
+
+        // Rebuild legacy key-value object to prevent React crash
+        $socialLinksObj = [
+            'instagram' => '',
+            'tiktok' => '',
+            'facebook' => '',
         ];
+        
+        foreach ($socialLinksList as $l) {
+            $cl = strtolower($l['label']);
+            if (strpos($cl, 'instagram') !== false) {
+                $socialLinksObj['instagram'] = $l['url'];
+            } elseif (strpos($cl, 'tiktok') !== false) {
+                $socialLinksObj['tiktok'] = $l['url'];
+            } elseif (strpos($cl, 'facebook') !== false) {
+                $socialLinksObj['facebook'] = $l['url'];
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -190,7 +253,8 @@ class HomeContentControllerNew extends Controller
                 'newsletter_section' => $newsletterSection,
                 'footer'             => $footer,
                 'footer_brand'       => $footerBrand,
-                'social_links'       => $socialLinks,
+                'social_links'       => $socialLinksObj,
+                'social_links_list'  => $socialLinksList,
             ],
             'message' => 'Home content retrieved successfully.',
         ], 200, [], JSON_UNESCAPED_SLASHES);

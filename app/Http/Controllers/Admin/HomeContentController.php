@@ -45,9 +45,18 @@ class HomeContentController extends Controller
         $footerBrandDescription = Setting::getVal('footer_brand_description', 'Crafting personalized stories that celebrate the magic of childhood and the bonds of family.');
         $footerLogoPath = Setting::getVal('footer_logo_path', '');
         $footerCopyright = Setting::getVal('footer_copyright', '© ' . date('Y') . ' Lymetales HQ, Inc. All Rights Reserved.');
-        $socialInstagram = Setting::getVal('social_instagram', '');
-        $socialTiktok = Setting::getVal('social_tiktok', '');
-        $socialFacebook = Setting::getVal('social_facebook', '');
+        $socialLinksJson = Setting::getVal('social_media_links', null);
+        if ($socialLinksJson) {
+            $socialLinks = json_decode($socialLinksJson, true);
+        } else {
+            $socialLinks = [];
+            $inst = Setting::getVal('social_instagram', '');
+            if ($inst) $socialLinks[] = ['label' => 'Instagram', 'url' => $inst];
+            $tktk = Setting::getVal('social_tiktok', '');
+            if ($tktk) $socialLinks[] = ['label' => 'TikTok', 'url' => $tktk];
+            $fb = Setting::getVal('social_facebook', '');
+            if ($fb) $socialLinks[] = ['label' => 'Facebook', 'url' => $fb];
+        }
 
         return view('admin.home-content.index', compact(
             'heroSections', 
@@ -63,9 +72,7 @@ class HomeContentController extends Controller
             'footerBrandDescription',
             'footerLogoPath',
             'footerCopyright',
-            'socialInstagram',
-            'socialTiktok',
-            'socialFacebook'
+            'socialLinks'
         ));
     }
 
@@ -349,44 +356,52 @@ class HomeContentController extends Controller
     // --- Footer Brand Info, Logo & Social Links ---
     public function updateFooterBrandSocials(Request $request)
     {
-        // Sanitize social media link inputs to support usernames, handles, and protocol-less URLs
-        $socialFields = [
-            'social_instagram' => ['domain' => 'instagram.com', 'prefix' => 'instagram.com/'],
-            'social_tiktok'    => ['domain' => 'tiktok.com',    'prefix' => 'tiktok.com/@'],
-            'social_facebook'  => ['domain' => 'facebook.com',  'prefix' => 'facebook.com/'],
-        ];
-
-        foreach ($socialFields as $field => $config) {
-            if ($request->filled($field)) {
-                $val = trim($request->input($field));
-                if (!preg_match('/^https?:\/\//i', $val)) {
-                    if (stripos($val, $config['domain']) === false) {
-                        // Just a handle/username
-                        $username = ltrim($val, '@/ ');
-                        $val = 'https://' . $config['prefix'] . $username;
-                    } else {
-                        // Domain is present but protocol is missing (e.g. instagram.com/user)
-                        $val = 'https://' . ltrim($val, '@/ ');
-                    }
-                }
-                $request->merge([$field => $val]);
-            }
-        }
-
         $request->validate([
             'footer_brand_description' => 'nullable|string|max:500',
             'footer_copyright'         => 'nullable|string|max:255',
             'footer_logo'              => 'nullable|image|max:2048',
-            'social_instagram'         => 'nullable|url|max:255',
-            'social_tiktok'            => 'nullable|url|max:255',
-            'social_facebook'          => 'nullable|url|max:255',
+            'social_media_links'       => 'nullable|string',
         ]);
 
         Setting::updateOrCreate(['key' => 'footer_brand_description'], ['value' => $request->input('footer_brand_description', '')]);
         Setting::updateOrCreate(['key' => 'footer_copyright'],         ['value' => $request->input('footer_copyright', '')]);
-        Setting::updateOrCreate(['key' => 'social_instagram'],         ['value' => $request->input('social_instagram', '')]);
-        Setting::updateOrCreate(['key' => 'social_tiktok'],            ['value' => $request->input('social_tiktok', '')]);
-        Setting::updateOrCreate(['key' => 'social_facebook'],          ['value' => $request->input('social_facebook', '')]);
+
+        // Process and sanitize dynamic social links
+        $sanitizedLinks = [];
+        if ($request->filled('social_media_links')) {
+            $linksArray = json_decode($request->input('social_media_links'), true);
+            if (is_array($linksArray)) {
+                $prefixes = [
+                    'instagram' => 'instagram.com/',
+                    'tiktok'    => 'tiktok.com/@',
+                    'facebook'  => 'facebook.com/',
+                    'youtube'   => 'youtube.com/',
+                ];
+
+                foreach ($linksArray as $link) {
+                    $label = trim($link['label'] ?? '');
+                    $url = trim($link['url'] ?? '');
+
+                    if ($label !== '' && $url !== '') {
+                        if (!preg_match('/^https?:\/\//i', $url)) {
+                            // Determine domain prefix if possible
+                            $cleanLabel = strtolower($label);
+                            if (isset($prefixes[$cleanLabel]) && stripos($url, $cleanLabel . '.com') === false) {
+                                $username = ltrim($url, '@/ ');
+                                $url = 'https://' . $prefixes[$cleanLabel] . $username;
+                            } else {
+                                $url = 'https://' . ltrim($url, '@/ ');
+                            }
+                        }
+                        $sanitizedLinks[] = [
+                            'label' => $label,
+                            'url' => $url,
+                        ];
+                    }
+                }
+            }
+        }
+        Setting::updateOrCreate(['key' => 'social_media_links'], ['value' => json_encode($sanitizedLinks)]);
 
         // Handle logo upload
         if ($request->hasFile('footer_logo')) {

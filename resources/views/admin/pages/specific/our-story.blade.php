@@ -158,63 +158,99 @@
 </div>
 
 {{-- ── Mission Section ────────────────────────── --}}
-<div class="card">
-    <div class="card-title">
-        <span class="dot" style="background:#22c55e"></span> Mission Section
+<div class="card" x-data="{ missionParas: {{ json_encode(array_map(fn($p) => ['html' => $p], $content['mission']['paragraphs'] ?? (isset($content['mission']['paragraph_1']) ? array_values(array_filter([$content['mission']['paragraph_1'], $content['mission']['paragraph_2'] ?? ''])) : []))) }} }">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div class="card-title" style="margin-bottom:0">
+            <span class="dot" style="background:#22c55e"></span> Mission Section
+        </div>
+        <button type="button" class="btn-add" @click="missionParas.push({html:''})">+ Add Paragraph</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:0.75rem">
         <div><label class="field-label">Title</label><input type="text" name="mission_title" value="{{ $content['mission']['title'] ?? '' }}" class="field-input"></div>
-        <div><label class="field-label">Paragraph 1</label><textarea name="mission_paragraph_1" rows="3" class="field-input ck-editor" style="resize:vertical">{{ $content['mission']['paragraph_1'] ?? '' }}</textarea></div>
-        <div><label class="field-label">Paragraph 2</label><textarea name="mission_paragraph_2" rows="3" class="field-input ck-editor" style="resize:vertical">{{ $content['mission']['paragraph_2'] ?? '' }}</textarea></div>
+        <template x-for="(para, i) in missionParas" :key="i">
+            <div style="display:flex;align-items:flex-start;gap:0.5rem">
+                <div style="flex:1">
+                    <label class="field-label" x-text="'Paragraph ' + (i+1)"></label>
+                    <textarea :name="'mission_paragraphs['+i+']'" x-init="initCKEditor($el, para, 'html')" class="field-input"></textarea>
+                </div>
+                <button type="button" class="btn-remove" @click="missionParas.splice(i,1)" style="margin-top:1.5rem" title="Remove Paragraph">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </template>
     </div>
 </div>
 
 {{-- ── Quality Section ────────────────────────── --}}
-<div class="card">
-    <div class="card-title">
-        <span class="dot" style="background:#eab308"></span> Quality Section
+<div class="card" x-data="{ qualityItems: {{ json_encode(array_map(function($item) {
+    $paras = $item['paragraphs'] ?? array_values(array_filter([$item['paragraph_1'] ?? null, $item['paragraph_2'] ?? null]));
+    $item['paragraphs'] = array_map(fn($p) => ['html' => $p], $paras);
+    $item['_preview'] = '';
+    return $item;
+}, $content['quality_section']['items'] ?? (isset($content['quality_section']['left']) ? [$content['quality_section']['left'], $content['quality_section']['right']] : []))) }} }">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div class="card-title" style="margin-bottom:0">
+            <span class="dot" style="background:#eab308"></span> Quality Section
+        </div>
+        <button type="button" class="btn-add" @click="qualityItems.push({badge:'', title:'', paragraphs:[], image_url:'', _preview:''})">+ Add Block</button>
     </div>
     <div class="grid-2">
-        <div style="border:1.5px solid #f1f2f4;border-radius:0.75rem;padding:1rem">
-            <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">Left Block</p>
-            <div style="display:flex;flex-direction:column;gap:0.6rem">
-                <div><label class="field-label">Badge</label><input type="text" name="quality_left_badge" value="{{ $content['quality_section']['left']['badge'] ?? '' }}" class="field-input"></div>
-                <div><label class="field-label">Title</label><input type="text" name="quality_left_title" value="{{ $content['quality_section']['left']['title'] ?? '' }}" class="field-input"></div>
-                <div><label class="field-label">Paragraph 1</label><textarea name="quality_left_p1" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['left']['paragraph_1'] ?? '' }}</textarea></div>
-                <div><label class="field-label">Paragraph 2</label><textarea name="quality_left_p2" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['left']['paragraph_2'] ?? '' }}</textarea></div>
-                <div>
-                    <label class="field-label">Image</label>
-                    <input type="file" name="quality_left_image_file" class="field-input" accept="image/*" onchange="previewImage(event, 'qleft-preview')">
-                    <img id="qleft-preview" src="#" alt="Preview" style="display: none; height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
-                    @if(!empty($content['quality_section']['left']['image_url']))
-                        <div class="mt-2 flex items-center gap-2">
-                            <img src="{{ asset($content['quality_section']['left']['image_url']) }}" style="height: 40px; border-radius: 4px;" alt="Image">
-                            <span class="text-xs text-gray-500">Current</span>
+        <template x-for="(item, i) in qualityItems" :key="i">
+            <div style="border:1.5px solid #f1f2f4;border-radius:0.75rem;padding:1rem;position:relative">
+                <button type="button" class="btn-remove" @click="qualityItems.splice(i,1)" style="position:absolute;top:0.5rem;right:0.5rem">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+                <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem" x-text="'Block ' + (i+1)"></p>
+                <div style="display:flex;flex-direction:column;gap:0.6rem">
+                    <div><label class="field-label">Badge</label><textarea :name="'quality_badge['+i+']'" x-init="initCKEditor($el, item, 'badge')" class="field-input"></textarea></div>
+                    <div><label class="field-label">Title</label><textarea :name="'quality_title['+i+']'" x-init="initCKEditor($el, item, 'title')" class="field-input"></textarea></div>
+                    
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+                            <label class="field-label" style="margin-bottom:0">Paragraphs</label>
+                            <button type="button" class="btn-add" @click="if(!item.paragraphs) item.paragraphs = []; item.paragraphs.push({html:''})" style="font-size:0.65rem;padding:0.2rem 0.5rem">+ Add Paragraph</button>
                         </div>
-                    @endif
+                        <template x-for="(p, pi) in (item.paragraphs || [])" :key="pi">
+                            <div style="display:flex;align-items:flex-start;gap:0.5rem;margin-bottom:0.5rem">
+                                <div style="flex:1">
+                                    <textarea :name="'quality_p['+i+']['+pi+']'" x-init="initCKEditor($el, p, 'html')" class="field-input"></textarea>
+                                </div>
+                                <button type="button" class="btn-remove" @click="item.paragraphs.splice(pi,1)" title="Remove Paragraph">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    <div>
+                        <label class="field-label">Image</label>
+                        <input type="file" :name="'quality_image_file['+i+']'" class="field-input" accept="image/*"
+                            @change="
+                                const file = $event.target.files[0];
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = e => { item._preview = e.target.result; };
+                                    reader.readAsDataURL(file);
+                                }
+                            ">
+                        <input type="hidden" :name="'old_quality_image['+i+']'" :value="item.image_url">
+                        {{-- Live preview for newly selected file --}}
+                        <template x-if="item._preview">
+                            <div class="mt-2 flex items-center gap-2">
+                                <img :src="item._preview" style="height:60px;border-radius:4px;object-fit:cover;" alt="Preview">
+                                <span class="text-xs" style="color:#6366f1;font-weight:600">New Image (not saved yet)</span>
+                            </div>
+                        </template>
+                        {{-- Current saved image (only show when no new preview) --}}
+                        <template x-if="item.image_url && !item._preview">
+                            <div class="mt-2 flex items-center gap-2">
+                                <img :src="'/' + item.image_url" style="height:40px;border-radius:4px;" alt="Image">
+                                <button type="button" class="btn-remove" @click="item.image_url = ''" title="Remove image" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:#fef2f2;border-radius:0.35rem">✕ Cancel</button>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div style="border:1.5px solid #f1f2f4;border-radius:0.75rem;padding:1rem">
-            <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">Right Block</p>
-            <div style="display:flex;flex-direction:column;gap:0.6rem">
-                <div><label class="field-label">Badge</label><input type="text" name="quality_right_badge" value="{{ $content['quality_section']['right']['badge'] ?? '' }}" class="field-input"></div>
-                <div><label class="field-label">Title</label><input type="text" name="quality_right_title" value="{{ $content['quality_section']['right']['title'] ?? '' }}" class="field-input"></div>
-                <div><label class="field-label">Paragraph 1</label><textarea name="quality_right_p1" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['right']['paragraph_1'] ?? '' }}</textarea></div>
-                <div><label class="field-label">Paragraph 2</label><textarea name="quality_right_p2" rows="2" class="field-input ck-editor" style="resize:vertical">{{ $content['quality_section']['right']['paragraph_2'] ?? '' }}</textarea></div>
-                <div>
-                    <label class="field-label">Image</label>
-                    <input type="file" name="quality_right_image_file" class="field-input" accept="image/*" onchange="previewImage(event, 'qright-preview')">
-                    <img id="qright-preview" src="#" alt="Preview" style="display: none; height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
-                    @if(!empty($content['quality_section']['right']['image_url']))
-                        <div class="mt-2 flex items-center gap-2">
-                            <img src="{{ asset($content['quality_section']['right']['image_url']) }}" style="height: 40px; border-radius: 4px;" alt="Image">
-                            <span class="text-xs text-gray-500">Current</span>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+        </template>
     </div>
 </div>
 
@@ -286,24 +322,44 @@
 </div>
 
 {{-- ── Gallery ────────────────────────────────── --}}
-<div class="card">
+<div class="card" x-data="galleryManager({{ json_encode($content['gallery']['images'] ?? []) }})">
     <div class="card-title"><span class="dot" style="background:#14b8a6"></span> Gallery Section</div>
-    <div class="grid-2">
-        <div><label class="field-label">Gallery Title</label><input type="text" name="gallery_title" value="{{ $content['gallery']['title'] ?? '' }}" class="field-input"></div>
-        <div>
-            <label class="field-label">Add New Images <span style="font-weight:400;text-transform:none;letter-spacing:0">(Select multiple)</span></label>
-            <input type="file" name="gallery_image_files[]" multiple class="field-input" accept="image/*" onchange="previewMultipleImages(event, 'gallery-preview-container')">
-            <div id="gallery-preview-container" class="mt-3 flex flex-wrap gap-2"></div>
-            <div class="mt-3 flex flex-wrap gap-2">
-                @foreach($content['gallery']['images'] ?? [] as $img)
-                    <div class="relative">
-                        <img src="{{ asset($img) }}" style="height: 50px; border-radius: 4px;" alt="Gallery">
-                        <input type="hidden" name="old_gallery_images[]" value="{{ $img }}">
-                    </div>
-                @endforeach
-            </div>
-        </div>
+    <div style="margin-bottom:1rem">
+        <label class="field-label">Gallery Title</label>
+        <input type="text" name="gallery_title" value="{{ $content['gallery']['title'] ?? '' }}" class="field-input">
     </div>
+    <div>
+        <label class="field-label">Add New Images <span style="font-weight:400;text-transform:none;letter-spacing:0">(Select multiple)</span></label>
+        {{-- Visible trigger input without name --}}
+        <input type="file" multiple class="field-input" accept="image/*" @change="addNewFiles($event)">
+        {{-- Hidden input that actually submits the files --}}
+        <input type="file" id="gallery-file-input" name="gallery_image_files[]" multiple style="display:none">
+    </div>
+    {{-- Hidden inputs for kept existing images --}}
+    <template x-for="img in existingImages" :key="img">
+        <input type="hidden" name="old_gallery_images[]" :value="img">
+    </template>
+    {{-- Image grid --}}
+    <div class="mt-3" style="display:flex;flex-wrap:wrap;gap:0.75rem" x-show="existingImages.length > 0 || newPreviews.length > 0">
+        {{-- Existing images with cancel --}}
+        <template x-for="(img, idx) in existingImages" :key="img">
+            <div style="position:relative;display:inline-block">
+                <img :src="'/' + img" style="height:80px;width:80px;object-fit:cover;border-radius:8px;border:1.5px solid #e5e7eb;" alt="Gallery">
+                <button type="button" @click="removeExisting(idx)" title="Remove"
+                    style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ef4444;color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:0.7rem;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+        </template>
+        {{-- New image previews with cancel --}}
+        <template x-for="(prev, idx) in newPreviews" :key="idx">
+            <div style="position:relative;display:inline-block">
+                <img :src="prev.url" style="height:80px;width:80px;object-fit:cover;border-radius:8px;border:2px dashed #6366f1;" alt="New">
+                <span style="position:absolute;bottom:0;left:0;right:0;background:rgba(99,102,241,0.8);color:#fff;font-size:0.55rem;font-weight:700;text-align:center;border-radius:0 0 7px 7px;padding:1px 0">NEW</span>
+                <button type="button" @click="removeNew(idx)" title="Cancel"
+                    style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#ef4444;color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:0.7rem;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+        </template>
+    </div>
+    <p x-show="existingImages.length === 0 && newPreviews.length === 0" style="color:#9ca3af;font-size:0.85rem;margin-top:0.75rem">No gallery images yet.</p>
 </div>
 
 {{-- ── CTA ─────────────────────────────────────── --}}
@@ -330,7 +386,8 @@
 
 {{-- Save Bar --}}
 <div style="display:flex;justify-content:flex-end;padding-bottom:2rem">
-    <button type="submit" style="background:#4f46e5;color:#fff;padding:0.7rem 2.2rem;border-radius:0.75rem;font-weight:700;font-size:0.9rem;border:none;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+    <button type="submit" id="save-all-btn"
+        style="background:#4f46e5;color:#fff;padding:0.7rem 2.2rem;border-radius:0.75rem;font-weight:700;font-size:0.9rem;border:none;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
         Save All Changes
     </button>
 </div>
@@ -352,11 +409,81 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+window.initCKEditor = function(el, item, key) {
+    // Wait for Alpine to finish rendering before creating editor
+    setTimeout(() => {
+        let editorInstance;
+        ClassicEditor.create(el, {
+            toolbar: [ 'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo' ]
+        }).then(editor => {
+            editorInstance = editor;
+            // item[key] must be an object property (not a primitive) for reactivity
+            editor.setData(item[key] || '');
+            editor.model.document.on('change:data', () => {
+                item[key] = editor.getData();
+            });
+        }).catch(error => { console.error(error); });
+    }, 50);
+};
+
+function galleryManager(existingImgs) {
+    return {
+        existingImages: existingImgs || [],
+        newPreviews: [],
+        _allFiles: [],
+
+        addNewFiles(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                const url = URL.createObjectURL(file);
+                this.newPreviews.push({ url, file });
+                this._allFiles.push(file);
+            });
+            // Sync the named file input so server receives the files
+            this._syncNamedInput();
+            // Reset the trigger input
+            event.target.value = '';
+        },
+
+        removeExisting(idx) {
+            this.existingImages.splice(idx, 1);
+        },
+
+        removeNew(idx) {
+            URL.revokeObjectURL(this.newPreviews[idx].url);
+            this.newPreviews.splice(idx, 1);
+            this._allFiles.splice(idx, 1);
+            this._syncNamedInput();
+        },
+
+        _syncNamedInput() {
+            // Push the current _allFiles into the named hidden input via DataTransfer
+            const dt = new DataTransfer();
+            this._allFiles.forEach(f => dt.items.add(f));
+            const input = document.getElementById('gallery-file-input');
+            if (input) input.files = dt.files;
+        }
+    };
+}
+
 function ourStoryForm() { 
     return {
         // Alpine data...
     }; 
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('form').addEventListener('submit', function(e) {
+        // Find the gallery manager Alpine component and sync its files before submission
+        const galleryEl = document.querySelector('[x-data*="galleryManager"]');
+        if (galleryEl && galleryEl._x_dataStack) {
+            const gm = galleryEl._x_dataStack[0];
+            if (gm && typeof gm.submitFiles === 'function') {
+                gm.submitFiles();
+            }
+        }
+    });
+});
 
 function previewImage(event, previewId) {
     const reader = new FileReader();

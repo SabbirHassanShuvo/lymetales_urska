@@ -23,9 +23,17 @@ class PageController extends Controller
             $file = $request->file($fileKey);
             $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
             $file->move(public_path('uploads/pages'), $filename);
-            // Return full url as well or relative? Previous is just 'http://...' so relative or absolute depending on how frontend uses it. But frontend usually assumes it is passed properly.
-            // Earlier it was passed as string "https://...". The Hero controller uses asset(). Let's use relative path so we can format it. Actually, wait.
-            // In the previous request they were using raw string.
+            return 'uploads/pages/' . $filename;
+        }
+        return $oldImageUrl;
+    }
+
+    private function handleArrayImageUpload(Request $request, $fileKey, $index, $oldImageUrl = null)
+    {
+        if ($request->hasFile("$fileKey.$index")) {
+            $file = $request->file("$fileKey.$index");
+            $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/pages'), $filename);
             return 'uploads/pages/' . $filename;
         }
         return $oldImageUrl;
@@ -127,24 +135,22 @@ class PageController extends Controller
             ],
             'mission' => [
                 'title'       => $request->input('mission_title'),
-                'paragraph_1' => $request->input('mission_paragraph_1'),
-                'paragraph_2' => $request->input('mission_paragraph_2'),
+                // Extract HTML strings from {html: '...'} wrapper objects sent by Alpine
+                'paragraphs'  => array_values(array_filter(array_map(
+                    fn($p) => is_array($p) ? ($p['html'] ?? '') : $p,
+                    $request->input('mission_paragraphs', [])
+                ))),
             ],
             'quality_section' => [
-                'left' => [
-                    'badge'       => $request->input('quality_left_badge'),
-                    'title'       => $request->input('quality_left_title'),
-                    'paragraph_1' => $request->input('quality_left_p1'),
-                    'paragraph_2' => $request->input('quality_left_p2'),
-                    'image_url'   => $this->handleImageUpload($request, 'quality_left_image_file', $oldContent['quality_section']['left']['image_url'] ?? ''),
-                ],
-                'right' => [
-                    'badge'       => $request->input('quality_right_badge'),
-                    'title'       => $request->input('quality_right_title'),
-                    'paragraph_1' => $request->input('quality_right_p1'),
-                    'paragraph_2' => $request->input('quality_right_p2'),
-                    'image_url'   => $this->handleImageUpload($request, 'quality_right_image_file', $oldContent['quality_section']['right']['image_url'] ?? ''),
-                ],
+                'items' => collect($request->input('quality_badge', []))->map(fn($b, $i) => [
+                    'badge'       => $b,
+                    'title'       => $request->input('quality_title')[$i] ?? '',
+                    'paragraphs'  => array_values(array_filter(array_map(
+                        fn($p) => is_array($p) ? ($p['html'] ?? '') : $p,
+                        $request->input('quality_p')[$i] ?? []
+                    ))),
+                    'image_url'   => $this->handleArrayImageUpload($request, 'quality_image_file', $i, $request->input('old_quality_image')[$i] ?? ''),
+                ])->values()->toArray(),
             ],
             'steps' => [
                 'title' => $request->input('steps_title'),
@@ -168,7 +174,11 @@ class PageController extends Controller
             ],
             'gallery' => [
                 'title'  => $request->input('gallery_title'),
-                'images' => $this->handleGalleryUpload($request, 'gallery_image_files', $request->input('old_gallery_images', [])),
+                'images' => $this->handleGalleryUpload(
+                    $request,
+                    'gallery_image_files',
+                    $request->input('old_gallery_images', [])
+                ),
             ],
             'cta' => [
                 'title'       => $request->input('cta_title'),

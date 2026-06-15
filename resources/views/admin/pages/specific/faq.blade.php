@@ -105,6 +105,7 @@
                                         <label class="label">Answer</label>
                                         <div x-init="
                                             ClassicEditor.create($refs.editor).then(editor => {
+                                                editor.setData(q.answer || '');
                                                 editor.model.document.on('change:data', () => {
                                                     q.answer = editor.getData();
                                                 });

@@ -26,7 +26,7 @@ class ECommerceSeeder extends Seeder
             'status' => true,
         ]);
 
-        $subKids = $siteCat->subcategories()->where('name', 'KIDS')->first();
+        $subKids = $siteCat->subcategories()->where('name', 'OTROCI')->first();
 
         // 1. Seed Categories & Subcategories
         $cat1 = Category::create([

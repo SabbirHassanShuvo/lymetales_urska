@@ -22,7 +22,6 @@ class HomeContentController extends Controller
      */
     public function index(): JsonResponse
     {
-        return response()->json(HeroSection::all());
         // Helper to format image URLs
         $formatImage = function ($path) {
             if (!$path) return null;
@@ -80,12 +79,20 @@ class HomeContentController extends Controller
         $giftGiverSection = $giverModel ? [
             'subtitle' => $giverModel->subtitle,
             'title' => $giverModel->title,
-            'step_1_image' => $formatImage($giverModel->step_1_image),
-            'step_1_text' => $giverModel->step_1_text,
-            'step_2_image' => $formatImage($giverModel->step_2_image),
-            'step_2_text' => $giverModel->step_2_text,
-            'step_3_image' => $formatImage($giverModel->step_3_image),
-            'step_3_text' => $giverModel->step_3_text,
+            'steps' => [
+                [
+                    'image' => $formatImage($giverModel->step_1_image),
+                    'text' => $giverModel->step_1_text,
+                ],
+                [
+                    'image' => $formatImage($giverModel->step_2_image),
+                    'text' => $giverModel->step_2_text,
+                ],
+                [
+                    'image' => $formatImage($giverModel->step_3_image),
+                    'text' => $giverModel->step_3_text,
+                ],
+            ]
         ] : null;
 
         // 6. FAQs (Requirement 6)

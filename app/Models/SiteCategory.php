@@ -36,18 +36,18 @@ class SiteCategory extends Model
         static::created(function ($category) {
             $category->subcategories()->createMany([
                 [
-                    'name'        => 'NEWBORNS',
-                    'description' => 'Books for newborns',
+                    'name'        => 'NOVOROJENČKI',
+                    'description' => 'Knjige za novorojenčke',
                     'status'      => true,
                 ],
                 [
-                    'name'        => 'KIDS',
-                    'description' => 'Books for kids',
+                    'name'        => 'OTROCI',
+                    'description' => 'Knjige za otroke',
                     'status'      => true,
                 ],
                 [
-                    'name'        => 'ADULT',
-                    'description' => 'Books for adults',
+                    'name'        => 'ODRASLI',
+                    'description' => 'Knjige za odrasle',
                     'status'      => true,
                 ],
             ]);
