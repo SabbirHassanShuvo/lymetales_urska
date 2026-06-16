@@ -99,7 +99,7 @@ class PersonalisationController extends Controller
 
         if (!is_dir($dest)) {
             mkdir($dest, 0755, true);
-        }
+        } 
 
         $filename = 'prev_' . uniqid('', true) . '_' . \Illuminate\Support\Str::random(6)
                     . '.' . $file->getClientOriginalExtension();

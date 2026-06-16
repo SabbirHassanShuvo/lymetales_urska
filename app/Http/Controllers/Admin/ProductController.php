@@ -21,7 +21,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'subcategory', 'siteCategory', 'siteSubcategory', 'primaryImage', 'images', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions'])
+        $products = Product::with(['category', 'subcategory', 'siteCategory', 'siteSubcategory', 'primaryImage', 'images', 'bookImages', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions'])
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -70,6 +70,7 @@ class ProductController extends Controller
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
+            'type'               => 'nullable|string|max:255',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
             'domain'             => 'nullable|in:domain1,domain2',
             'featured_image_id'  => 'nullable|string',
@@ -107,6 +108,7 @@ class ProductController extends Controller
                 'is_bestseller'  => $request->boolean('is_bestseller'),
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
+                'type'           => $request->type,
                 'slug'           => Str::slug($request->title),
                 'domain'         => $request->filled('domain') ? $request->domain : null,
                 'featured_image_id' => is_numeric($request->featured_image_id) ? $request->featured_image_id : null,
@@ -136,6 +138,21 @@ class ProductController extends Controller
                         'subtitle' => $section['subtitle'] ?? null,
                         'description' => $section['description'] ?? null,
                         'image' => $imagePath,
+                        'sort_order' => $sort++,
+                    ]);
+                }
+            }
+
+            // Save book images
+            if ($request->has('book_images') && is_array($request->book_images)) {
+                $sort = 0;
+                foreach ($request->book_images as $index => $imgData) {
+                    if (!$request->hasFile("book_images.$index.image")) {
+                        continue;
+                    }
+                    $imagePath = $this->saveUploadedFile($request->file("book_images.$index.image"), 'book');
+                    $product->bookImages()->create([
+                        'image_path' => $imagePath,
                         'sort_order' => $sort++,
                     ]);
                 }
@@ -289,7 +306,7 @@ class ProductController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $product = Product::with('images')->findOrFail($id);
+        $product = Product::with('images', 'bookImages')->findOrFail($id);
 
         $request->validate([
             'title'              => 'required|string|max:255',
@@ -320,6 +337,7 @@ class ProductController extends Controller
             'is_bestseller'      => 'nullable|boolean',
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
+            'type'               => 'nullable|string|max:255',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
             'domain'             => 'nullable|in:domain1,domain2',
             'featured_image_id'  => 'nullable|string',
@@ -361,6 +379,7 @@ class ProductController extends Controller
                 'is_bestseller'  => $request->boolean('is_bestseller'),
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
+                'type'           => $request->type,
                 'slug'           => Str::slug($request->title),
                 'domain'         => $request->filled('domain') ? $request->domain : null,
                 'featured_image_id' => is_numeric($request->featured_image_id) ? $request->featured_image_id : null,
@@ -428,6 +447,61 @@ class ProductController extends Controller
                         $this->deleteFile($delSec->image);
                     }
                     $delSec->delete();
+                }
+            }
+
+            // Save book images
+            if ($request->has('book_images') && is_array($request->book_images)) {
+                $submittedImgIds = [];
+                $sort = 0;
+
+                foreach ($request->book_images as $index => $imgData) {
+                    $id = $imgData['id'] ?? null;
+
+                    if (!$request->hasFile("book_images.$index.image") && empty($imgData['existing_image'])) {
+                        continue;
+                    }
+
+                    $imagePath = $imgData['existing_image'] ?? null;
+                    if ($request->hasFile("book_images.$index.image")) {
+                        $imagePath = $this->saveUploadedFile($request->file("book_images.$index.image"), 'book');
+                    }
+
+                    if ($id) {
+                        $existingBookImg = $product->bookImages()->find($id);
+                        if ($existingBookImg) {
+                            $existingBookImg->update([
+                                'image_path' => $imagePath,
+                                'sort_order' => $sort++,
+                            ]);
+                            $submittedImgIds[] = $existingBookImg->id;
+                        }
+                    } else {
+                        if ($imagePath) {
+                            $newBookImg = $product->bookImages()->create([
+                                'image_path' => $imagePath,
+                                'sort_order' => $sort++,
+                            ]);
+                            $submittedImgIds[] = $newBookImg->id;
+                        }
+                    }
+                }
+
+                // Delete removed book images
+                $toDeleteBookImgs = $product->bookImages()->whereNotIn('id', $submittedImgIds)->get();
+                foreach ($toDeleteBookImgs as $delImg) {
+                    if ($delImg->image_path) {
+                        $this->deleteFile($delImg->image_path);
+                    }
+                    $delImg->delete();
+                }
+            } else {
+                $toDeleteBookImgs = $product->bookImages;
+                foreach ($toDeleteBookImgs as $delImg) {
+                    if ($delImg->image_path) {
+                        $this->deleteFile($delImg->image_path);
+                    }
+                    $delImg->delete();
                 }
             }
 
@@ -729,6 +803,12 @@ class ProductController extends Controller
         foreach ($product->specialSections as $sec) {
             if ($sec->image) {
                 $this->deleteFile($sec->image);
+            }
+        }
+
+        foreach ($product->bookImages as $bookImg) {
+            if ($bookImg->image_path) {
+                $this->deleteFile($bookImg->image_path);
             }
         }
 

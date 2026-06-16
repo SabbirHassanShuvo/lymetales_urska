@@ -289,8 +289,11 @@ Route::prefix('admin')->group(function () {
 
         // Footer Section & Items
         Route::post('/home-content/footer-section', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFooterSection'])->name('admin.home-content.footer-section.store');
+        Route::put('/home-content/footer-section/{section}', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateFooterSection'])->name('admin.home-content.footer-section.update');
+        Route::post('/home-content/footer-section/reorder', [\App\Http\Controllers\Admin\HomeContentController::class, 'reorderFooterSections'])->name('admin.home-content.footer-section.reorder');
         Route::delete('/home-content/footer-section/{section}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFooterSection'])->name('admin.home-content.footer-section.destroy');
         Route::post('/home-content/footer-item', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFooterItem'])->name('admin.home-content.footer-item.store');
+        Route::put('/home-content/footer-item/{item}', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateFooterItem'])->name('admin.home-content.footer-item.update');
         Route::delete('/home-content/footer-item/{item}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFooterItem'])->name('admin.home-content.footer-item.destroy');
 
         // Footer Brand Info & Social Links

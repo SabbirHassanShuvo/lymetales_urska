@@ -15,10 +15,7 @@ class SiteCategoryController extends Controller
      */
     public function index()
     {
-        $categories = SiteCategory::with(['subcategories' => function ($q) {
-                $q->where('status', true)->orderBy('name');
-            }])
-            ->where('status', true)
+        $categories = SiteCategory::where('status', true)
             ->orderBy('name')
             ->get();
 
@@ -37,10 +34,7 @@ class SiteCategoryController extends Controller
      */
     public function show(string $id)
     {
-        $category = SiteCategory::with(['subcategories' => function ($q) {
-                $q->active();
-            }])
-            ->where('id', $id)
+        $category = SiteCategory::where('id', $id)
             ->where('status', true)
             ->firstOrFail();
 
@@ -62,15 +56,7 @@ class SiteCategoryController extends Controller
             'is_special'  => $c->is_special,
         ];
 
-        if ($withChildren) {
-            $data['subcategories'] = $c->subcategories
-                ->map(fn ($sub) => [
-                    'id'          => $sub->id,
-                    'name'        => $sub->name,
-                    'description' => $sub->description,
-                ])
-                ->values();
-        }
+        // subcategories removed
 
         return $data;
     }

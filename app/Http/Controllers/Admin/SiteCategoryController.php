@@ -12,7 +12,7 @@ class SiteCategoryController extends Controller
 {
     public function index()
     {
-        $categories = SiteCategory::with('subcategories')->orderBy('name')->get();
+        $categories = SiteCategory::orderBy('name')->get();
 
         return view('admin.site-categories.index', compact('categories'));
     }
@@ -95,34 +95,5 @@ class SiteCategoryController extends Controller
         }
     }
 
-    // ── Subcategory CRUD ─────────────────────────────────────────────────────
-
-    public function storeSubcategory(Request $request)
-    {
-        return redirect()
-            ->route('admin.site-categories.index', ['tab' => 'sub'])
-            ->with('error', 'Subcategories are fixed and cannot be modified.');
-    }
-
-    public function updateSubcategory(Request $request, string $id)
-    {
-        return redirect()
-            ->route('admin.site-categories.index', ['tab' => 'sub'])
-            ->with('error', 'Subcategories are fixed and cannot be modified.');
-    }
-
-    public function destroySubcategory(string $id)
-    {
-        return redirect()
-            ->route('admin.site-categories.index', ['tab' => 'sub'])
-            ->with('error', 'Subcategories are fixed and cannot be modified.');
-    }
-
-    public function toggleSubcategoryStatus(Request $request, string $id)
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'Subcategories are fixed and status cannot be modified.',
-        ], 403);
-    }
+    // Subcategory CRUD removed
 }

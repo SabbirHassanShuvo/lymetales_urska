@@ -37,6 +37,7 @@ class Product extends Model
         'is_bestseller',
         'is_recommended',
         'status',
+        'type',
         'domain',
         'featured_image_id',
     ];
@@ -64,6 +65,13 @@ class Product extends Model
             }
         });
     }
+
+    public function bookImages()
+    {
+        return $this->hasMany(ProductBookImage::class)->orderBy('sort_order');
+    }
+
+    // ── Virtual / Computed Attributes ──────────────────────────────────────────────────────
 
     // ── Relationships ──────────────────────────────────────────────────────
 

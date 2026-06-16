@@ -25,22 +25,20 @@ class ProductController extends Controller
         ])
         ->where('status', true);
 
-        // Category / Subcategory filter
-        if ($request->filled('subcategory_id')) {
-            $query->where('subcategory_id', $request->subcategory_id);
-        } elseif ($request->filled('category_id')) {
+        if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
 
-        // Site Category / Site Subcategory filter
-        if ($request->filled('site_subcategory_id')) {
-            $query->where('site_subcategory_id', $request->site_subcategory_id);
-        } elseif ($request->filled('site_category_id')) {
-            $siteCategoryId = $request->site_category_id;
-            $subcategoryIds = \App\Models\SiteSubcategory::where('site_category_id', $siteCategoryId)->pluck('id');
-            $query->where(function ($q) use ($siteCategoryId, $subcategoryIds) {
-                $q->where('site_category_id', $siteCategoryId)
-                  ->orWhereIn('site_subcategory_id', $subcategoryIds);
+        // Site Category filter
+        if ($request->filled('site_category_id')) {
+            $query->where('site_category_id', $request->site_category_id);
+        }
+        
+        // General category filter (matches either)
+        if ($request->filled('category')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('site_category_id', $request->category)
+                  ->orWhere('category_id', $request->category);
             });
         }
 
@@ -50,6 +48,7 @@ class ProductController extends Controller
         if ($request->filled('max_price'))       $query->where('price', '<=', (float) $request->max_price);
         if ($request->filled('age_range'))       $query->where('age_range', $request->age_range);
         if ($request->filled('domain'))          $query->where('domain', $request->domain);
+        if ($request->filled('type'))            $query->where('type', $request->type);
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
@@ -91,10 +90,7 @@ class ProductController extends Controller
     {
         $product = Product::with([
             'category:id,name,slug',
-            'subcategory:id,category_id,parent_id,name',
-            'subcategory.parent:id,name',
             'siteCategory:id,name,slug',
-            'siteSubcategory:id,site_category_id,name',
             'primaryImage',
             'galleryImages',
             'images',
@@ -116,6 +112,12 @@ class ProductController extends Controller
 
     private function formatProduct(Product $p, bool $detailed = false): array
     {
+        $typeTranslations = [
+            'newborn' => 'novorojenček',
+            'kids'    => 'otroci',
+            'adult'   => 'odrasli',
+        ];
+
         $base = [
             'id'             => $p->id,
             'title'          => $p->title,
@@ -129,6 +131,10 @@ class ProductController extends Controller
             'is_bestseller'  => (bool) $p->is_bestseller,
             'is_recommended' => (bool) $p->is_recommended,
             'status'         => (bool) $p->status,
+            'type'           => $p->type ? [
+                'name' => $typeTranslations[$p->type] ?? $p->type,
+                'slug' => \Illuminate\Support\Str::slug($p->type),
+            ] : null,
             'age_range'      => $p->age_range,
             'domain'         => $p->domain,
             'category'       => $p->category ? [
@@ -136,19 +142,10 @@ class ProductController extends Controller
                 'name'      => $p->category->name,
                 'slug'      => $p->category->slug,
             ] : null,
-            'subcategory'    => $p->subcategory ? [
-                'id'        => $p->subcategory->id,
-                'name'      => $p->subcategory->name,
-                'slug'      => $p->subcategory->slug,
-            ] : null,
             'site_category'  => $p->siteCategory ? [
                 'id'        => $p->siteCategory->id,
                 'name'      => $p->siteCategory->name,
                 'slug'      => $p->siteCategory->slug,
-            ] : null,
-            'site_subcategory' => $p->siteSubcategory ? [
-                'id'        => $p->siteSubcategory->id,
-                'name'      => $p->siteSubcategory->name,
             ] : null,
         ];
 
@@ -354,5 +351,37 @@ class ProductController extends Controller
         }
 
         return asset($normalised);
+    }
+
+    /**
+     * GET /api/shop/products/{id}/book-pictures
+     * Optional query param: ?preview_image={url}
+     */
+    public function bookPictures(Request $request, string $id)
+    {
+        $product = Product::with('bookImages')->findOrFail($id);
+
+        $images = [];
+
+        if ($request->filled('preview_image')) {
+            $images[] = [
+                'id'   => 'preview',
+                'url'  => $this->resolveImageUrl($request->preview_image),
+                'type' => 'generated_preview',
+            ];
+        }
+
+        foreach ($product->bookImages as $img) {
+            $images[] = [
+                'id'   => $img->id,
+                'url'  => $this->resolveImageUrl($img->image_path),
+                'type' => 'book_page',
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $images,
+        ]);
     }
 }

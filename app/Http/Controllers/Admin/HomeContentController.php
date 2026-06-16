@@ -321,6 +321,33 @@ class HomeContentController extends Controller
         return back()->with('success', 'Footer section added successfully.');
     }
 
+    public function updateFooterSection(Request $request, FooterSection $section)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $section->update([
+            'title' => $request->input('title'),
+        ]);
+
+        return back()->with('success', 'Footer section updated successfully.');
+    }
+
+    public function reorderFooterSections(Request $request)
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:footer_sections,id',
+        ]);
+
+        foreach ($request->input('order') as $index => $id) {
+            FooterSection::where('id', $id)->update(['sort_order' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
     public function destroyFooterSection(FooterSection $section)
     {
         $section->delete(); // Cascading delete will handle items
@@ -345,6 +372,21 @@ class HomeContentController extends Controller
         ]);
 
         return back()->with('success', 'Footer item link added successfully.');
+    }
+
+    public function updateFooterItem(Request $request, FooterItem $item)
+    {
+        $request->validate([
+            'label' => 'required|string|max:255',
+            'url' => 'required|string|max:255',
+        ]);
+
+        $item->update([
+            'label' => $request->input('label'),
+            'url' => $request->input('url'),
+        ]);
+
+        return back()->with('success', 'Footer item link updated successfully.');
     }
 
     public function destroyFooterItem(FooterItem $item)

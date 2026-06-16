@@ -482,9 +482,12 @@
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-lg font-semibold mb-6 text-gray-800">Configured Footer Columns & Links</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="sortable-footer-sections">
                 @forelse($footerSections as $sec)
-                    <div class="border rounded-xl p-5 bg-gray-50 relative flex flex-col justify-between">
+                    <div class="border rounded-xl p-5 bg-gray-50 relative flex flex-col justify-between group" data-id="{{ $sec->id }}">
+                        <div class="absolute top-2 left-2 cursor-move text-gray-400 hover:text-gray-600 sortable-handle" title="Drag to reorder">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+                        </div>
                         <form action="{{ route('admin.home-content.footer-section.destroy', $sec) }}" method="POST" class="absolute top-2 right-2">
                             @csrf
                             @method('DELETE')
@@ -492,21 +495,48 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </form>
-                        <div>
-                            <h3 class="font-bold text-lg text-gray-900 border-b pb-2 mb-4 pr-6">{{ $sec->title }}</h3>
+                        <div x-data="{ editSecMode: false }" class="mt-4">
+                            <div x-show="!editSecMode" class="flex items-center justify-between border-b pb-2 mb-4 pr-6">
+                                <h3 class="font-bold text-lg text-gray-900">{{ $sec->title }}</h3>
+                                <button type="button" @click="editSecMode = true" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold ml-2">Edit</button>
+                            </div>
+                            <form x-show="editSecMode" action="{{ route('admin.home-content.footer-section.update', $sec) }}" method="POST" class="mb-4 flex gap-2" style="display: none;">
+                                @csrf
+                                @method('PUT')
+                                <input type="text" name="title" value="{{ $sec->title }}" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-600" required>
+                                <button type="submit" class="bg-indigo-600 text-white px-3 py-1.5 rounded text-xs hover:bg-indigo-700">Save</button>
+                                <button type="button" @click="editSecMode = false" class="text-gray-500 hover:text-gray-700 text-xs">Cancel</button>
+                            </form>
                             <ul class="space-y-2.5">
                                 @forelse($sec->items as $item)
-                                    <li class="flex items-center justify-between text-sm bg-white p-2 rounded-lg border border-gray-100">
-                                        <div>
-                                            <span class="font-medium text-gray-700">{{ $item->label }}</span>
-                                            <span class="text-xs text-gray-400 block">{{ $item->url }}</span>
+                                    <li x-data="{ editItemMode: false }" class="bg-white p-2 rounded-lg border border-gray-100">
+                                        <div x-show="!editItemMode" class="flex items-center justify-between text-sm">
+                                            <div>
+                                                <span class="font-medium text-gray-700">{{ $item->label }}</span>
+                                                <span class="text-xs text-gray-400 block">{{ $item->url }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <button type="button" @click="editItemMode = true" class="text-indigo-500 hover:text-indigo-700 p-0.5">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                </button>
+                                                <form action="{{ route('admin.home-content.footer-item.destroy', $item) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-500 hover:text-red-700 p-0.5" onclick="confirmDelete(event, this.closest('form'), 'Remove this link from the footer column.')">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </div>
-                                        <form action="{{ route('admin.home-content.footer-item.destroy', $item) }}" method="POST">
+                                        <form x-show="editItemMode" action="{{ route('admin.home-content.footer-item.update', $item) }}" method="POST" class="flex flex-col gap-2 mt-1" style="display: none;">
                                             @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-500 hover:text-red-700 p-0.5" onclick="confirmDelete(event, this.closest('form'), 'Remove this link from the footer column.')">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                            </button>
+                                            @method('PUT')
+                                            <input type="text" name="label" value="{{ $item->label }}" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" required placeholder="Label">
+                                            <input type="text" name="url" value="{{ $item->url }}" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" required placeholder="URL">
+                                            <div class="flex justify-end gap-2 mt-1">
+                                                <button type="button" @click="editItemMode = false" class="text-gray-500 hover:text-gray-700 text-xs px-2 py-1">Cancel</button>
+                                                <button type="submit" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700">Save</button>
+                                            </div>
                                         </form>
                                     </li>
                                 @empty
@@ -623,44 +653,50 @@
         </div>
     </div>
 
-</div>
+</div>@endsection
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
     function previewImage(event, previewId) {
-        const reader = new FileReader();
-        reader.onload = function() {
-            const output = document.getElementById(previewId);
-            output.src = reader.result;
-            output.style.display = 'block';
-        };
-        if(event.target.files[0]) {
-            reader.readAsDataURL(event.target.files[0]);
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById(previewId);
+                const placeholder = document.getElementById(previewId.replace('-preview', '-placeholder'));
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
         }
     }
 
     function previewFooterLogo(event) {
         const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('logo-preview');
-            const placeholder = document.getElementById('logo-placeholder');
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-            if (placeholder) placeholder.style.display = 'none';
-        };
-        reader.readAsDataURL(file);
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('logo-preview');
+                const placeholder = document.getElementById('logo-placeholder');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
     }
 
-    function confirmDelete(event, form, messageText = 'Are you sure you want to delete this?') {
+    function confirmDelete(event, form, text = "You won't be able to revert this!") {
         event.preventDefault();
         Swal.fire({
             title: 'Are you sure?',
-            text: messageText,
+            text: text,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#4f46e5', // Indigo color matching theme
-            cancelButtonColor: '#ef4444',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
             confirmButtonText: 'Yes, delete it!',
             cancelButtonText: 'Cancel',
             background: '#ffffff',
@@ -676,5 +712,33 @@
             }
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const el = document.getElementById('sortable-footer-sections');
+        if (el) {
+            new Sortable(el, {
+                handle: '.sortable-handle',
+                animation: 150,
+                ghostClass: 'opacity-50',
+                onEnd: function (evt) {
+                    const order = Array.from(el.children).map(child => child.dataset.id);
+                    fetch('{{ route('admin.home-content.footer-section.reorder') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ order: order })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            // Optional: show a small toast notification here
+                        }
+                    });
+                }
+            });
+        }
+    });
 </script>
-@endsection
+@endpush

@@ -282,7 +282,7 @@
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
         <!-- Large Modal Panel -->
-        <div class="inline-block align-middle bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-gray-100">
+        <div class="inline-block align-middle bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full border border-gray-100">
             <form action="{{ route('admin.products.store') }}" method="POST" id="productForm" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="_method" id="formMethod" value="POST">
@@ -324,20 +324,23 @@
                                 </select>
                             </div>
 
-                            <div id="prodCategoryWrapper">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                                <select name="site_category_id" id="prodCategory" onchange="loadProductSubcategories(this.value)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
-                                    <option value="">— No category —</option>
-                                    @foreach($siteCategories as $cat)
-                                        <option value="{{ $cat->id }}" data-has-sub="{{ $cat->subcategories->count() > 0 ? 'true' : 'false' }}">{{ $cat->name }}</option>
-                                    @endforeach
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                                <select name="type" id="prodType" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                    <option value="">— No specific type —</option>
+                                    <option value="newborn">novorojenček</option>
+                                    <option value="kids">otroci</option>
+                                    <option value="adult">odrasli</option>
                                 </select>
                             </div>
 
-                            <div id="prodSubcategoryWrapper" class="hidden">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Subcategory</label>
-                                <select name="site_subcategory_id" id="prodSubcategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
-                                    <option value="">— No subcategory —</option>
+                            <div id="prodCategoryWrapper">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                                <select name="site_category_id" id="prodCategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                    <option value="">— No category —</option>
+                                    @foreach($siteCategories as $cat)
+                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -475,6 +478,17 @@
                     </div>
                     --}}
 
+                    {{-- ── Book Pictures ────────────────────────────────────────── --}}
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-md font-bold text-gray-800">Book Pictures (Pages)</h4>
+                            <button type="button" onclick="toggleModal('bookPicturesModal')" class="px-4 py-2 bg-sky-600 text-white text-sm font-semibold rounded-lg hover:bg-sky-700 transition-all flex items-center shadow-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                Manage Book Pictures
+                            </button>
+                        </div>
+                    </div>
+
                     {{-- ── Customization Steps ───────────────────────────────── --}}
                     <div class="pt-6 border-t border-gray-100">
                         <div class="flex items-center justify-between mb-5">
@@ -530,7 +544,45 @@
                         Save Book
                     </button>
                 </div>
+
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Book Pictures Modal (Outside Form) -->
+<div id="bookPicturesModal" class="fixed inset-0 z-[60] overflow-y-auto hidden animate-fade-in" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-80 transition-opacity" aria-hidden="true" onclick="toggleModal('bookPicturesModal')"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-middle bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-gray-100 relative">
+            <!-- Close btn -->
+            <button type="button" onclick="toggleModal('bookPicturesModal')" class="absolute top-6 right-6 z-10 w-10 h-10 bg-white hover:bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 transition-all focus:outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <div class="px-8 py-6 border-b border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900">Manage Book Pictures</h3>
+                <p class="text-sm text-gray-500 mt-1">Add internal pages of the book. These will be saved when you save the product.</p>
+            </div>
+            <div class="p-8 max-h-[60vh] overflow-y-auto">
+                <div class="flex justify-end mb-4">
+                    <button type="button" onclick="addBookPictureSection()" class="px-3 py-1.5 bg-sky-50 text-sky-700 text-sm font-semibold rounded-lg hover:bg-sky-100 transition-all flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Add Picture
+                    </button>
+                </div>
+                <div id="bookPicturesContainer" class="space-y-4">
+                    <!-- Dynamic book picture fields appended here -->
+                </div>
+            </div>
+            <div class="bg-gray-50 px-8 py-4 flex justify-end">
+                <button type="button" onclick="toggleModal('bookPicturesModal')" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all">
+                    Done
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -907,6 +959,7 @@
     }
     let specialSectionIndex = 0;
     let categoryImageIndex = 0;
+    let bookPictureIndex = 0;
 
     // ── Gallery Featured Image ────────────────────────────────────────────────
 
@@ -1052,6 +1105,13 @@
             addCategoryImageSection();
         }
 
+        const bookPicCont = document.getElementById('bookPicturesContainer');
+        if (bookPicCont) {
+            bookPicCont.innerHTML = "";
+            bookPictureIndex = 0;
+            addBookPictureSection();
+        }
+
         // Reset customization steps
         resetCustomizationSteps();
 
@@ -1086,11 +1146,11 @@
 
         document.getElementById('prodTitle').value = product.title;
         if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = product.domain || "";
+        if (document.getElementById('prodType')) document.getElementById('prodType').value = product.type || "";
 
-        // Populate Site Category & Subcategory
+        // Populate Site Category
         if (document.getElementById('prodCategory')) {
             document.getElementById('prodCategory').value = product.site_category_id || '';
-            loadProductSubcategories(product.site_category_id, product.site_subcategory_id);
         }
 
         // Populate featured image
@@ -1110,6 +1170,26 @@
         document.getElementById('prodDesc').value = product.description || "";
         
         // Name Overlay Populate
+        document.getElementById('specialSectionsContainer').innerHTML = "";
+        specialSectionIndex = 0;
+        if (product.special_sections && product.special_sections.length > 0) {
+            product.special_sections.forEach(section => {
+                addSpecialSection(section);
+            });
+        } else {
+            addSpecialSection();
+        }
+
+        document.getElementById('bookPicturesContainer').innerHTML = "";
+        bookPictureIndex = 0;
+        if (product.book_images && product.book_images.length > 0) {
+            product.book_images.forEach(img => {
+                addBookPictureSection(img);
+            });
+        } else {
+            addBookPictureSection();
+        }
+
         document.getElementById('prodNameText').value = product.name_text || "";
         document.getElementById('prodNameFontFamily').value = product.name_font_family || "PetitCochon";
         document.getElementById('prodNameTop').value = product.name_top || "2%";
@@ -1415,6 +1495,92 @@
         const existingInput = document.querySelector(`input[name="special_sections[${idx}][existing_image]"]`);
         if(existingInput) existingInput.remove();
     }
+
+    // ── Book Pictures Logic ────────────────────────────────────────────────
+
+    function addBookPictureSection(data = null) {
+        const container = document.getElementById('bookPicturesContainer');
+        if (!container) return;
+        const idx = bookPictureIndex++;
+        
+        let existingIdHtml = '';
+        let existingImageHtml = '';
+        let previewHtml = '';
+
+        if (data && data.id) {
+            existingIdHtml = `<input type="hidden" name="book_images[${idx}][id]" value="${data.id}" form="productForm">`;
+        }
+
+        if (data && data.image_path) {
+            existingImageHtml = `<input type="hidden" name="book_images[${idx}][existing_image]" value="${data.image_path}" form="productForm">`;
+            let src = data.image_path.startsWith('http') ? data.image_path : '/' + data.image_path.replace(/^\//, '');
+            previewHtml = `
+                <div id="bookImagePreview_${idx}" class="mt-3 relative w-32 h-32 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img id="bookImagePreviewImg_${idx}" src="${src}" class="w-full h-full object-cover">
+                    <button type="button" onclick="clearBookImage(${idx})" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center" title="Remove">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+        } else {
+            previewHtml = `
+                <div id="bookImagePreview_${idx}" class="hidden mt-3 relative w-32 h-32 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                    <img id="bookImagePreviewImg_${idx}" src="" class="w-full h-full object-cover">
+                    <button type="button" onclick="clearBookImage(${idx})" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center" title="Remove">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        const sectionHtml = `
+            <div id="book_image_row_${idx}" class="flex items-start gap-4 p-4 border border-sky-100 rounded-2xl bg-sky-50/30 relative group">
+                <div class="flex-1">
+                    ${existingIdHtml}
+                    ${existingImageHtml}
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Page Image</label>
+                    <input type="file" name="book_images[${idx}][image]" id="bookImgFile_${idx}" accept="image/*" onchange="previewBookImage(event, ${idx})" form="productForm" class="text-xs text-gray-500 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 w-full border border-gray-200 p-1.5 rounded-xl bg-white">
+                    ${previewHtml}
+                </div>
+                <div class="flex flex-col gap-2 pt-8">
+                    <button type="button" onclick="addBookPictureSection()" class="w-8 h-8 bg-sky-100 hover:bg-sky-200 text-sky-600 rounded-full flex items-center justify-center transition-colors" title="Add another">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                    <button type="button" onclick="removeBookPictureSection(${idx})" class="w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 rounded-full flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-red-200" title="Remove">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', sectionHtml);
+    }
+
+    function previewBookImage(event, idx) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(`bookImagePreviewImg_${idx}`).src = e.target.result;
+            document.getElementById(`bookImagePreview_${idx}`).classList.remove('hidden');
+            const existingInput = document.querySelector(`input[name="book_images[${idx}][existing_image]"]`);
+            if(existingInput) existingInput.remove();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearBookImage(idx) {
+        document.getElementById(`bookImgFile_${idx}`).value = '';
+        document.getElementById(`bookImagePreviewImg_${idx}`).src = '';
+        document.getElementById(`bookImagePreview_${idx}`).classList.add('hidden');
+        const existingInput = document.querySelector(`input[name="book_images[${idx}][existing_image]"]`);
+        if(existingInput) existingInput.remove();
+    }
+
+    function removeBookPictureSection(idx) {
+        document.getElementById(`book_image_row_${idx}`).remove();
+    }
+
 
     // --- Multi-Image Gallery Preview & Delete ---
     let selectedGalleryFiles = [];

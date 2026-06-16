@@ -29,6 +29,7 @@ Route::prefix('shop')->group(function () {
     // ── Products ───────────────────────────────────────────────────────────
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
+    Route::get('/products/{id}/book-pictures', [ProductController::class, 'bookPictures']);
 
     // ── Reviews ────────────────────────────────────────────────────────────
     Route::get('/reviews', [ReviewController::class, 'allReviews']);
