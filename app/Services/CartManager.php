@@ -102,10 +102,7 @@ class CartManager
             $cartKey = 'gift_' . $productId;
 
             if (isset($cart[$cartKey])) {
-                $newQuantity = $cart[$cartKey]['quantity'] + $quantity;
-                $newQuantity = min($newQuantity, self::MAX_QUANTITY);
-                $cart[$cartKey]['quantity']   = $newQuantity;
-                $cart[$cartKey]['line_total'] = round($cart[$cartKey]['unit_price'] * $newQuantity, 2);
+                throw new CartException('This gift is already in your cart.');
             } else {
                 $unitPrice = round((float) $gift->price, 2);
                 $cart[$cartKey] = [
@@ -135,32 +132,27 @@ class CartManager
 
         $cart = $this->getCart();
 
-        // Cart key: if personalisation is provided, make item unique per personalisation
-        // so the same product can appear multiple times with different names/options.
-        $cartKey = $personalisation
-            ? $productId . '_' . md5(json_encode($personalisation))
-            : $productId;
+        $cartKey = $productId;
 
-        if (isset($cart[$cartKey])) {
-            $newQuantity = $cart[$cartKey]['quantity'] + $quantity;
-            $newQuantity = min($newQuantity, self::MAX_QUANTITY);
-
-            $cart[$cartKey]['quantity']   = $newQuantity;
-            $cart[$cartKey]['line_total'] = round($cart[$cartKey]['unit_price'] * $newQuantity, 2);
-        } else {
-            $unitPrice = round((float) $product->price, 2);
-
-            $cart[$cartKey] = [
-                'product_id'      => $product->id,
-                'title'           => $product->title,
-                'image'           => $product->imageUrl ?? '',
-                'unit_price'      => $unitPrice,
-                'quantity'        => min($quantity, self::MAX_QUANTITY),
-                'line_total'      => round($unitPrice * min($quantity, self::MAX_QUANTITY), 2),
-                'personalisation' => $personalisation,
-                'type'            => 'product',
-            ];
+        // Check if product is already in the cart
+        foreach ($cart as $item) {
+            if (($item['type'] ?? 'product') === 'product' && $item['product_id'] == $productId) {
+                throw new CartException('This product is already in your cart.');
+            }
         }
+
+        $unitPrice = round((float) $product->price, 2);
+
+        $cart[$cartKey] = [
+            'product_id'      => $product->id,
+            'title'           => $product->title,
+            'image'           => $product->imageUrl ?? '',
+            'unit_price'      => $unitPrice,
+            'quantity'        => min($quantity, self::MAX_QUANTITY),
+            'line_total'      => round($unitPrice * min($quantity, self::MAX_QUANTITY), 2),
+            'personalisation' => $personalisation,
+            'type'            => 'product',
+        ];
 
         $this->putCart($cart);
     }
@@ -177,12 +169,10 @@ class CartManager
         if ($type === 'gift') {
             $cartKey = 'gift_' . $productId;
         } else {
-            $cartKey = $personalisation
-                ? $productId . '_' . md5(json_encode($personalisation))
-                : $productId;
+            $cartKey = $productId;
 
             // If the specific key is not found, fallback to search by prefix if no specific personalisation is provided
-            if (!isset($cart[$cartKey]) && !$personalisation) {
+            if (!isset($cart[$cartKey])) {
                 foreach (array_keys($cart) as $key) {
                     if (($cart[$key]['type'] ?? 'product') === 'product' && ($key == $productId || str_starts_with((string) $key, $productId . '_'))) {
                         $cartKey = $key;
@@ -221,13 +211,11 @@ class CartManager
                 unset($cart[$cartKey]);
             }
         } else {
-            $cartKey = $personalisation
-                ? $productId . '_' . md5(json_encode($personalisation))
-                : $productId;
+            $cartKey = $productId;
 
             if (isset($cart[$cartKey])) {
                 unset($cart[$cartKey]);
-            } else if (!$personalisation) {
+            } else {
                 // Remove all items matching the product ID if no specific personalisation is given
                 foreach (array_keys($cart) as $key) {
                     if (($cart[$key]['type'] ?? 'product') === 'product' && ($key == $productId || str_starts_with((string) $key, $productId . '_'))) {
@@ -277,8 +265,9 @@ class CartManager
                 $item['description'] = $product ? $product->description : '';
                 $item['type'] = 'product';
 
-                if (!empty($item['personalisation']) && !empty($item['personalisation']['preview_image'])) {
-                    $path = $item['personalisation']['preview_image'];
+                $defaultImage = $product ? $product->imageUrl : ($item['image'] ?? '');
+                if (!empty($defaultImage)) {
+                    $path = $defaultImage;
                     if (!str_starts_with($path, 'http://') && !str_starts_with($path, 'https://')) {
                         $normalised = '/' . ltrim($path, '/');
                         if (app()->runningInConsole() || !request()->getHost()) {
@@ -290,22 +279,7 @@ class CartManager
                         $item['image'] = $path;
                     }
                 } else {
-                    $defaultImage = $product ? $product->imageUrl : ($item['image'] ?? '');
-                    if (!empty($defaultImage)) {
-                        $path = $defaultImage;
-                        if (!str_starts_with($path, 'http://') && !str_starts_with($path, 'https://')) {
-                            $normalised = '/' . ltrim($path, '/');
-                            if (app()->runningInConsole() || !request()->getHost()) {
-                                $item['image'] = rtrim(config('app.url'), '/') . $normalised;
-                            } else {
-                                $item['image'] = request()->getSchemeAndHttpHost() . $normalised;
-                            }
-                        } else {
-                            $item['image'] = $path;
-                        }
-                    } else {
-                        $item['image'] = '';
-                    }
+                    $item['image'] = '';
                 }
             }
             unset($item['personalisation']);

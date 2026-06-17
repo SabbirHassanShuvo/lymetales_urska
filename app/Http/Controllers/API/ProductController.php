@@ -102,9 +102,29 @@ class ProductController extends Controller
             'customizationSteps.options.subSteps.subOptions',
         ])->where('id', $id)->where('status', true)->firstOrFail();
 
+        $latestProducts = Product::where('status', true)
+            ->where('id', '!=', $id)
+            ->latest()
+            ->take(6)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id'            => $p->id,
+                    'title'         => $p->title,
+                    'slug'          => $p->slug,
+                    'price'         => (float) $p->price,
+                    'rating'        => (float) $p->rating,
+                    'reviews_count' => $p->reviews_count,
+                    'is_bestseller' => (bool) $p->is_bestseller,
+                    'image_url'     => $this->resolveImageUrl($p->imageUrl),
+                ];
+            });
+
         return response()->json([
             'success' => true,
-            'data'    => $this->formatProduct($product, detailed: true),
+            'data'    => array_merge($this->formatProduct($product, detailed: true), [
+                'latest_products' => $latestProducts
+            ]),
         ]);
     }
 
@@ -363,10 +383,24 @@ class ProductController extends Controller
 
         $images = [];
 
-        if ($request->filled('preview_image')) {
+        // Try getting preview_image from request query string
+        $previewImageUrl = $request->input('preview_image');
+
+        // If not provided in query, check if there's a personalisation for this product in the Cart Session
+        if (!$previewImageUrl) {
+            $cart = \Illuminate\Support\Facades\Session::get(config('shop.cart_session_key'), []);
+            foreach ($cart as $item) {
+                if (isset($item['product_id']) && $item['product_id'] == $id && !empty($item['personalisation']['preview_image'])) {
+                    $previewImageUrl = $item['personalisation']['preview_image'];
+                    break;
+                }
+            }
+        }
+
+        if ($previewImageUrl) {
             $images[] = [
                 'id'   => 'preview',
-                'url'  => $this->resolveImageUrl($request->preview_image),
+                'url'  => $this->resolveImageUrl($previewImageUrl),
                 'type' => 'generated_preview',
             ];
         }

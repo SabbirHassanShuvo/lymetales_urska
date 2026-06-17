@@ -259,4 +259,26 @@ class HomeContentControllerNew extends Controller
             'message' => 'Home content retrieved successfully.',
         ], 200, [], JSON_UNESCAPED_SLASHES);
     }
+
+    /**
+     * Get just the FAQs data for a dedicated API endpoint.
+     *
+     * @return JsonResponse
+     */
+    public function faqs(): JsonResponse
+    {
+        $faqs = Faq::all()->map(function ($faq) {
+            return [
+                'id'       => $faq->id,
+                'question' => $faq->question,
+                'answer'   => $faq->answer,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $faqs,
+            'message' => 'FAQs retrieved successfully.',
+        ], 200, [], JSON_UNESCAPED_SLASHES);
+    }
 }

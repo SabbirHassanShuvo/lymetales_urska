@@ -76,6 +76,7 @@ Route::prefix('shop')->group(function () {
 
     // Home Content (Hero, Features, Gifts, FAQs)
     Route::get('/home-content', [HomeContentControllerNew::class, 'index']);
+    Route::get('/faqs', [HomeContentControllerNew::class, 'faqs']);
 
     // Gifts
     Route::get('/gifts', [\App\Http\Controllers\API\GiftController::class, 'index']);
