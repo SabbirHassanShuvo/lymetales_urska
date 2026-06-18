@@ -282,7 +282,6 @@ class CartManager
                     $item['image'] = '';
                 }
             }
-            unset($item['personalisation']);
         }
         return array_values($items);
     }

@@ -70,8 +70,9 @@
                         <th class="px-5 py-4">Payment Status</th>
                         <th class="px-5 py-4">Total</th>
                         <th class="px-5 py-4">Date</th>
-                        <th class="px-5 py-4">Preview</th>
-                        <th class="px-5 py-4">Delete</th>
+                        <th class="px-5 py-4 text-center">Receipt</th>
+                        <th class="px-5 py-4 text-center">Preview</th>
+                        <th class="px-5 py-4 text-center">Delete</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
@@ -145,8 +146,20 @@
                                 <span class="text-gray-400">{{ $order->created_at->format('H:i') }}</span>
                             </td>
 
+                            {{-- Receipt button --}}
+                            <td class="px-5 py-4 text-center">
+                                <a href="{{ route('admin.orders.receipt', $order) }}"
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold rounded-lg transition-all"
+                                   title="Download Receipt">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                    </svg>
+                                    Receipt
+                                </a>
+                            </td>
+
                             {{-- Preview button --}}
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 text-center">
                                 @php
                                     $previewImage = null;
                                     $orderItems = is_array($order->items) ? $order->items : json_decode($order->items, true);
@@ -156,23 +169,41 @@
                                             break;
                                         }
                                     }
+
+                                    $canPreview = false;
+                                    if ($order->payment_method === 'stripe' && $order->payment_status === 'paid') {
+                                        $canPreview = true;
+                                    } elseif ($order->payment_method !== 'stripe' && in_array($order->payment_status, ['pending', 'paid'])) {
+                                        $canPreview = true;
+                                    }
                                 @endphp
                                 @if($previewImage)
-                                    <button onclick="openPreviewModal('{{ $previewImage }}', '{{ $order->order_number }}')"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                        </svg>
-                                        Preview
-                                    </button>
+                                    @if($canPreview)
+                                        <button onclick="openPreviewModal('{{ $previewImage }}', '{{ $order->order_number }}')"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            Preview
+                                        </button>
+                                    @else
+                                        <button disabled title="Payment must be completed for Stripe or pending/paid for COD"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-400 text-xs font-semibold rounded-lg cursor-not-allowed">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            Preview
+                                        </button>
+                                    @endif
                                 @else
                                     <span class="text-gray-300 text-xs">—</span>
                                 @endif
                             </td>
 
                             {{-- Delete button --}}
-                            <td class="px-5 py-4">
+                            <td class="px-5 py-4 text-center">
                                 <button onclick="deleteOrder({{ $order->id }}, '{{ $order->order_number }}', this)"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-all">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,15 +255,22 @@
                  style="max-height: calc(100vh - 160px); object-fit: contain;">
         </div>
 
-        <!-- Download PDF button -->
-        <div class="w-full max-w-2xl mt-4">
+        <!-- Download buttons -->
+        <div class="w-full max-w-2xl mt-4 flex gap-3">
             <button onclick="downloadPreviewAsPdf()"
-                class="w-full flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg">
+                class="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                 </svg>
                 Download as PDF
             </button>
+            <a id="pvDownloadImageBtn" href="#" download="preview.png"
+                class="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Download Image
+            </a>
         </div>
     </div>
 </div>
@@ -257,6 +295,8 @@
 
         document.getElementById('pvImage').src = src;
         document.getElementById('pvOrderNumber').textContent = orderNumber;
+        document.getElementById('pvDownloadImageBtn').href = src;
+        document.getElementById('pvDownloadImageBtn').download = `personalisation-${orderNumber}.png`;
         document.getElementById('imagePreviewModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
     }

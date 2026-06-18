@@ -46,43 +46,38 @@ class PersonalisationController extends Controller
             $imageUrl = $this->storePreviewImage($request->file('image'));
         }
 
-        // ── Build personalisation snapshot ─────────────────────────────────
-        $personalisation = [
-            'child_name'  => trim($request->child_name),
-            'dedication'  => $request->dedication ? trim($request->dedication) : null,
-            'preview_image' => $imageUrl,
-            'fields'      => [],
-        ];
-
+        // ── Build fields JSON ──────────────────────────────────────────────
+        $fields = [];
         if ($request->filled('fields') && is_array($request->fields)) {
-            foreach ($request->fields as $key => $value) {
-                $personalisation['fields'][$key] = $value;
-            }
+            $fields = $request->fields;
         }
 
-        // ── Add to cart ────────────────────────────────────────────────────
+        // ── Save to database ───────────────────────────────────────────────
         try {
-            $this->cart->add(
-                (int) $request->product_id,
-                (int) $request->input('quantity', 1),
-                $personalisation
-            );
-        } catch (CartException $e) {
-            // Clean up uploaded image if cart add fails
+            $personalisation = \App\Models\Personalisation::create([
+                'product_id'    => $request->product_id,
+                'quantity'      => $request->input('quantity', 1),
+                'child_name'    => trim($request->child_name),
+                'dedication'    => $request->dedication ? trim($request->dedication) : null,
+                'preview_image' => $imageUrl,
+                'fields'        => $fields,
+            ]);
+        } catch (\Exception $e) {
+            // Clean up uploaded image if db save fails
             if ($imageUrl) {
                 $this->deleteFile($imageUrl);
             }
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Failed to save personalisation.',
+                'error' => 'Database error: Table might not exist. Please run migrations.',
             ], 422);
         }
 
         return response()->json([
             'success'         => true,
-            'message'         => 'Book personalised and added to cart.',
-            'cart_count'      => $this->cart->count(),
+            'message'         => 'Book personalisation saved successfully.',
             'personalisation' => $personalisation,
         ]);
     }

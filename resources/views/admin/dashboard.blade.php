@@ -102,12 +102,136 @@
         </div>
     </div>
 
-    <!-- Welcome Card -->
+    <!-- Row 3: Revenue Analytics Chart -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h3 class="text-xl font-bold text-gray-800 mb-4">{{ __('admin.welcome_title') }}</h3>
-        <p class="text-gray-500 leading-relaxed max-w-2xl">
-            {{ __('admin.welcome_desc') }}
-        </p>
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">Revenue Analytics</h3>
+                <p class="text-gray-500 text-sm mt-1">Total Lifetime Revenue: <span class="font-bold text-green-600">&euro;{{ number_format($totalRevenue, 2) }}</span></p>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="updateChart('weekly')" id="btn-weekly" class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-50 text-indigo-700 transition-colors">Weekly</button>
+                <button onclick="updateChart('monthly')" id="btn-monthly" class="px-4 py-2 text-sm font-semibold rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">Monthly</button>
+                <button onclick="updateChart('yearly')" id="btn-yearly" class="px-4 py-2 text-sm font-semibold rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">Yearly</button>
+            </div>
+        </div>
+        
+        <div class="relative h-[350px] w-full">
+            <canvas id="revenueChart"></canvas>
+        </div>
     </div>
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const weeklyData = @json($weeklyRevenue);
+    const monthlyData = @json($monthlyRevenue);
+    const yearlyData = @json($yearlyRevenue);
+
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    
+    // Gradient for the line chart fill
+    let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)'); // indigo-600 low opacity
+    gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+    let revenueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: weeklyData.labels,
+            datasets: [{
+                label: 'Revenue (€)',
+                data: weeklyData.data,
+                borderColor: '#4f46e5', // indigo-600
+                backgroundColor: gradient,
+                borderWidth: 3,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#4f46e5',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4 // smooth curves
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#1f2937',
+                    padding: 12,
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 14, weight: 'bold' },
+                    callbacks: {
+                        label: function(context) {
+                            return '€' + parseFloat(context.parsed.y).toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f3f4f6',
+                        drawBorder: false,
+                    },
+                    ticks: {
+                        font: { family: "'Inter', sans-serif", size: 12 },
+                        color: '#6b7280',
+                        callback: function(value) {
+                            return '€' + value;
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false,
+                    },
+                    ticks: {
+                        font: { family: "'Inter', sans-serif", size: 12 },
+                        color: '#6b7280'
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index',
+            },
+        }
+    });
+
+    function updateChart(period) {
+        // Reset button styles
+        ['weekly', 'monthly', 'yearly'].forEach(p => {
+            const btn = document.getElementById('btn-' + p);
+            btn.className = 'px-4 py-2 text-sm font-semibold rounded-lg text-gray-500 hover:bg-gray-50 transition-colors';
+        });
+
+        // Set active button style
+        const activeBtn = document.getElementById('btn-' + period);
+        activeBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-50 text-indigo-700 transition-colors';
+
+        // Update chart data
+        let newData = {};
+        if (period === 'weekly') newData = weeklyData;
+        else if (period === 'monthly') newData = monthlyData;
+        else if (period === 'yearly') newData = yearlyData;
+
+        revenueChart.data.labels = newData.labels;
+        revenueChart.data.datasets[0].data = newData.data;
+        
+        // Adjust points for monthly so it doesn't look too cluttered
+        revenueChart.data.datasets[0].pointRadius = period === 'monthly' ? 2 : 4;
+        
+        revenueChart.update();
+    }
+</script>
+@endpush
 @endsection

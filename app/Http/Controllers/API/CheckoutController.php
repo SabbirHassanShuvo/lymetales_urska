@@ -90,8 +90,13 @@ class CheckoutController extends Controller
         $isFastProd = session('shop.cart_fast_production', false);
         $t          = $this->calculateTotals($isFastProd);
 
+        $responseItems = array_map(function($item) {
+            unset($item['personalisation']);
+            return $item;
+        }, $this->cart->items());
+
         return response()->json([
-            'items'               => $this->cart->items(),
+            'items'               => $responseItems,
             'subtotal'            => number_format($t['subtotal'], 2, '.', ''),
             'shipping_fee'        => number_format($t['shipping'] + $t['fastProdFee'], 2, '.', ''),
             'fast_production_fee' => number_format($t['fastFee'], 2, '.', ''),

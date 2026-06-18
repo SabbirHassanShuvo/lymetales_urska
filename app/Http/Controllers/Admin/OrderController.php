@@ -75,4 +75,18 @@ class OrderController extends Controller
             'payment_status' => $order->payment_status,
         ]);
     }
+
+    /**
+     * Download Order Receipt PDF
+     */
+    public function receipt(Order $order)
+    {
+        if (!class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+            // Flash error and redirect back if package is not installed
+            return back()->with('error', 'PDF package not installed. Please run: composer require barryvdh/laravel-dompdf');
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.orders.receipt', compact('order'));
+        return $pdf->download('Receipt-' . $order->order_number . '.pdf');
+    }
 }

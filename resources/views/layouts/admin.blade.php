@@ -97,6 +97,14 @@
                     </svg>
                     Orders
                 </a>
+                <a href="{{ route('admin.reports.revenue') }}"
+                    class="flex items-center px-4 py-3 {{ request()->routeIs('admin.reports.revenue') ? 'bg-green-50 text-green-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                    </svg>
+                    Revenue Reports
+                </a>
                 {{-- ── Content Management ─────────────────────────── --}}
                 @php
                     $pagesOpen = request()->routeIs('admin.pages.*');

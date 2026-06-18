@@ -86,8 +86,13 @@ class CartController extends Controller
 
         $displayShippingFee = ($freeShip ? 0.0 : $shippingFee) + $appliedFastFee;
 
+        $responseItems = array_map(function($item) {
+            unset($item['personalisation']);
+            return $item;
+        }, $this->cart->items());
+
         return response()->json([
-            'items'               => $this->cart->items(),
+            'items'               => $responseItems,
             'count'               => $this->cart->count(),
             'subtotal'            => number_format($subtotal, 2, '.', ''),
             'global_discount'     => $globalDiscount > 0 ? '-' . number_format($globalDiscount, 2, '.', '') : null,

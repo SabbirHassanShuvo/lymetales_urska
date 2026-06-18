@@ -251,11 +251,14 @@ Route::prefix('admin')->group(function () {
         Route::patch('offers/{offer}/status', [\App\Http\Controllers\Admin\OfferController::class, 'toggleStatus'])->name('admin.offers.status');
         Route::resource('offers', \App\Http\Controllers\Admin\OfferController::class)->names('admin.offers');
 
-        // Orders
+        // Orders & Reports
         Route::get('/orders', [\App\Http\Controllers\Admin\OrderController::class, 'index'])->name('admin.orders.index');
         Route::delete('/orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'destroy'])->name('admin.orders.destroy');
         Route::patch('/orders/{order}/order-status', [\App\Http\Controllers\Admin\OrderController::class, 'updateOrderStatus'])->name('admin.orders.order-status');
         Route::patch('/orders/{order}/payment-status', [\App\Http\Controllers\Admin\OrderController::class, 'updatePaymentStatus'])->name('admin.orders.payment-status');
+        Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Admin\OrderController::class, 'receipt'])->name('admin.orders.receipt');
+        
+        Route::get('/reports/revenue', [\App\Http\Controllers\Admin\RevenueReportController::class, 'index'])->name('admin.reports.revenue');
 
         // Settings
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings.index');
