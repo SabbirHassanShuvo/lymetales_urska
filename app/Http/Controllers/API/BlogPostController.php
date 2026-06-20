@@ -86,9 +86,29 @@ class BlogPostController extends Controller
             'updated_at' => $post->updated_at,
         ];
 
+        // Fetch latest 3 active posts (excluding current)
+        $latestPosts = BlogPost::where('is_active', true)
+            ->where('id', '!=', $post->id)
+            ->orderBy('published_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'title' => $p->title,
+                    'slug' => $p->slug,
+                    'category' => $p->category,
+                    'excerpt' => $p->excerpt,
+                    'cover_image_url' => $p->cover_image ? (filter_var($p->cover_image, FILTER_VALIDATE_URL) ? $p->cover_image : asset($p->cover_image)) : null,
+                    'reading_time' => $p->reading_time,
+                    'published_at' => $p->published_at,
+                ];
+            });
+
         return response()->json([
             'success' => true,
             'data' => $formattedPost,
+            'latest_posts' => $latestPosts,
             'message' => 'Article retrieved successfully.'
         ], 200, [], JSON_UNESCAPED_SLASHES);
     }
