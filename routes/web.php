@@ -52,12 +52,32 @@ Route::get('/clear-cache', function() {
     return response()->json($res);
 });
 
+// --- Run Migrations Route ---
+Route::get('/run-migrations', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $output = \Illuminate\Support\Facades\Artisan::output();
+        return response()->json([
+            'success' => true,
+            'output'  => $output,
+            'message' => 'Migrations ran successfully.',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+});
+
+
+
 // --- Temporary Database, File, and View Cleanup Script ---
 Route::get('/run-cleanup', function () {
     if (function_exists('opcache_reset')) {
         opcache_reset();
     }
-    
+
     $oldMigration = database_path('migrations/2026_06_10_100002_add_featured_image_id_to_products_table.php');
     if (file_exists($oldMigration)) {
         @unlink($oldMigration);
@@ -200,6 +220,11 @@ Route::get('/', function () {
     return redirect()->route('admin.login');
 });
 
+Route::get('/blog', [\App\Http\Controllers\Admin\BlogPostController::class, 'publicIndex'])->name('blog.index');
+Route::get('/blog/{slug}', [\App\Http\Controllers\Admin\BlogPostController::class, 'publicShow'])->name('blog.show');
+
+
+
 Route::get('/lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'nl'])) {
         session(['locale' => $locale]);
@@ -217,6 +242,14 @@ Route::prefix('admin')->group(function () {
     Route::get('/login', [\App\Http\Controllers\Admin\AuthController::class, 'showLogin'])->name('admin.login');
     Route::post('/login', [\App\Http\Controllers\Admin\AuthController::class, 'login']);
     Route::post('/logout', [\App\Http\Controllers\Admin\AuthController::class, 'logout'])->name('admin.logout');
+
+    // Forgot Password — OTP Flow
+    Route::get('/forgot-password', [\App\Http\Controllers\Admin\AuthController::class, 'showForgotPassword'])->name('admin.forgot-password');
+    Route::post('/forgot-password/send', [\App\Http\Controllers\Admin\AuthController::class, 'sendOtp'])->name('admin.forgot-password.send');
+    Route::get('/forgot-password/verify', [\App\Http\Controllers\Admin\AuthController::class, 'showVerifyOtp'])->name('admin.forgot-password.otp-form');
+    Route::post('/forgot-password/verify', [\App\Http\Controllers\Admin\AuthController::class, 'verifyOtp'])->name('admin.forgot-password.verify');
+    Route::get('/forgot-password/reset', [\App\Http\Controllers\Admin\AuthController::class, 'showResetPassword'])->name('admin.forgot-password.reset-form');
+    Route::post('/forgot-password/reset', [\App\Http\Controllers\Admin\AuthController::class, 'resetPassword'])->name('admin.forgot-password.reset');
 
     // Protected Admin Routes
     Route::middleware(['auth', 'admin'])->group(function () {
@@ -267,17 +300,29 @@ Route::prefix('admin')->group(function () {
         // Dynamic Pages
         Route::resource('pages', \App\Http\Controllers\Admin\PageController::class)->names('admin.pages');
 
+        // Blog Posts CRUD
+        Route::post('/blog-posts/update-header', [\App\Http\Controllers\Admin\BlogPostController::class, 'updateHeader'])->name('admin.blog.update-header');
+        Route::resource('blog-posts', \App\Http\Controllers\Admin\BlogPostController::class)->names('admin.blog');
+
+        // Admin Profile Management
+        Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'index'])->name('admin.profile.index');
+        Route::put('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('admin.profile.update');
+
         // Home Content (Hero, Gifts, FAQs, Features, Promo, Gift Giver, Newsletter, Footer)
         Route::get('/home-content', [\App\Http\Controllers\Admin\HomeContentController::class, 'index'])->name('admin.home-content.index');
         Route::post('/home-content/hero', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeHero'])->name('admin.home-content.hero.store');
+        Route::post('/home-content/hero/{hero}', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateHero'])->name('admin.home-content.hero.update');
         Route::delete('/home-content/hero/{hero}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyHero'])->name('admin.home-content.hero.destroy');
         Route::post('/home-content/gift', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeGift'])->name('admin.home-content.gift.store');
+        Route::post('/home-content/gift/{gift}', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateGift'])->name('admin.home-content.gift.update');
         Route::delete('/home-content/gift/{gift}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyGift'])->name('admin.home-content.gift.destroy');
         Route::post('/home-content/faq', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFaq'])->name('admin.home-content.faq.store');
+        Route::put('/home-content/faq/{faq}', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateFaq'])->name('admin.home-content.faq.update');
         Route::delete('/home-content/faq/{faq}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFaq'])->name('admin.home-content.faq.destroy');
         
         // Highlight Features
         Route::post('/home-content/feature', [\App\Http\Controllers\Admin\HomeContentController::class, 'storeFeature'])->name('admin.home-content.feature.store');
+        Route::put('/home-content/feature/{feature}', [\App\Http\Controllers\Admin\HomeContentController::class, 'updateFeature'])->name('admin.home-content.feature.update');
         Route::delete('/home-content/feature/{feature}', [\App\Http\Controllers\Admin\HomeContentController::class, 'destroyFeature'])->name('admin.home-content.feature.destroy');
 
         // Promo Section

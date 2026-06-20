@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'phone_number',
         'photo',
+        'avatar',
         'password',
         'status',
         'role',
@@ -53,18 +54,5 @@ class User extends Authenticatable
 
 
 
-    public function complaints()
-    {
-        return $this->hasMany(Complaint::class);
-    }
-
-    public function ideas()
-    {
-        return $this->hasMany(Idea::class);
-    }
-
-    public function incidentReports()
-    {
-        return $this->hasMany(IncidentReport::class);
-    }
 }
+

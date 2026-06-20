@@ -68,6 +68,12 @@ Route::prefix('shop')->group(function () {
     // Dynamic Pages
     Route::get('/pages/{slug}', [PageController::class, 'show']);
 
+    // Blog Posts API
+    Route::get('/blog', [\App\Http\Controllers\API\BlogPostController::class, 'index']);
+    Route::get('/blog/{slug}', [\App\Http\Controllers\API\BlogPostController::class, 'show']);
+    Route::get('/whatsapp', [\App\Http\Controllers\API\BlogPostController::class, 'whatsapp']);
+    Route::get('/footer', [\App\Http\Controllers\API\BlogPostController::class, 'footer']);
+
     // Contact Form
     Route::post('/contact', [ContactController::class, 'store']);
 

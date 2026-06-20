@@ -62,6 +62,10 @@ class PersonalisationController extends Controller
                 'preview_image' => $imageUrl,
                 'fields'        => $fields,
             ]);
+
+            // Save pending personalisation to session so it can be attached when adding to cart
+            session()->put('pending_personalisation_' . $request->product_id, $personalisation->toArray());
+            session()->save();
         } catch (\Exception $e) {
             // Clean up uploaded image if db save fails
             if ($imageUrl) {

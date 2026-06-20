@@ -90,10 +90,7 @@ class CheckoutController extends Controller
         $isFastProd = session('shop.cart_fast_production', false);
         $t          = $this->calculateTotals($isFastProd);
 
-        $responseItems = array_map(function($item) {
-            unset($item['personalisation']);
-            return $item;
-        }, $this->cart->items());
+        $responseItems = $this->cart->items();
 
         return response()->json([
             'items'               => $responseItems,

@@ -386,7 +386,15 @@ class ProductController extends Controller
         // Try getting preview_image from request query string
         $previewImageUrl = $request->input('preview_image');
 
-        // If not provided in query, check if there's a personalisation for this product in the Cart Session
+        // If not provided in query, check if there's a pending personalisation in the session
+        if (!$previewImageUrl) {
+            $pending = \Illuminate\Support\Facades\Session::get('pending_personalisation_' . $id);
+            if ($pending && !empty($pending['preview_image'])) {
+                $previewImageUrl = $pending['preview_image'];
+            }
+        }
+
+        // If still not found, check if there's a personalisation for this product in the Cart Session
         if (!$previewImageUrl) {
             $cart = \Illuminate\Support\Facades\Session::get(config('shop.cart_session_key'), []);
             foreach ($cart as $item) {

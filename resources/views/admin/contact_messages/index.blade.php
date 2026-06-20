@@ -23,8 +23,17 @@
 
 {{-- Table Card --}}
 <div style="background:#fff;border:1.5px solid #f1f2f4;border-radius:1.1rem;overflow:hidden">
+    <div style="padding:1rem 1.25rem;border-bottom:1.5px solid #f9fafb;display:flex;align-items:center;justify-content:between;flex-wrap:wrap;gap:0.75rem">
+        <span style="font-size:0.875rem;font-weight:700;color:#374151">All Messages</span>
+        <div style="display:flex;align-items:center;gap:0.75rem">
+            <div style="position:relative">
+                <input type="text" id="searchInput" placeholder="Search messages..." style="padding:0.4rem 0.75rem 0.4rem 2rem;border:1.5px solid #e5e7eb;border-radius:0.5rem;font-size:0.8rem;width:12rem;outline:none;background:#fff" onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#e5e7eb'">
+                <svg style="position:absolute;left:0.6rem;top:0.55rem;width:0.85rem;height:0.85rem;color:#9ca3af" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+        </div>
+    </div>
     <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;text-align:left">
+        <table id="messagesTable" style="width:100%;border-collapse:collapse;text-align:left">
             <thead style="background:#f9fafb;border-bottom:1.5px solid #f1f2f4">
                 <tr>
                     <th class="tbl-th">Date</th>
@@ -37,7 +46,7 @@
             </thead>
             <tbody>
                 @forelse($messages as $message)
-                <tr class="tbl-row {{ !$message->is_read ? '' : '' }}" style="{{ !$message->is_read ? 'background:#fafbff' : '' }}">
+                <tr class="tbl-row" style="{{ !$message->is_read ? 'background:#fafbff' : '' }}" data-name="{{ strtolower($message->first_name . ' ' . $message->last_name) }}" data-email="{{ strtolower($message->email) }}">
                     <td class="tbl-td" style="color:#6b7280;white-space:nowrap">
                         {{ $message->created_at->format('M d, Y') }}<br>
                         <span style="font-size:0.75rem;color:#c3c8d4">{{ $message->created_at->format('h:i A') }}</span>
@@ -88,10 +97,12 @@
         </table>
     </div>
 
-    @if($messages->hasPages())
-    <div style="padding:1rem 1.25rem;border-top:1.5px solid #f9fafb">
-        {{ $messages->links() }}
-    </div>
-    @endif
+    <div id="tablePagination" class="px-6 py-4 border-t border-gray-100"></div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        new TableHelper('#messagesTable', '#searchInput', '#tablePagination', 10);
+    });
+</script>
 @endsection

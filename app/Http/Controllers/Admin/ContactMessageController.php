@@ -13,7 +13,7 @@ class ContactMessageController extends Controller
      */
     public function index()
     {
-        $messages = ContactMessage::orderBy('created_at', 'desc')->paginate(15);
+        $messages = ContactMessage::orderBy('created_at', 'desc')->get();
         return view('admin.contact_messages.index', compact('messages'));
     }
 

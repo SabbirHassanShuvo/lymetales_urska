@@ -3,7 +3,50 @@
 @section('content')
 <div x-data="{ 
     activeTab: localStorage.getItem('home_content_active_tab') || 'hero',
-    socialLinks: {{ json_encode($socialLinks) }}
+    socialLinks: {{ json_encode($socialLinks) }},
+    editHeroModal: false,
+    editHeroData: { id: '', title: '', button_one_text: '', button_two_text: '', image_url: '' },
+    openEditHero(hero) {
+        this.editHeroData = {
+            id: hero.id,
+            title: hero.title,
+            button_one_text: hero.button_one_text || '',
+            button_two_text: hero.button_two_text || '',
+            image_url: hero.image_path ? (hero.image_path.startsWith('http') ? hero.image_path : '/' + hero.image_path) : ''
+        };
+        this.editHeroModal = true;
+    },
+    editFeatureModal: false,
+    editFeatureData: { id: '', title: '', description: '' },
+    openEditFeature(feat) {
+        this.editFeatureData = {
+            id: feat.id,
+            title: feat.title,
+            description: feat.description
+        };
+        this.editFeatureModal = true;
+    },
+    editGiftModal: false,
+    editGiftData: { id: '', title: '', subtitle: '', image_url: '' },
+    openEditGift(gift) {
+        this.editGiftData = {
+            id: gift.id,
+            title: gift.title,
+            subtitle: gift.subtitle || '',
+            image_url: gift.image_path ? (gift.image_path.startsWith('http') ? gift.image_path : '/' + gift.image_path) : ''
+        };
+        this.editGiftModal = true;
+    },
+    editFaqModal: false,
+    editFaqData: { id: '', question: '', answer: '' },
+    openEditFaq(faq) {
+        this.editFaqData = {
+            id: faq.id,
+            question: faq.question,
+            answer: faq.answer
+        };
+        this.editFaqModal = true;
+    }
 }" x-init="$watch('activeTab', value => localStorage.setItem('home_content_active_tab', value))" class="w-full">
     <!-- Navigation Tabs -->
     <div class="flex flex-wrap gap-2 border-b border-gray-200 mb-8 pb-px">
@@ -72,13 +115,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($heroSections as $hero)
                     <div class="border rounded-xl p-4 relative bg-gray-50 flex flex-col justify-between">
-                        <form action="{{ route('admin.home-content.hero.destroy', $hero) }}" method="POST" class="absolute top-2 right-2">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600 shadow" onclick="confirmDelete(event, this.closest('form'), 'This hero section will be permanently deleted.')">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <div class="absolute top-2 right-2 flex gap-1.5">
+                            <button type="button" @click="openEditHero({{ json_encode($hero) }})" class="bg-indigo-600 text-white p-1.5 rounded-lg hover:bg-indigo-700 shadow" title="Edit Hero">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </button>
-                        </form>
+                            <form action="{{ route('admin.home-content.hero.destroy', $hero) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600 shadow" onclick="confirmDelete(event, this.closest('form'), 'This hero section will be permanently deleted.')" title="Delete Hero">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </div>
                         <div>
                             @if($hero->image_path)
                                 <img src="{{ filter_var($hero->image_path, FILTER_VALIDATE_URL) ? $hero->image_path : asset($hero->image_path) }}" alt="Hero Image" class="w-full h-36 object-cover rounded-lg mb-4">
@@ -126,13 +174,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 @forelse($features as $feat)
                     <div class="border rounded-xl p-4 relative bg-gray-50 flex flex-col justify-between">
-                        <form action="{{ route('admin.home-content.feature.destroy', $feat) }}" method="POST" class="absolute top-2 right-2">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-500 hover:text-red-700 p-1" onclick="confirmDelete(event, this.closest('form'), 'This highlight feature will be permanently deleted.')">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <div class="absolute top-2 right-2 flex gap-1.5">
+                            <button type="button" @click="openEditFeature({{ json_encode($feat) }})" class="text-indigo-600 hover:text-indigo-800 p-1" title="Edit Feature">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
-                        </form>
+                            <form action="{{ route('admin.home-content.feature.destroy', $feat) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-500 hover:text-red-700 p-1" onclick="confirmDelete(event, this.closest('form'), 'This highlight feature will be permanently deleted.')" title="Delete Feature">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </div>
                         <div>
                             <h3 class="font-bold text-gray-800 mb-2">{{ $feat->title }}</h3>
                             <p class="text-sm text-gray-600">{{ $feat->description }}</p>
@@ -177,13 +230,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 @forelse($giftCards as $gift)
                     <div class="border rounded-xl p-4 relative bg-gray-50 flex flex-col justify-between">
-                        <form action="{{ route('admin.home-content.gift.destroy', $gift) }}" method="POST" class="absolute top-2 right-2">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="bg-red-500 text-white p-1 rounded-lg hover:bg-red-600" onclick="confirmDelete(event, this.closest('form'), 'This gift card will be permanently deleted.')">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <div class="absolute top-2 right-2 flex gap-1.5">
+                            <button type="button" @click="openEditGift({{ json_encode($gift) }})" class="bg-indigo-600 text-white p-1 rounded-lg hover:bg-indigo-700 shadow" title="Edit Gift Card">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </button>
-                        </form>
+                            <form action="{{ route('admin.home-content.gift.destroy', $gift) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="bg-red-500 text-white p-1 rounded-lg hover:bg-red-600" onclick="confirmDelete(event, this.closest('form'), 'This gift card will be permanently deleted.')" title="Delete Gift Card">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </form>
+                        </div>
                         <div>
                             @if($gift->image_path)
                                 <img src="{{ filter_var($gift->image_path, FILTER_VALIDATE_URL) ? $gift->image_path : asset($gift->image_path) }}" alt="Gift Image" class="w-full h-32 object-cover rounded-lg mb-4">
@@ -362,13 +420,18 @@
             <div class="space-y-4">
                 @forelse($faqs as $faq)
                     <div class="border rounded-xl p-4 relative bg-gray-50">
-                        <form action="{{ route('admin.home-content.faq.destroy', $faq) }}" method="POST" class="absolute top-4 right-4">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-500 hover:text-red-700" onclick="confirmDelete(event, this.closest('form'), 'This FAQ will be permanently deleted.')">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <div class="absolute top-4 right-4 flex gap-1.5">
+                            <button type="button" @click="openEditFaq({{ json_encode($faq) }})" class="text-indigo-500 hover:text-indigo-700" title="Edit FAQ">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
-                        </form>
+                            <form action="{{ route('admin.home-content.faq.destroy', $faq) }}" method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-500 hover:text-red-700" onclick="confirmDelete(event, this.closest('form'), 'This FAQ will be permanently deleted.')" title="Delete FAQ">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </div>
                         <h3 class="font-bold text-gray-800 pr-8">{{ $faq->question }}</h3>
                         <p class="text-sm text-gray-600 mt-2">{{ $faq->answer }}</p>
                     </div>
@@ -650,6 +713,154 @@
                     <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">Save All Footer Settings</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Edit Hero Modal -->
+    <div x-show="editHeroModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" @click="editHeroModal = false"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-lg overflow-hidden transform transition-all p-6">
+                <div class="flex justify-between items-center pb-4 border-b border-gray-100 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800">Edit Hero Section</h3>
+                    <button type="button" @click="editHeroModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form :action="'/admin/home-content/hero/' + editHeroData.id" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                            <input type="text" name="title" x-model="editHeroData.title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Button One Text</label>
+                            <input type="text" name="button_one_text" x-model="editHeroData.button_one_text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Button Two Text</label>
+                            <input type="text" name="button_two_text" x-model="editHeroData.button_two_text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Background Image</label>
+                            <input type="file" name="image" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" onchange="previewImage(event, 'edit-hero-preview')">
+                            <div class="mt-3">
+                                <img id="edit-hero-preview" :src="editHeroData.image_url" alt="Preview" class="h-24 rounded-lg object-cover" x-show="editHeroData.image_url">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+                        <button type="button" @click="editHeroModal = false" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Feature Modal -->
+    <div x-show="editFeatureModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" @click="editFeatureModal = false"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-lg overflow-hidden transform transition-all p-6">
+                <div class="flex justify-between items-center pb-4 border-b border-gray-100 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800">Edit Highlight Feature</h3>
+                    <button type="button" @click="editFeatureModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form :action="'/admin/home-content/feature/' + editFeatureData.id" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                            <input type="text" name="title" x-model="editFeatureData.title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                            <textarea name="description" x-model="editFeatureData.description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" required></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+                        <button type="button" @click="editFeatureModal = false" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Gift Card Modal -->
+    <div x-show="editGiftModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" @click="editGiftModal = false"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-lg overflow-hidden transform transition-all p-6">
+                <div class="flex justify-between items-center pb-4 border-b border-gray-100 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800">Edit Gift Card</h3>
+                    <button type="button" @click="editGiftModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form :action="'/admin/home-content/gift/' + editGiftData.id" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                            <input type="text" name="title" x-model="editGiftData.title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Subtitle</label>
+                            <input type="text" name="subtitle" x-model="editGiftData.subtitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Image</label>
+                            <input type="file" name="image" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" onchange="previewImage(event, 'edit-gift-preview')">
+                            <div class="mt-3">
+                                <img id="edit-gift-preview" :src="editGiftData.image_url" alt="Preview" class="h-24 rounded-lg object-cover" x-show="editGiftData.image_url">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+                        <button type="button" @click="editGiftModal = false" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit FAQ Modal -->
+    <div x-show="editFaqModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" @click="editFaqModal = false"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-lg overflow-hidden transform transition-all p-6">
+                <div class="flex justify-between items-center pb-4 border-b border-gray-100 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800">Edit FAQ</h3>
+                    <button type="button" @click="editFaqModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form :action="'/admin/home-content/faq/' + editFaqData.id" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Question</label>
+                            <input type="text" name="question" x-model="editFaqData.question" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Answer</label>
+                            <textarea name="answer" x-model="editFaqData.answer" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 text-sm" required></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+                        <button type="button" @click="editFaqModal = false" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Save Changes</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

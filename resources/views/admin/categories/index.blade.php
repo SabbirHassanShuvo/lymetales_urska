@@ -58,7 +58,7 @@
             </div>
             <div class="flex items-center space-x-4">
                 <div class="relative">
-                    <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <input type="text" id="searchInput" placeholder="Search..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                     <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
                 <button onclick="openParentModal()" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all duration-200">
@@ -75,7 +75,7 @@
         {{-- ── Tab 1: Categories ────────────────────────────────────────── --}}
         <div id="tabContent-parent" class="tab-content p-6">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table id="categoriesTable" class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-gray-100 text-xs font-semibold text-gray-500 bg-gray-50/50">
                             <th class="px-6 py-4">Name</th>
@@ -116,12 +116,13 @@
                     </tbody>
                 </table>
             </div>
+            <div id="parentPagination" class="mt-4"></div>
         </div>
 
         {{-- ── Tab 2: Subcategories (tree view) ───────────────────────── --}}
         <div id="tabContent-sub" class="tab-content p-6 hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table id="subcategoriesTable" class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-gray-100 text-xs font-semibold text-gray-500 bg-gray-50/50">
                             <th class="px-6 py-4">Name</th>
@@ -202,6 +203,7 @@
                     </tbody>
                 </table>
             </div>
+            <div id="subPagination" class="mt-4"></div>
         </div>
     </div>
 </div>
@@ -565,12 +567,10 @@ function confirmDelete(action) {
         });
 }
 
-// ── Table search ───────────────────────────────────────────────────────────
-function filterTable() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    document.querySelectorAll('.category-row').forEach(row => {
-        row.style.display = row.dataset.name.includes(q) ? '' : 'none';
-    });
-}
+// ── Table pagination & search ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    new TableHelper('#categoriesTable', '#searchInput', '#parentPagination', 10);
+    new TableHelper('#subcategoriesTable', '#searchInput', '#subPagination', 10);
+});
 </script>
 @endsection

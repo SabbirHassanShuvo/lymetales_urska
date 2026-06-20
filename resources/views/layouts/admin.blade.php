@@ -20,9 +20,20 @@
     <div class="min-h-screen flex">
         <!-- Sidebar -->
         <aside class="w-64 bg-white border-r border-gray-100 flex-shrink-0 relative">
-            <div class="h-16 flex items-center px-8 border-b border-gray-50">
-                <span class="text-xl font-bold text-gray-800 tracking-tight"><span
-                        class="text-indigo-600">LYMETALES</span></span>
+            <div class="h-16 flex items-center px-6 border-b border-gray-50">
+                @php
+                    $adminLogoPath = \App\Models\Setting::getVal('admin_logo_path', '');
+                    $adminSiteName = \App\Models\Setting::getVal('admin_site_name', 'LYMETALES');
+                @endphp
+                @if($adminLogoPath && file_exists(public_path($adminLogoPath)))
+                    <a href="{{ route('admin.dashboard') }}">
+                        <img src="{{ asset($adminLogoPath) }}" alt="Admin Logo" style="max-height:38px;max-width:160px;object-fit:contain">
+                    </a>
+                @else
+                    <span class="text-xl font-bold text-gray-800 tracking-tight">
+                        <span class="text-indigo-600">{{ strtoupper($adminSiteName) }}</span>
+                    </span>
+                @endif
             </div>
             <nav class="mt-8 px-4 space-y-2 mb-24">
                 <a href="{{ route('admin.dashboard') }}"
@@ -152,6 +163,11 @@
                                 </span>
                             @endif
                         @endforeach
+                        <a href="{{ route('admin.blog.index') }}"
+                            class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg {{ request()->routeIs('admin.blog.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800' }} transition-all">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>
+                            Our Blog
+                        </a>
                         <a href="{{ route('admin.pages.index') }}"
                             class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-700 transition-all">
                             <span class="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>
@@ -231,12 +247,17 @@
                         <a href="{{ route('lang.switch', 'nl') }}" class="px-3 py-1 text-xs font-bold rounded-md transition-all {{ App::getLocale() === 'nl' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600' }}">NL</a>
                     </div> -->
                     
-                    <span class="text-sm text-gray-500">{{ auth()->user()->first_name }}
-                        {{ auth()->user()->last_name }}</span>
-                    <div
-                        class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                        {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}
-                    </div>
+                    <a href="{{ route('admin.profile.index') }}" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;padding:0.35rem 0.65rem;border-radius:0.65rem;transition:background 0.15s{{ request()->routeIs('admin.profile.*') ? ';background:#eef2ff' : '' }}" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='{{ request()->routeIs('admin.profile.*') ? '#eef2ff' : 'transparent' }}'">
+                        <span style="font-size:0.82rem;font-weight:600;color:#4b5563">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
+                        @php $avatar = auth()->user()->avatar; @endphp
+                        @if($avatar && file_exists(public_path($avatar)))
+                            <img src="{{ asset($avatar) }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #e0e7ff" alt="Avatar">
+                        @else
+                            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.72rem;font-weight:700;flex-shrink:0">
+                                {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}{{ strtoupper(substr(auth()->user()->last_name, 0, 1)) }}
+                            </div>
+                        @endif
+                    </a>
                 </div>
             </header>
 
@@ -271,6 +292,176 @@
             </div>
         </main>
     </div>
+    <script>
+    class TableHelper {
+        constructor(tableSelector, searchInputSelector, paginationContainerSelector, pageSize = 10, rowSelector = 'tbody tr') {
+            this.table = document.querySelector(tableSelector);
+            if (!this.table) return;
+            this.tbody = this.table.querySelector('tbody');
+            this.rowSelector = rowSelector;
+            this.searchInput = document.querySelector(searchInputSelector);
+            this.paginationContainer = document.querySelector(paginationContainerSelector);
+            this.pageSize = pageSize;
+            this.currentPage = 1;
+            
+            // Extract all rows initially
+            this.allRows = Array.from(this.tbody.querySelectorAll(this.rowSelector)).filter(row => !row.classList.contains('no-results-row'));
+            this.filteredRows = [...this.allRows];
+
+            this.init();
+        }
+
+        init() {
+            if (this.searchInput) {
+                this.searchInput.addEventListener('input', () => {
+                    this.currentPage = 1;
+                    this.filter();
+                });
+                this.filter();
+            } else {
+                this.render();
+            }
+        }
+
+        filter() {
+            const query = this.searchInput.value.toLowerCase().trim();
+            this.filteredRows = this.allRows.filter(row => {
+                let searchableText = '';
+                if (row.dataset.name) searchableText += ' ' + row.dataset.name.toLowerCase();
+                if (row.dataset.title) searchableText += ' ' + row.dataset.title.toLowerCase();
+                if (row.dataset.code) searchableText += ' ' + row.dataset.code.toLowerCase();
+                if (row.dataset.email) searchableText += ' ' + row.dataset.email.toLowerCase();
+                if (row.dataset.category) searchableText += ' ' + row.dataset.category.toLowerCase();
+                
+                if (searchableText === '') {
+                    searchableText = row.innerText.toLowerCase();
+                }
+                
+                return searchableText.includes(query);
+            });
+
+            // Show/hide no results row
+            let noResultsRow = this.tbody.querySelector('.no-results-row');
+            if (this.filteredRows.length === 0) {
+                if (!noResultsRow) {
+                    noResultsRow = document.createElement('tr');
+                    noResultsRow.className = 'no-results-row';
+                    const cols = this.table.querySelectorAll('thead th').length || 10;
+                    noResultsRow.innerHTML = `<td colspan="${cols}" class="text-center py-8 text-gray-500 text-sm">No matching results found.</td>`;
+                    this.tbody.appendChild(noResultsRow);
+                } else {
+                    noResultsRow.style.display = '';
+                }
+            } else if (noResultsRow) {
+                noResultsRow.style.display = 'none';
+            }
+
+            this.render();
+        }
+
+        render() {
+            const totalRows = this.filteredRows.length;
+            const totalPages = Math.ceil(totalRows / this.pageSize) || 1;
+
+            if (this.currentPage > totalPages) {
+                this.currentPage = totalPages;
+            }
+
+            const start = (this.currentPage - 1) * this.pageSize;
+            const end = start + this.pageSize;
+
+            // Hide all rows
+            this.allRows.forEach(row => row.style.display = 'none');
+
+            // Show current page rows
+            this.filteredRows.slice(start, end).forEach(row => row.style.display = '');
+
+            // Render pagination controls
+            if (this.paginationContainer) {
+                this.renderPagination(totalPages);
+            }
+        }
+
+        renderPagination(totalPages) {
+            this.paginationContainer.innerHTML = '';
+            if (totalPages <= 1) {
+                this.paginationContainer.classList.add('hidden');
+                return;
+            }
+            this.paginationContainer.classList.remove('hidden');
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center justify-between border-t border-gray-100 bg-white px-4 py-3 sm:px-6 mt-4 w-full';
+
+            const flex1 = document.createElement('div');
+            flex1.className = 'flex flex-1 justify-between sm:hidden';
+
+            const mobPrev = document.createElement('button');
+            mobPrev.type = 'button';
+            mobPrev.className = 'relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50';
+            mobPrev.innerText = 'Previous';
+            mobPrev.disabled = this.currentPage === 1;
+            mobPrev.onclick = () => { if (this.currentPage > 1) { this.currentPage--; this.render(); } };
+
+            const mobNext = document.createElement('button');
+            mobNext.type = 'button';
+            mobNext.className = 'relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50';
+            mobNext.innerText = 'Next';
+            mobNext.disabled = this.currentPage === totalPages;
+            mobNext.onclick = () => { if (this.currentPage < totalPages) { this.currentPage++; this.render(); } };
+
+            flex1.appendChild(mobPrev);
+            flex1.appendChild(mobNext);
+
+            const flex2 = document.createElement('div');
+            flex2.className = 'hidden sm:flex sm:flex-1 sm:items-center sm:justify-between gap-4';
+
+            const info = document.createElement('div');
+            const startIdx = this.filteredRows.length === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
+            const endIdx = Math.min(this.currentPage * this.pageSize, this.filteredRows.length);
+            info.innerHTML = `<p class="text-xs text-gray-500">Showing <span class="font-semibold text-gray-700">${startIdx}</span> to <span class="font-semibold text-gray-700">${endIdx}</span> of <span class="font-semibold text-gray-700">${this.filteredRows.length}</span> results</p>`;
+
+            const nav = document.createElement('nav');
+            nav.className = 'isolate inline-flex -space-x-px rounded-md shadow-sm bg-white';
+
+            const prevBtn = document.createElement('button');
+            prevBtn.type = 'button';
+            prevBtn.className = 'relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50';
+            prevBtn.innerHTML = `<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.83 10l3.94 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" /></svg>`;
+            prevBtn.disabled = this.currentPage === 1;
+            prevBtn.onclick = () => { if (this.currentPage > 1) { this.currentPage--; this.render(); } };
+            nav.appendChild(prevBtn);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.type = 'button';
+                if (i === this.currentPage) {
+                    pageBtn.className = 'relative z-10 inline-flex items-center bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600';
+                } else {
+                    pageBtn.className = 'relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0';
+                }
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => { this.currentPage = i; this.render(); };
+                nav.appendChild(pageBtn);
+            }
+
+            const nextBtn = document.createElement('button');
+            nextBtn.type = 'button';
+            nextBtn.className = 'relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50';
+            nextBtn.innerHTML = `<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.17 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>`;
+            nextBtn.disabled = this.currentPage === totalPages;
+            nextBtn.onclick = () => { if (this.currentPage < totalPages) { this.currentPage++; this.render(); } };
+            nav.appendChild(nextBtn);
+
+            flex2.appendChild(info);
+            flex2.appendChild(nav);
+
+            wrapper.appendChild(flex1);
+            wrapper.appendChild(flex2);
+            this.paginationContainer.appendChild(wrapper);
+        }
+    }
+    </script>
     @stack('scripts')
 </body>
 

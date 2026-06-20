@@ -48,19 +48,37 @@
             <h2 class="text-2xl font-bold text-gray-800">Orders Management</h2>
             <p class="text-sm text-gray-500">Manage order fulfillment and payment statuses for all customer orders.</p>
         </div>
-        <div class="relative">
-            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search orders..."
-                class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-            <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
+        <div class="flex items-center gap-3">
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="Search orders..."
+                    class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+            
+            <!-- Export Options -->
+            <div class="relative animate-fade-in" x-data="{ open: false }">
+                <button type="button" @click="open = !open" class="inline-flex items-center px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl transition-all shadow-sm">
+                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Export
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden">
+                    <button type="button" @click="exportOrdersToExcel(); open = false" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center font-semibold">
+                        Excel Spreadsheet
+                    </button>
+                    <button type="button" @click="exportOrdersToPDF(); open = false" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center font-semibold">
+                        PDF Document
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Orders Table -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table id="ordersTable" class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-xs font-semibold uppercase border-b border-gray-100">
                         <th class="px-5 py-4">Order #</th>
@@ -78,7 +96,7 @@
                 <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
                     @forelse($orders as $order)
                         <tr class="hover:bg-gray-50/50 transition-colors order-row"
-                            data-search="{{ strtolower($order->order_number . ' ' . $order->full_name . ' ' . $order->email) }}">
+                            data-name="{{ strtolower($order->order_number . ' ' . $order->full_name . ' ' . $order->email) }}">
                             <td class="px-5 py-4">
                                 <span class="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg">
                                     {{ $order->order_number }}
@@ -170,12 +188,7 @@
                                         }
                                     }
 
-                                    $canPreview = false;
-                                    if ($order->payment_method === 'stripe' && $order->payment_status === 'paid') {
-                                        $canPreview = true;
-                                    } elseif ($order->payment_method !== 'stripe' && in_array($order->payment_status, ['pending', 'paid'])) {
-                                        $canPreview = true;
-                                    }
+                                    $canPreview = $order->payment_status === 'paid';
                                 @endphp
                                 @if($previewImage)
                                     @if($canPreview)
@@ -188,7 +201,7 @@
                                             Preview
                                         </button>
                                     @else
-                                        <button disabled title="Payment must be completed for Stripe or pending/paid for COD"
+                                        <button disabled title="Payment must be completed (Paid status) to preview image"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-400 text-xs font-semibold rounded-lg cursor-not-allowed">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -225,8 +238,8 @@
                         </tr>
                     @endforelse
                 </tbody>
-            </table>
         </div>
+        <div id="tablePagination" class="px-5 py-4 border-t border-gray-100"></div>
     </div>
 </div>
 
@@ -276,7 +289,9 @@
 </div>
 
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script>
     const csrfToken = '{{ csrf_token() }}';
 
@@ -402,7 +417,16 @@
             const data = await res.json();
             if (!res.ok || !data.success) throw new Error(data.message ?? 'Update failed.');
             select.dataset.previous = newValue;
-            Swal.fire({ icon: 'success', title: 'Updated!', text: `Status changed to "${newValue}".`, timer: 1500, showConfirmButton: false, customClass: { popup: 'rounded-2xl shadow-xl' } });
+            Swal.fire({ 
+                icon: 'success', 
+                title: 'Updated!', 
+                text: `Status changed to "${newValue}".`, 
+                timer: 1500, 
+                showConfirmButton: false, 
+                customClass: { popup: 'rounded-2xl shadow-xl' } 
+            }).then(() => {
+                window.location.reload();
+            });
         })
         .catch(err => {
             select.value = previousValue;
@@ -411,18 +435,90 @@
         .finally(() => { select.disabled = false; });
     }
 
-    // ── Search ─────────────────────────────────────────────────────────────
-
-    function filterTable() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('.order-row').forEach(row => {
-            row.style.display = (row.getAttribute('data-search') ?? '').includes(query) ? '' : 'none';
-        });
-    }
+    // ── Table pagination & search ───────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        new TableHelper('#ordersTable', '#searchInput', '#tablePagination', 10);
+    });
 
     document.querySelectorAll('select[data-type]').forEach(select => {
         select.dataset.previous = select.value;
     });
+
+    // ── Table Data Exports ─────────────────────────────────────────────────
+    function getOrdersData() {
+        const table = document.getElementById('ordersTable');
+        if (!table) return [];
+        
+        const headers = ["Order #", "Customer Name", "Customer Email", "Payment Method", "Order Status", "Payment Status", "Total", "Date"];
+        const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => !row.classList.contains('no-results-row'));
+        const data = [headers];
+        
+        rows.forEach(row => {
+            if (row.style.display === 'none') return;
+
+            const cells = row.cells;
+            if (cells.length < 7) return;
+
+            const orderNumber = cells[0].innerText.trim();
+            const name = cells[1].querySelector('div:nth-child(1)')?.innerText.trim() || '';
+            const email = cells[1].querySelector('div:nth-child(2)')?.innerText.trim() || '';
+            const paymentMethod = cells[2].innerText.trim();
+            
+            const orderStatusSelect = cells[3].querySelector('select');
+            const orderStatus = orderStatusSelect ? orderStatusSelect.value : cells[3].innerText.trim();
+            
+            const paymentStatusSelect = cells[4].querySelector('select');
+            let paymentStatus = '';
+            if (paymentStatusSelect) {
+                paymentStatus = paymentStatusSelect.value;
+            } else {
+                paymentStatus = cells[4].innerText.trim();
+            }
+            
+            const total = cells[5].innerText.trim();
+            const date = cells[6].innerText.replace('\n', ' ').trim();
+            
+            data.push([orderNumber, name, email, paymentMethod, orderStatus, paymentStatus, total, date]);
+        });
+        return data;
+    }
+
+    function exportOrdersToExcel() {
+        const data = getOrdersData();
+        if (data.length <= 1) {
+            Swal.fire('Info', 'No data to export.', 'info');
+            return;
+        }
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+        XLSX.writeFile(workbook, `orders_report_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    function exportOrdersToPDF() {
+        const data = getOrdersData();
+        if (data.length <= 1) {
+            Swal.fire('Info', 'No data to export.', 'info');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'pt', 'a4');
+        
+        doc.setFontSize(16);
+        doc.text("Orders Report", 40, 40);
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 40, 55);
+        
+        doc.autoTable({
+            head: [data[0]],
+            body: data.slice(1),
+            startY: 70,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [79, 70, 229] }
+        });
+        
+        doc.save(`orders_report_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
 </script>
 @endpush
 @endsection

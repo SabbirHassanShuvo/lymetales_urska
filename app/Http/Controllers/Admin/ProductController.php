@@ -23,7 +23,7 @@ class ProductController extends Controller
     {
         $products = Product::with(['category', 'subcategory', 'siteCategory', 'siteSubcategory', 'primaryImage', 'images', 'bookImages', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions'])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->get();
 
         // Totals for header cards (all products, not just current page)
         $totalCount       = Product::count();

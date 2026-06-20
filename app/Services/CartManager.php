@@ -130,6 +130,14 @@ class CartManager
             throw new CartException('This product is not available.');
         }
 
+        // Check if there is a pending personalisation in the session for this product
+        if ($type === 'product' && $personalisation === null) {
+            $personalisation = session()->get('pending_personalisation_' . $productId);
+            if ($personalisation) {
+                session()->forget('pending_personalisation_' . $productId);
+            }
+        }
+
         $cart = $this->getCart();
 
         $cartKey = $productId;

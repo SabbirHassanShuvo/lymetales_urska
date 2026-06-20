@@ -459,4 +459,84 @@ class HomeContentController extends Controller
 
         return back()->with('success', 'Footer brand info and social links updated successfully.');
     }
+
+    public function updateHero(Request $request, HeroSection $hero)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'button_one_text' => 'nullable|string|max:255',
+            'button_two_text' => 'nullable|string|max:255',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        $data = [
+            'title' => $request->input('title'),
+            'button_one_text' => $request->input('button_one_text'),
+            'button_two_text' => $request->input('button_two_text'),
+        ];
+
+        if ($request->hasFile('image')) {
+            if ($hero->image_path && File::exists(public_path($hero->image_path))) {
+                File::delete(public_path($hero->image_path));
+            }
+            $imageName = time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('uploads/home'), $imageName);
+            $data['image_path'] = 'uploads/home/' . $imageName;
+        }
+
+        $hero->update($data);
+
+        return back()->with('success', 'Hero section updated successfully.');
+    }
+
+    public function updateFeature(Request $request, HomeFeature $feature)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+
+        $feature->update($request->all());
+
+        return back()->with('success', 'Feature updated successfully.');
+    }
+
+    public function updateGift(Request $request, GiftCard $gift)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        $data = [
+            'title' => $request->input('title'),
+            'subtitle' => $request->input('subtitle'),
+        ];
+
+        if ($request->hasFile('image')) {
+            if ($gift->image_path && File::exists(public_path($gift->image_path))) {
+                File::delete(public_path($gift->image_path));
+            }
+            $imageName = time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('uploads/home'), $imageName);
+            $data['image_path'] = 'uploads/home/' . $imageName;
+        }
+
+        $gift->update($data);
+
+        return back()->with('success', 'Gift card updated successfully.');
+    }
+
+    public function updateFaq(Request $request, Faq $faq)
+    {
+        $request->validate([
+            'question' => 'required|string',
+            'answer' => 'required|string',
+        ]);
+
+        $faq->update($request->all());
+
+        return back()->with('success', 'FAQ updated successfully.');
+    }
 }

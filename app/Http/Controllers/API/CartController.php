@@ -86,10 +86,7 @@ class CartController extends Controller
 
         $displayShippingFee = ($freeShip ? 0.0 : $shippingFee) + $appliedFastFee;
 
-        $responseItems = array_map(function($item) {
-            unset($item['personalisation']);
-            return $item;
-        }, $this->cart->items());
+        $responseItems = $this->cart->items();
 
         return response()->json([
             'items'               => $responseItems,

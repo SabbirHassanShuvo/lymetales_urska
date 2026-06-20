@@ -29,7 +29,7 @@ class RevenueReportController extends Controller
         // With basic pagination
         $orders = Order::where('payment_status', 'paid')
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->get();
 
         return view('admin.reports.revenue', compact(
             'totalRevenue',
