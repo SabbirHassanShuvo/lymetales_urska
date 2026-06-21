@@ -118,8 +118,8 @@
                             <td class="px-5 py-3.5">
                                 @if($product->domain)
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold
-                                        {{ $product->domain === 'domain1' ? 'bg-violet-50 text-violet-700 border border-violet-100' : 'bg-sky-50 text-sky-700 border border-sky-100' }}">
-                                        {{ $product->domain === 'domain1' ? 'Domain 1' : 'Domain 2' }}
+                                        {{ $product->domain === 'https://lymetales.com/' ? 'bg-violet-50 text-violet-700 border border-violet-100' : 'bg-sky-50 text-sky-700 border border-sky-100' }}">
+                                        {{ $product->domain === 'https://lymetales.com/' ? 'LymeTales' : 'BeeBook' }}
                                     </span>
                                 @else
                                     <span class="text-gray-300 text-xs">—</span>
@@ -287,8 +287,8 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Domain</label>
                                 <select name="domain" id="prodDomain" onchange="loadDomainCategories(this.value)" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                     <option value="">— No specific domain —</option>
-                                    <option value="domain1">Domain 1</option>
-                                    <option value="domain2">Domain 2</option>
+                                    <option value="https://lymetales.com/">LymeTales</option>
+                                    <option value="https://beebook.si/">BeeBook</option>
                                 </select>
                             </div>
 

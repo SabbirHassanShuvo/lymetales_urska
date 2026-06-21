@@ -41,6 +41,11 @@ class ProductController extends Controller
         ));
     }
 
+    public function show($id)
+    {
+        return redirect()->route('admin.products.index');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -72,7 +77,7 @@ class ProductController extends Controller
             'status'             => 'nullable|boolean',
             'type'               => 'nullable|string|max:255',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
-            'domain'             => 'nullable|in:domain1,domain2',
+            'domain'             => 'nullable|in:https://lymetales.com/,https://beebook.si/',
             'featured_image_id'  => 'nullable|string',
             'site_category_id'    => 'nullable|exists:site_categories,id',
             'site_subcategory_id' => 'nullable|exists:site_subcategories,id',
@@ -339,7 +344,7 @@ class ProductController extends Controller
             'status'             => 'nullable|boolean',
             'type'               => 'nullable|string|max:255',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
-            'domain'             => 'nullable|in:domain1,domain2',
+            'domain'             => 'nullable|in:https://lymetales.com/,https://beebook.si/',
             'featured_image_id'  => 'nullable|string',
             'site_category_id'    => 'nullable|exists:site_categories,id',
             'site_subcategory_id' => 'nullable|exists:site_subcategories,id',
