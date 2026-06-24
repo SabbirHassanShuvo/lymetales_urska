@@ -14,7 +14,7 @@
     </div>
 
     <!-- Top Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Revenue</p>
             <p class="text-3xl font-bold text-green-600 mt-2">&euro;{{ number_format($totalRevenue, 2) }}</p>
@@ -33,6 +33,11 @@
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">COD Revenue</p>
             <p class="text-3xl font-bold text-amber-600 mt-2">&euro;{{ number_format($codRevenue, 2) }}</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">PayPal Revenue</p>
+            <p class="text-3xl font-bold text-blue-600 mt-2">&euro;{{ number_format($paypalRevenue, 2) }}</p>
         </div>
     </div>
 
@@ -91,6 +96,10 @@
                             @if(strtolower($order->payment_method) === 'stripe')
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold uppercase">
                                     Stripe
+                                </span>
+                            @elseif(strtolower($order->payment_method) === 'paypal')
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-bold uppercase">
+                                    PayPal
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-bold uppercase">

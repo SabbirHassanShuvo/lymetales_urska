@@ -22,7 +22,7 @@ class CheckoutRequest extends FormRequest
             'postal_code'    => ['required', 'string', 'max:20'],
             'country'        => ['required', 'string', 'max:100'],
             'phone'          => ['required', 'regex:/^[+\d\s\-]{1,20}$/'],
-            'payment_method' => ['required', Rule::in(['cod', 'stripe'])],
+            'payment_method' => ['required', Rule::in(['cod', 'stripe', 'paypal'])],
             'fast_production' => ['sometimes', 'boolean'],
             // stripe_payment_intent_id is only needed for direct PaymentIntent flow,
             // NOT for Stripe Checkout Session (link-based) flow.

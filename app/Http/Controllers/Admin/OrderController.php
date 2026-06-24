@@ -57,10 +57,10 @@ class OrderController extends Controller
      */
     public function updatePaymentStatus(Request $request, Order $order): JsonResponse
     {
-        if ($order->payment_method === 'stripe') {
+        if (in_array($order->payment_method, ['stripe', 'paypal'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment status for Stripe orders is managed by webhooks.',
+                'message' => 'Payment status for online orders is managed automatically.',
             ], 422);
         }
 

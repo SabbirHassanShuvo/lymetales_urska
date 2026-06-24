@@ -48,6 +48,29 @@ class ConfirmationController extends Controller
             }
         }
 
+        // If payment status is pending for PayPal order, try to capture using PayPal Order ID
+        if ($order->payment_method === 'paypal' && $order->payment_status !== 'paid') {
+            $paypalOrderId = $order->paypal_order_id;
+            if ($paypalOrderId) {
+                try {
+                    $provider = new \Srmklive\PayPal\Services\PayPal;
+                    $provider->setApiCredentials(config('paypal'));
+                    $provider->getAccessToken();
+
+                    $response = $provider->capturePaymentOrder($paypalOrderId);
+
+                    if (isset($response['status']) && $response['status'] === 'COMPLETED') {
+                        $order->update([
+                            'payment_status' => 'paid',
+                        ]);
+                        $order->refresh();
+                    }
+                } catch (\Exception $e) {
+                    Log::error('PayPal order capture failed in confirmation: ' . $e->getMessage());
+                }
+            }
+        }
+
         // If order is paid or is a COD order, clear the cart in the user's session
         if ($order->payment_status === 'paid' || $order->payment_method === 'cod') {
             $this->cart->clear();

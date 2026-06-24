@@ -53,6 +53,8 @@ Route::prefix('shop')->group(function () {
     // Checkout (COD + Stripe — single endpoint)
     Route::get('/checkout',  [CheckoutController::class, 'index']);
     Route::post('/checkout', [CheckoutController::class, 'store']);
+    Route::get('/paypal/return', [CheckoutController::class, 'paypalReturn'])->name('paypal.return');
+    Route::get('/paypal/cancel', [CheckoutController::class, 'paypalCancel'])->name('paypal.cancel');
 
     // Coupon
     Route::post('/coupon/apply',  [CheckoutController::class, 'applyCoupon']);

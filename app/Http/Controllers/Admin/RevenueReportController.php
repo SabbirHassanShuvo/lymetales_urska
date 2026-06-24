@@ -25,6 +25,10 @@ class RevenueReportController extends Controller
             ->where('payment_method', 'cod')
             ->sum('total');
 
+        $paypalRevenue = Order::where('payment_status', 'paid')
+            ->where('payment_method', 'paypal')
+            ->sum('total');
+
         // Detailed order list (revenue generating only)
         // With basic pagination
         $orders = Order::where('payment_status', 'paid')
@@ -37,6 +41,7 @@ class RevenueReportController extends Controller
             'averageOrderValue',
             'stripeRevenue',
             'codRevenue',
+            'paypalRevenue',
             'orders'
         ));
     }

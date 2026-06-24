@@ -112,6 +112,11 @@
                                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>
                                         Stripe
                                     </span>
+                                @elseif($order->payment_method === 'paypal')
+                                    <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20.007 11.624c-.139 2.01-1.42 3.427-3.844 3.427h-2.146c-.506 0-.931.36-.995.858L12.01 23.63a.583.583 0 0 1-.577.509h-3.48a.43.43 0 0 1-.418-.517l2.873-18.064a.874.874 0 0 1 .865-.736h6.059c1.986 0 3.324.498 4.015 1.488.625.894.757 2.052.709 3.314zm-4.32-6.52H9.627a.437.437 0 0 0-.433.368L6.476 22.585a.291.291 0 0 0 .288.337h3.48a.583.583 0 0 0 .577-.509l1.012-6.355a.874.874 0 0 1 .866-.736h2.146c2.81 0 5.083-1.636 5.617-5.11.233-1.52.062-2.73-.664-3.6-.665-.794-1.92-1.31-3.791-1.31z"/></svg>
+                                        PayPal
+                                    </span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 text-xs font-bold px-2.5 py-1 rounded-lg">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -133,14 +138,17 @@
                                 </select>
                             </td>
                             <td class="px-5 py-4">
-                                @if($order->payment_method === 'stripe')
+                                @if($order->payment_method === 'stripe' || $order->payment_method === 'paypal')
                                     @php
                                         $psColors = ['pending' => 'bg-amber-50 text-amber-700', 'paid' => 'bg-green-50 text-green-700', 'failed' => 'bg-red-50 text-red-700'];
                                         $psColor = $psColors[$order->payment_status] ?? 'bg-gray-50 text-gray-600';
+                                        $tooltipText = $order->payment_method === 'stripe' 
+                                            ? 'Stripe payment status is webhook-controlled' 
+                                            : 'PayPal payment status is API-controlled';
                                     @endphp
                                     <div class="flex items-center gap-1.5">
                                         <span class="text-xs font-bold px-2.5 py-1.5 rounded-lg {{ $psColor }}">{{ ucfirst($order->payment_status) }}</span>
-                                        <span title="Stripe payment status is webhook-controlled" class="text-gray-400 cursor-help">
+                                        <span title="{{ $tooltipText }}" class="text-gray-400 cursor-help">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                                         </span>
                                     </div>

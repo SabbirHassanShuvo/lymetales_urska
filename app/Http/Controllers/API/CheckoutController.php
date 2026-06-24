@@ -146,6 +146,88 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // ── PayPal ───────────────────────────────────────────────────────────
+        if ($request->input('payment_method') === 'paypal') {
+            // 1. Create pending order
+            $checkoutData = array_merge($request->validated(), [
+                'payment_method'           => 'paypal',
+                'fast_production'          => $fastProd,
+                'stripe_payment_intent_id' => null,
+            ]);
+
+            try {
+                $order = $this->orderGenerator->create($checkoutData, $this->cart->items(), $coupon);
+            } catch (OrderException $e) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            // 2. Redirect URLs (to our backend routes which then capture and redirect to frontend)
+            $successUrl  = route('paypal.return', ['order' => $order->order_number]);
+            $cancelUrl   = route('paypal.cancel', ['order' => $order->order_number]);
+
+            // 3. Create PayPal Order
+            try {
+                $provider = new \Srmklive\PayPal\Services\PayPal;
+                $provider->setApiCredentials(config('paypal'));
+                $provider->getAccessToken();
+
+                $response = $provider->createOrder([
+                    'intent' => 'CAPTURE',
+                    'purchase_units' => [
+                        [
+                            'amount' => [
+                                'currency_code' => strtoupper(config('shop.currency', 'eur')),
+                                'value'         => number_format((float) $t['total'], 2, '.', ''),
+                            ],
+                            'custom_id' => $order->order_number,
+                        ]
+                    ],
+                    'application_context' => [
+                        'return_url' => $successUrl,
+                        'cancel_url' => $cancelUrl,
+                    ]
+                ]);
+
+                if (isset($response['id'])) {
+                    $checkoutUrl = '';
+                    foreach ($response['links'] as $link) {
+                        if ($link['rel'] === 'approve') {
+                            $checkoutUrl = $link['href'];
+                            break;
+                        }
+                    }
+
+                    // Save the PayPal order ID to the order
+                    $order->update([
+                        'paypal_order_id' => $response['id'],
+                    ]);
+
+                    // Save the last order number to the session
+                    session()->put('last_order_number', $order->order_number);
+                    session()->save();
+
+                    return response()->json([
+                        'success'        => true,
+                        'payment_method' => 'paypal',
+                        'order_number'   => $order->order_number,
+                        'checkout_url'   => $checkoutUrl,
+                    ]);
+                }
+
+                throw new \Exception($response['error']['message'] ?? 'Unable to create PayPal order.');
+
+            } catch (\Exception $e) {
+                if (isset($order)) {
+                    $order->delete(); // rollback
+                }
+                \Illuminate\Support\Facades\Log::error('PayPal checkout failed: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment service unavailable: ' . $e->getMessage(),
+                ], 500);
+            }
+        }
+
         // ── Stripe ───────────────────────────────────────────────────────────
         $currency = config('shop.currency', 'eur');
 
@@ -290,5 +372,71 @@ class CheckoutController extends Controller
         session()->forget(config('shop.coupon_session_key'));
 
         return response()->json(['success' => true, 'message' => 'Coupon removed.']);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/shop/paypal/return
+    // ─────────────────────────────────────────────────────────────────────────
+    public function paypalReturn(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $orderNumber = $request->query('order');
+        $token       = $request->query('token'); // PayPal Order ID
+
+        if (! $orderNumber || ! $token) {
+            return redirect()->away(rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/') . '/shop/order-failed');
+        }
+
+        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+
+        if (! $order) {
+            return redirect()->away(rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/') . '/shop/order-failed');
+        }
+
+        try {
+            $provider = new \Srmklive\PayPal\Services\PayPal;
+            $provider->setApiCredentials(config('paypal'));
+            $provider->getAccessToken();
+
+            $response = $provider->capturePaymentOrder($token);
+
+            if (isset($response['status']) && $response['status'] === 'COMPLETED') {
+                $order->update([
+                    'payment_status' => 'paid',
+                ]);
+
+                // Clear cart & session coupon
+                $this->cart->clear();
+                session()->forget(config('shop.coupon_session_key'));
+                session()->save();
+
+                $frontendUrl = rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/');
+                return redirect()->away($frontendUrl . '/shop/order-confirmed?session_id=' . $token . '&order=' . $order->order_number);
+            }
+
+            throw new \Exception($response['error']['message'] ?? 'PayPal capture did not complete.');
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('PayPal return capture failed: ' . $e->getMessage());
+            $order->update(['payment_status' => 'failed']);
+            
+            $frontendUrl = rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/');
+            return redirect()->away($frontendUrl . '/shop/order-failed?order=' . $order->order_number);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/shop/paypal/cancel
+    // ─────────────────────────────────────────────────────────────────────────
+    public function paypalCancel(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $orderNumber = $request->query('order');
+        $order = \App\Models\Order::where('order_number', $orderNumber)->first();
+
+        if ($order) {
+            $order->update(['payment_status' => 'failed']);
+        }
+
+        $frontendUrl = rtrim(env('FRONTEND_URL', 'http://localhost:3000'), '/');
+        return redirect()->away($frontendUrl . '/shop/order-failed?order=' . $orderNumber);
     }
 }
