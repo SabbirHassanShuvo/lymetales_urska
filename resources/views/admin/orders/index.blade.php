@@ -65,14 +65,67 @@
                 </button>
                 <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden">
                     <button type="button" @click="exportOrdersToExcel(); open = false" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center font-semibold">
-                        Excel Spreadsheet
+                        Excel
+                    </button>
+                    <button type="button" @click="exportOrdersToCSV(); open = false" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center font-semibold">
+                        CSV
+                    </button>
+                    <button type="button" @click="exportOrdersToWord(); open = false" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center font-semibold">
+                        Word
                     </button>
                     <button type="button" @click="exportOrdersToPDF(); open = false" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors flex items-center font-semibold">
-                        PDF Document
+                        PDF
                     </button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mt-6 mb-6">
+        <form action="{{ route('admin.orders.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Order Status</label>
+                <select name="order_status" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50/50 text-gray-700 font-medium">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ request('order_status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="processing" {{ request('order_status') === 'processing' ? 'selected' : '' }}>Processing</option>
+                    <option value="shipped" {{ request('order_status') === 'shipped' ? 'selected' : '' }}>Shipped</option>
+                    <option value="delivered" {{ request('order_status') === 'delivered' ? 'selected' : '' }}>Delivered</option>
+                    <option value="cancelled" {{ request('order_status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Payment Status</label>
+                <select name="payment_status" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50/50 text-gray-700 font-medium">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ request('payment_status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="paid" {{ request('payment_status') === 'paid' ? 'selected' : '' }}>Paid</option>
+                    <option value="failed" {{ request('payment_status') === 'failed' ? 'selected' : '' }}>Failed</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">From</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50/50 text-gray-700 font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">To</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50/50 text-gray-700 font-medium">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-sm transition-all flex items-center justify-center gap-1.5 hover:shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Filter
+                </button>
+                @if(request()->anyFilled(['order_status', 'payment_status', 'date_from', 'date_to']))
+                    <a href="{{ route('admin.orders.index') }}" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-xl text-sm transition-all flex items-center justify-center">
+                        Clear
+                    </a>
+                @endif
+            </div>
+        </form>
     </div>
 
     <!-- Orders Table -->
@@ -444,8 +497,9 @@
     }
 
     // ── Table pagination & search ───────────────────────────────────────────
+    let ordersTableHelper;
     document.addEventListener('DOMContentLoaded', () => {
-        new TableHelper('#ordersTable', '#searchInput', '#tablePagination', 10);
+        ordersTableHelper = new TableHelper('#ordersTable', '#searchInput', '#tablePagination', 10);
     });
 
     document.querySelectorAll('select[data-type]').forEach(select => {
@@ -458,12 +512,11 @@
         if (!table) return [];
         
         const headers = ["Order #", "Customer Name", "Customer Email", "Payment Method", "Order Status", "Payment Status", "Total", "Date"];
-        const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => !row.classList.contains('no-results-row'));
         const data = [headers];
         
+        const rows = ordersTableHelper ? ordersTableHelper.filteredRows : Array.from(table.querySelectorAll('tbody tr')).filter(row => !row.classList.contains('no-results-row'));
+        
         rows.forEach(row => {
-            if (row.style.display === 'none') return;
-
             const cells = row.cells;
             if (cells.length < 7) return;
 
@@ -501,6 +554,80 @@
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
         XLSX.writeFile(workbook, `orders_report_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    function exportOrdersToCSV() {
+        const data = getOrdersData();
+        if (data.length <= 1) {
+            Swal.fire('Info', 'No data to export.', 'info');
+            return;
+        }
+        const csvContent = "\uFEFF" + data.map(e => e.map(val => {
+            let text = String(val);
+            if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+                text = '"' + text.replace(/"/g, '""') + '"';
+            }
+            return text;
+        }).join(",")).join("\n");
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `orders_report_${new Date().toISOString().slice(0,10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportOrdersToWord() {
+        const data = getOrdersData();
+        if (data.length <= 1) {
+            Swal.fire('Info', 'No data to export.', 'info');
+            return;
+        }
+        const title = "Orders Report";
+        let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <title>${title}</title>
+            <style>
+                table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 11px; }
+                th { background-color: #4F46E5; color: white; padding: 8px; text-align: left; }
+                td { border: 1px solid #E5E7EB; padding: 8px; }
+                h2 { font-family: Arial, sans-serif; color: #1F2937; }
+            </style>
+        </head>
+        <body>
+            <h2>${title}</h2>
+            <p>Generated on: ${new Date().toLocaleString()}</p>
+            <table>
+                <thead>
+                    <tr>
+                        ${data[0].map(h => `<th>${h}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.slice(1).map(row => `
+                        <tr>
+                            ${row.map(cell => `<td>${cell}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </body>
+        </html>`;
+
+        const blob = new Blob([html], { type: 'application/msword' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `orders_report_${new Date().toISOString().slice(0,10)}.doc`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     function exportOrdersToPDF() {

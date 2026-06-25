@@ -184,6 +184,7 @@ class SearchController extends Controller
             'title'          => $p->title,
             'slug'           => $p->slug,
             'price'          => (float) $p->price,
+            'compare_at_price' => $p->compare_at_price ? (float) $p->compare_at_price : null,
             'image'          => $p->imageUrl,
             'rating'         => (float) $p->rating,
             'reviews_count'  => $p->reviews_count,

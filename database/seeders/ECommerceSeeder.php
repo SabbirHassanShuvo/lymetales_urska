@@ -240,5 +240,117 @@ class ECommerceSeeder extends Seeder
             'comment' => 'This is the most thoughtful birthday gift ever. Highly recommend.',
             'is_approved' => true,
         ]);
+
+        // 5. Seed Gifts Category
+        $cat3 = Category::create([
+            'name' => 'Gifts',
+            'slug' => 'gifts',
+            'description' => 'Beautiful gift items for children and families.',
+            'is_special' => false,
+            'status' => true,
+        ]);
+
+        // Seed gift products for Product 1 (First-grader book: timetable, stickers, t-shirt)
+        $gift1 = Product::create([
+            'category_id' => $cat3->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
+            'title' => 'Personalized School Timetable',
+            'slug' => 'personalized-school-timetable',
+            'description' => 'A gorgeous colorful school timetable customized with your kid\'s name.',
+            'price' => 9.99,
+            'pages' => null,
+            'age_range' => '5-8 Years',
+            'status' => true,
+            'type' => 'gift',
+        ]);
+        $gift1->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
+        ]);
+
+        $gift2 = Product::create([
+            'category_id' => $cat3->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
+            'title' => 'Fun Stickers Pack',
+            'slug' => 'fun-stickers-pack',
+            'description' => 'A pack of 20 high-quality waterproof stickers featuring story characters.',
+            'price' => 4.99,
+            'pages' => null,
+            'age_range' => '3-10 Years',
+            'status' => true,
+            'type' => 'gift',
+        ]);
+        $gift2->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1572375995501-4b0894dbe5d8?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
+        ]);
+
+        $gift3 = Product::create([
+            'category_id' => $cat3->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
+            'title' => 'Personalized Adventure T-Shirt',
+            'slug' => 'personalized-adventure-t-shirt',
+            'description' => '100% premium cotton t-shirt with story artwork and custom name.',
+            'price' => 19.99,
+            'pages' => null,
+            'age_range' => '4-8 Years',
+            'status' => true,
+            'type' => 'gift',
+        ]);
+        $gift3->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
+        ]);
+
+        // Seed gift products for Product 2 (Baby book: greeting card, toy)
+        $gift4 = Product::create([
+            'category_id' => $cat3->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
+            'title' => 'Custom Keepsake Greeting Card',
+            'slug' => 'custom-keepsake-greeting-card',
+            'description' => 'A heavy-cardstock greeting card with a personalized dedication message.',
+            'price' => 3.99,
+            'pages' => null,
+            'age_range' => '0-2 Years',
+            'status' => true,
+            'type' => 'gift',
+        ]);
+        $gift4->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
+        ]);
+
+        $gift5 = Product::create([
+            'category_id' => $cat3->id,
+            'site_category_id' => $siteCat->id,
+            'site_subcategory_id' => $subKids->id,
+            'title' => 'Plush Rabbit Toy',
+            'slug' => 'plush-rabbit-toy',
+            'description' => 'An ultra-soft cuddly organic plush toy bunny.',
+            'price' => 14.50,
+            'pages' => null,
+            'age_range' => '0-3 Years',
+            'status' => true,
+            'type' => 'gift',
+        ]);
+        $gift5->images()->create([
+            'image_path' => 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=400',
+            'is_main' => true,
+            'sort_order' => 0,
+        ]);
+
+        // Link upsells to Product 1 ("My First Easter Egg Hunt")
+        $product1->upsells()->attach([$gift1->id, $gift2->id, $gift3->id]);
+
+        // Link upsells to Product 2 ("The Birthday Adventure Kept Safe")
+        $product2->upsells()->attach([$gift4->id, $gift5->id]);
     }
 }

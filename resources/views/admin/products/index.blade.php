@@ -157,6 +157,9 @@
                             {{-- Price --}}
                             <td class="px-5 py-3.5">
                                 <span class="text-sm font-bold text-gray-900">${{ number_format($product->price, 2) }}</span>
+                                @if($product->compare_at_price)
+                                    <span class="text-xs text-gray-400 line-through ml-1">${{ number_format($product->compare_at_price, 2) }}</span>
+                                @endif
                             </td>
 
                             {{-- Specs --}}
@@ -312,10 +315,14 @@
                                 </select>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">Price ($) *</label>
                                     <input type="number" step="0.01" name="price" id="prodPrice" required placeholder="29.99" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Compare at Price ($)</label>
+                                    <input type="number" step="0.01" name="compare_at_price" id="prodCompareAtPrice" placeholder="39.99" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">Total Pages</label>
@@ -427,25 +434,6 @@
                         <textarea name="description" id="prodDesc" rows="3" placeholder="Write a gorgeous description for this personalized story..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"></textarea>
                     </div>
 
-                    {{--
-                    ╔══════════════════════════════════════════════════════════╗
-                    ║  Book Category Images — DISABLED (replaced by           ║
-                    ║  Customization Steps below)                             ║
-                    ╚══════════════════════════════════════════════════════════╝
-                    <!-- Dynamic "Book Category Images" Sections -->
-                    <div class="pt-6 border-t border-gray-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <h4 class="text-md font-bold text-gray-800">Book Category Images</h4>
-                            <button type="button" onclick="addCategoryImageSection()" class="px-3 py-1.5 bg-pink-50 text-pink-700 text-sm font-semibold rounded-lg hover:bg-pink-100 transition-all flex items-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                Add Image
-                            </button>
-                        </div>
-                        <div id="categoryImagesContainer" class="space-y-6">
-                        </div>
-                    </div>
-                    --}}
-
                     {{-- ── Book Pictures ────────────────────────────────────────── --}}
                     <div class="pt-6 border-t border-gray-100">
                         <div class="flex items-center justify-between mb-4">
@@ -482,6 +470,36 @@
                         </div>
                         <div id="specialSectionsContainer" class="space-y-6">
                             <!-- Dynamic sections appended here via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Upsell Gifts -->
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="mb-4">
+                            <h4 class="text-md font-bold text-gray-800">Upsell Gifts</h4>
+                            <p class="text-xs text-gray-500 mt-1">Select specific products from the catalog to offer as upsell gifts when this book is in the cart.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
+                            <div class="relative">
+                                <input type="text" id="upsellSearchInput" oninput="filterUpsellProducts()" placeholder="Search products..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <div class="max-h-60 overflow-y-auto space-y-1.5 pr-2" id="upsellProductsList">
+                                @foreach($products as $p)
+                                    <label class="flex items-center justify-between p-2 hover:bg-white rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100/50 upsell-product-item group" data-upsell-title="{{ strtolower($p->title) }}" data-product-id="{{ $p->id }}">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-8 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                                                <img src="{{ $p->imageUrl ?: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=80' }}" class="w-full h-full object-cover">
+                                            </div>
+                                            <div>
+                                                <span class="text-xs font-bold text-gray-700 block group-hover:text-indigo-600 transition-colors">{{ $p->title }}</span>
+                                                <span class="text-[10px] text-gray-400 font-semibold">${{ number_format($p->price, 2) }}</span>
+                                            </div>
+                                        </div>
+                                        <input type="checkbox" name="upsell_ids[]" value="{{ $p->id }}" class="w-4.5 h-4.5 text-indigo-600 border-gray-300 rounded-md focus:ring-indigo-500 cursor-pointer upsell-checkbox">
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
 
@@ -580,7 +598,6 @@
                         <div class="w-full aspect-[4/5] bg-gray-50 rounded-2xl overflow-hidden border border-gray-100/50 shadow-inner flex items-center justify-center">
                             <img id="prevImg" src="" alt="Book Cover" class="w-full h-full object-cover transition-all duration-300">
                         </div>
-                        <!-- Mini Gallery Removed -->
                     </div>
 
                     <!-- Right: Product details -->
@@ -607,7 +624,10 @@
                             <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex items-center justify-between">
                                 <div>
                                     <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Customer Price</p>
-                                    <p id="prevPrice" class="text-3xl font-black text-gray-900 mt-1">$29.99</p>
+                                    <div class="flex items-baseline space-x-2 mt-1">
+                                        <p id="prevPrice" class="text-3xl font-black text-gray-900">$29.99</p>
+                                        <p id="prevComparePrice" class="text-lg font-bold text-gray-400 line-through hidden">$39.99</p>
+                                    </div>
                                 </div>
                                 <button type="button" class="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-md shadow-indigo-150 transition-all hover:scale-105">
                                     Personalise Book
@@ -1038,6 +1058,7 @@
         document.getElementById('featuredImageId').value = '';
         document.getElementById('featuredHint').classList.add('hidden');
         document.getElementById('prodPrice').value = "";
+        document.getElementById('prodCompareAtPrice').value = "";
         document.getElementById('prodPages').value = "";
         document.getElementById('prodAgeRange').value = "";
         document.getElementById('prodSize').value = "";
@@ -1096,6 +1117,16 @@
         document.getElementById('prodIsRecommended').checked = false;
         document.getElementById('prodStatus').checked = true;
         document.getElementById('replaceGalleryGroup').classList.add('hidden');
+
+        // Reset upsell checkboxes
+        document.querySelectorAll('.upsell-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        document.querySelectorAll('.upsell-product-item').forEach(item => {
+            item.style.display = 'flex';
+        });
+        const upsellSearch = document.getElementById('upsellSearchInput');
+        if (upsellSearch) upsellSearch.value = '';
     }
 
     function openCreateProductModal() {
@@ -1126,6 +1157,7 @@
         document.getElementById('featuredHint').classList.remove('hidden');
 
         document.getElementById('prodPrice').value = product.price;
+        document.getElementById('prodCompareAtPrice').value = product.compare_at_price || "";
         document.getElementById('prodPages').value = product.pages || "";
         document.getElementById('prodAgeRange').value = product.age_range || "";
         document.getElementById('prodSize').value = product.size || "";
@@ -1254,6 +1286,29 @@
         document.getElementById('prodIsRecommended').checked = product.is_recommended === true || product.is_recommended === 1;
         document.getElementById('prodStatus').checked = product.status === true || product.status === 1;
 
+        // Prefill upsell checkboxes
+        if (product.upsells && product.upsells.length > 0) {
+            const upsellIds = product.upsells.map(u => String(u.id));
+            document.querySelectorAll('.upsell-checkbox').forEach(cb => {
+                cb.checked = upsellIds.includes(String(cb.value));
+            });
+        } else {
+            document.querySelectorAll('.upsell-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+        
+        // Exclude the current product from being selected as its own upsell
+        document.querySelectorAll('.upsell-product-item').forEach(item => {
+            if (String(item.getAttribute('data-product-id')) === String(product.id)) {
+                item.style.display = 'none';
+            } else {
+                item.style.display = 'flex';
+            }
+        });
+        const upsellSearch = document.getElementById('upsellSearchInput');
+        if (upsellSearch) upsellSearch.value = '';
+
         toggleModal('productModal');
     }
 
@@ -1262,8 +1317,6 @@
 
         // Resolve images from product.images relation
         const primaryImg = product.images ? product.images.find(i => i.is_main) : null;
-        const galleryImgs = product.images ? product.images.filter(i => !i.is_main) : [];
-        // Use url accessor if available, otherwise build from image_path
         const resolveUrl = (img) => img.url
             ? img.url
             : (img.image_path.startsWith('http') ? img.image_path : window.location.origin + '/' + img.image_path.replace(/^\//, ''));
@@ -1273,6 +1326,12 @@
         document.getElementById('prevTitle').textContent = product.title;
         document.getElementById('prevImg').src = primaryUrl || fallBackImg;
         document.getElementById('prevPrice').textContent = "$" + parseFloat(product.price).toFixed(2);
+        if (product.compare_at_price) {
+            document.getElementById('prevComparePrice').textContent = "$" + parseFloat(product.compare_at_price).toFixed(2);
+            document.getElementById('prevComparePrice').classList.remove('hidden');
+        } else {
+            document.getElementById('prevComparePrice').classList.add('hidden');
+        }
         document.getElementById('prevDescription').textContent = product.description || "No description provided for this book yet.";
         document.getElementById('prevRatingScore').textContent = parseFloat(product.rating || 5.0).toFixed(1) + " / 5.0";
         document.getElementById('prevReviewsLink').textContent = `Based on ${(product.reviews_count || 0).toLocaleString()} reviews`;
@@ -1348,6 +1407,31 @@
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
+            }
+        });
+    }
+
+    function filterUpsellProducts() {
+        const query = document.getElementById('upsellSearchInput').value.toLowerCase();
+        const items = document.querySelectorAll('.upsell-product-item');
+        // Get currently active product ID if editing
+        const isEdit = document.getElementById('formMethod').value === 'PUT';
+        const activeProdId = isEdit 
+            ? document.getElementById('productForm').action.split('/').pop()
+            : null;
+
+        items.forEach(item => {
+            const prodId = item.getAttribute('data-product-id');
+            if (activeProdId && String(prodId) === String(activeProdId)) {
+                item.style.display = 'none';
+                return;
+            }
+
+            const title = item.getAttribute('data-upsell-title');
+            if (title.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
             }
         });
     }

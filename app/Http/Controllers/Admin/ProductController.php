@@ -21,7 +21,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with(['category', 'subcategory', 'siteCategory', 'siteSubcategory', 'primaryImage', 'images', 'bookImages', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions'])
+        $products = Product::with(['category', 'subcategory', 'siteCategory', 'siteSubcategory', 'primaryImage', 'images', 'bookImages', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions', 'upsells'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -53,6 +53,7 @@ class ProductController extends Controller
             'category_id'        => 'nullable|exists:categories,id',
             'description'        => 'nullable|string',
             'price'              => 'required|numeric|min:0',
+            'compare_at_price'   => 'nullable|numeric|min:0',
             'pages'              => 'nullable|integer|min:1',
             'age_range'          => 'nullable|string|max:255',
             'size'               => 'nullable|string|max:255',
@@ -90,6 +91,8 @@ class ProductController extends Controller
             'name_color'       => 'nullable|string|max:20',
             'name_font_size'   => 'nullable|string|max:20',
             'name_right'       => 'nullable|string|max:20',
+            'upsell_ids'       => 'nullable|array',
+            'upsell_ids.*'     => 'exists:products,id',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -99,9 +102,10 @@ class ProductController extends Controller
                 'subcategory_id'      => $request->filled('subcategory_id') ? $request->subcategory_id : null,
                 'site_category_id'    => $request->filled('site_category_id') ? $request->site_category_id : null,
                 'site_subcategory_id' => $request->filled('site_subcategory_id') ? $request->site_subcategory_id : null,
-                'description'    => $request->description,
-                'price'          => $request->price,
-                'pages'          => $request->pages,
+                'description'       => $request->description,
+                'price'             => $request->price,
+                'compare_at_price'  => $request->compare_at_price,
+                'pages'             => $request->pages,
                 'age_range'      => $request->age_range,
                 'size'           => $request->size,
                 'characters'     => $request->characters,
@@ -304,6 +308,9 @@ class ProductController extends Controller
                     }
                 }
             }
+
+            // Sync upsells
+            $product->upsells()->sync($request->input('upsell_ids', []));
         });
 
         return redirect()->route('admin.products.index')->with('success', 'Book created successfully.');
@@ -318,6 +325,7 @@ class ProductController extends Controller
             'category_id'        => 'nullable|exists:categories,id',
             'description'        => 'nullable|string',
             'price'              => 'required|numeric|min:0',
+            'compare_at_price'   => 'nullable|numeric|min:0',
             'pages'              => 'nullable|integer|min:1',
             'age_range'          => 'nullable|string|max:255',
             'size'               => 'nullable|string|max:255',
@@ -361,6 +369,8 @@ class ProductController extends Controller
             'name_color'       => 'nullable|string|max:20',
             'name_font_size'   => 'nullable|string|max:20',
             'name_right'       => 'nullable|string|max:20',
+            'upsell_ids'       => 'nullable|array',
+            'upsell_ids.*'     => 'exists:products,id',
         ]);
 
         DB::transaction(function () use ($request, $product) {
@@ -370,9 +380,10 @@ class ProductController extends Controller
                 'subcategory_id'      => $request->filled('subcategory_id') ? $request->subcategory_id : null,
                 'site_category_id'    => $request->filled('site_category_id') ? $request->site_category_id : null,
                 'site_subcategory_id' => $request->filled('site_subcategory_id') ? $request->site_subcategory_id : null,
-                'description'    => $request->description,
-                'price'          => $request->price,
-                'pages'          => $request->pages,
+                'description'       => $request->description,
+                'price'             => $request->price,
+                'compare_at_price'  => $request->compare_at_price,
+                'pages'             => $request->pages,
                 'age_range'      => $request->age_range,
                 'size'           => $request->size,
                 'characters'     => $request->characters,
@@ -743,6 +754,9 @@ class ProductController extends Controller
                     }
                 }
             }
+
+            // Sync upsells
+            $product->upsells()->sync($request->input('upsell_ids', []));
         });
 
         return redirect()->route('admin.products.index')->with('success', 'Book updated successfully.');

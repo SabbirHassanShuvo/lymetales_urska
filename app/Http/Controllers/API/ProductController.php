@@ -113,10 +113,11 @@ class ProductController extends Controller
                     'title'         => $p->title,
                     'slug'          => $p->slug,
                     'price'         => (float) $p->price,
+                    'compare_at_price' => $p->compare_at_price ? (float) $p->compare_at_price : null,
                     'rating'        => (float) $p->rating,
                     'reviews_count' => $p->reviews_count,
                     'is_bestseller' => (bool) $p->is_bestseller,
-                    'image_url'     => $this->resolveImageUrl($p->imageUrl),
+                    'image'     => $this->resolveImageUrl($p->imageUrl),
                 ];
             });
 
@@ -143,6 +144,7 @@ class ProductController extends Controller
             'title'          => $p->title,
             'slug'           => $p->slug,
             'price'          => (float) $p->price,
+            'compare_at_price' => $p->compare_at_price ? (float) $p->compare_at_price : null,
             'image'          => ($detailed && $p->primaryImage)
                                 ? $this->resolveImageUrl($p->primaryImage->image_path)
                                 : $this->resolveImageUrl($p->imageUrl),

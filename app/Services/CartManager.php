@@ -92,6 +92,36 @@ class CartManager
     public function add(int $productId, int $quantity = 1, ?array $personalisation = null, string $type = 'product'): void
     {
         if ($type === 'gift') {
+            // Try to find catalog product first
+            $catalogProduct = \App\Models\Product::find($productId);
+
+            if ($catalogProduct) {
+                $cart = $this->getCart();
+                $cartKey = 'gift_' . $productId;
+
+                if (isset($cart[$cartKey])) {
+                    throw new CartException('This gift is already in your cart.');
+                }
+
+                $unitPrice = $catalogProduct->compare_at_price
+                    ? round((float) $catalogProduct->compare_at_price, 2)
+                    : round((float) $catalogProduct->price, 2);
+
+                $cart[$cartKey] = [
+                    'product_id'      => $catalogProduct->id,
+                    'title'           => $catalogProduct->title,
+                    'image'           => $catalogProduct->imageUrl ?? '',
+                    'unit_price'      => $unitPrice,
+                    'quantity'        => min($quantity, self::MAX_QUANTITY),
+                    'line_total'      => round($unitPrice * min($quantity, self::MAX_QUANTITY), 2),
+                    'type'            => 'gift',
+                ];
+
+                $this->putCart($cart);
+                return;
+            }
+
+            // Fallback to legacy Gift model
             $gift = \App\Models\Gift::find($productId);
 
             if (! $gift) {
@@ -149,7 +179,9 @@ class CartManager
             }
         }
 
-        $unitPrice = round((float) $product->price, 2);
+        $unitPrice = $product->compare_at_price
+            ? round((float) $product->compare_at_price, 2)
+            : round((float) $product->price, 2);
 
         $cart[$cartKey] = [
             'product_id'      => $product->id,
@@ -248,11 +280,22 @@ class CartManager
             $type = $item['type'] ?? 'product';
 
             if ($type === 'gift') {
-                $gift = \App\Models\Gift::find($item['product_id']);
-                $item['description'] = $gift ? $gift->short_description : '';
-                $item['type'] = 'gift';
+                $catalogProduct = \App\Models\Product::find($item['product_id']);
+                $gift = null;
+                if (!$catalogProduct) {
+                    $gift = \App\Models\Gift::find($item['product_id']);
+                }
 
-                $defaultImage = $gift ? $gift->image_path : ($item['image'] ?? '');
+                if ($catalogProduct) {
+                    $item['description'] = $catalogProduct->description ?? '';
+                    $item['type'] = 'gift';
+                    $defaultImage = $catalogProduct->imageUrl ?? '';
+                } else {
+                    $item['description'] = $gift ? $gift->short_description : '';
+                    $item['type'] = 'gift';
+                    $defaultImage = $gift ? $gift->image_path : ($item['image'] ?? '');
+                }
+
                 if (!empty($defaultImage)) {
                     $path = $defaultImage;
                     if (!str_starts_with($path, 'http://') && !str_starts_with($path, 'https://')) {

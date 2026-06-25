@@ -83,7 +83,7 @@ class HomeContentController extends Controller
             'title' => 'required|string|max:255',
             'button_one_text' => 'nullable|string|max:255',
             'button_two_text' => 'nullable|string|max:255',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable',
         ]);
 
         $data = [
@@ -118,7 +118,7 @@ class HomeContentController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable',
         ]);
 
         $data = [
@@ -190,7 +190,7 @@ class HomeContentController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'button_text' => 'required|string|max:255',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image',
         ]);
 
         $promo = HomePromo::first();
@@ -226,9 +226,9 @@ class HomeContentController extends Controller
             'step_1_text' => 'required|string|max:255',
             'step_2_text' => 'required|string|max:255',
             'step_3_text' => 'required|string|max:255',
-            'step_1_image' => 'nullable|image|max:2048',
-            'step_2_image' => 'nullable|image|max:2048',
-            'step_3_image' => 'nullable|image|max:2048',
+            'step_1_image' => 'nullable|image',
+            'step_2_image' => 'nullable|image',
+            'step_3_image' => 'nullable|image',
         ]);
 
         $giver = GiftGiver::first();
@@ -401,7 +401,7 @@ class HomeContentController extends Controller
         $request->validate([
             'footer_brand_description' => 'nullable|string|max:500',
             'footer_copyright'         => 'nullable|string|max:255',
-            'footer_logo'              => 'nullable|image|max:2048',
+            'footer_logo'              => 'nullable|image',
             'social_media_links'       => 'nullable|string',
         ]);
 
@@ -466,7 +466,7 @@ class HomeContentController extends Controller
             'title' => 'required|string|max:255',
             'button_one_text' => 'nullable|string|max:255',
             'button_two_text' => 'nullable|string|max:255',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image',
         ]);
 
         $data = [
@@ -506,7 +506,7 @@ class HomeContentController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image',
         ]);
 
         $data = [

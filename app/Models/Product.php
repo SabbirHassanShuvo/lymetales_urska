@@ -25,6 +25,7 @@ class Product extends Model
         'name_font_size',
         'name_right',
         'price',
+        'compare_at_price',
         'pages',
         'age_range',
         'size',
@@ -43,13 +44,14 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'price'          => 'decimal:2',
-        'rating'         => 'decimal:1',
-        'reviews_count'  => 'integer',
-        'pages'          => 'integer',
-        'is_bestseller'  => 'boolean',
-        'is_recommended' => 'boolean',
-        'status'         => 'boolean',
+        'price'            => 'decimal:2',
+        'compare_at_price' => 'decimal:2',
+        'rating'           => 'decimal:1',
+        'reviews_count'    => 'integer',
+        'pages'            => 'integer',
+        'is_bestseller'    => 'boolean',
+        'is_recommended'   => 'boolean',
+        'status'           => 'boolean',
     ];
 
     /**
@@ -177,4 +179,14 @@ class Product extends Model
 
         return $img?->url;
     }
+
+    /**
+     * Recommended upsell products for this book.
+     */
+    public function upsells()
+    {
+        return $this->belongsToMany(Product::class, 'product_upsells', 'product_id', 'upsell_product_id')
+                    ->withTimestamps();
+    }
 }
+

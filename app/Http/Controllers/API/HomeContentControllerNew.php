@@ -68,10 +68,11 @@ class HomeContentControllerNew extends Controller
                     'title'         => $product->title,
                     'slug'          => $product->slug,
                     'price'         => (float) $product->price,
+                    'compare_at_price' => $product->compare_at_price ? (float) $product->compare_at_price : null,
                     'rating'        => (float) $product->rating,
                     'reviews_count' => (int) $product->reviews_count,
                     'is_bestseller' => (bool) $product->is_bestseller,
-                    'image_url'     => $product->image_url,
+                    'image'     => $product->image_url,
                 ];
             });
 
