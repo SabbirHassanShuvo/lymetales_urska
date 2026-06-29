@@ -8,6 +8,7 @@ use App\Models\Subcategory;
 use App\Models\Product;
 use App\Models\Coupon;
 use App\Models\ProductReview;
+use App\Models\Gift;
 use Illuminate\Support\Str;
 
 class ECommerceSeeder extends Seeder
@@ -347,10 +348,51 @@ class ECommerceSeeder extends Seeder
             'sort_order' => 0,
         ]);
 
+        // Seed actual Gift models for book upsells
+        $uGift1 = Gift::create([
+            'title' => 'Personalized School Timetable',
+            'short_description' => 'A gorgeous colorful school timetable customized with your kid\'s name.',
+            'price' => 9.99,
+            'image_path' => 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&q=80&w=400',
+            'language_type' => 'SL',
+        ]);
+
+        $uGift2 = Gift::create([
+            'title' => 'Fun Stickers Pack',
+            'short_description' => 'A pack of 20 high-quality waterproof stickers featuring story characters.',
+            'price' => 4.99,
+            'image_path' => 'https://images.unsplash.com/photo-1572375995501-4b0894dbe5d8?auto=format&fit=crop&q=80&w=400',
+            'language_type' => 'SL',
+        ]);
+
+        $uGift3 = Gift::create([
+            'title' => 'Personalized Adventure T-Shirt',
+            'short_description' => '100% premium cotton t-shirt with story artwork and custom name.',
+            'price' => 19.99,
+            'image_path' => 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=400',
+            'language_type' => 'SL',
+        ]);
+
+        $uGift4 = Gift::create([
+            'title' => 'Custom Keepsake Greeting Card',
+            'short_description' => 'A heavy-cardstock greeting card with a personalized dedication message.',
+            'price' => 3.99,
+            'image_path' => 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80&w=400',
+            'language_type' => 'SL',
+        ]);
+
+        $uGift5 = Gift::create([
+            'title' => 'Plush Rabbit Toy',
+            'short_description' => 'An ultra-soft cuddly organic plush toy bunny.',
+            'price' => 14.50,
+            'image_path' => 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&q=80&w=400',
+            'language_type' => 'SL',
+        ]);
+
         // Link upsells to Product 1 ("My First Easter Egg Hunt")
-        $product1->upsells()->attach([$gift1->id, $gift2->id, $gift3->id]);
+        $product1->upsells()->attach([$uGift1->id, $uGift2->id, $uGift3->id]);
 
         // Link upsells to Product 2 ("The Birthday Adventure Kept Safe")
-        $product2->upsells()->attach([$gift4->id, $gift5->id]);
+        $product2->upsells()->attach([$uGift4->id, $uGift5->id]);
     }
 }

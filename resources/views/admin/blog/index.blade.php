@@ -22,10 +22,21 @@
         <h2 style="font-size:1.4rem;font-weight:800;color:#111827;margin:0">Blog Posts</h2>
         <p style="font-size:0.82rem;color:#9ca3af;margin-top:0.2rem">Manage articles published on the Our Blog section</p>
     </div>
-    <a href="{{ route('admin.blog.create') }}" style="display:inline-flex;align-items:center;gap:0.4rem;background:#4f46e5;color:#fff;font-size:0.82rem;font-weight:700;padding:0.55rem 1.1rem;border-radius:0.7rem;text-decoration:none;transition:background 0.15s;white-space:nowrap" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-        <svg style="width:0.9rem;height:0.9rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-        New Post
-    </a>
+    
+    <div style="display:flex;align-items:center;gap:1rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;background:#fff;padding:0.35rem 0.75rem;border-radius:0.5rem;border:1.5px solid #e5e7eb;">
+            <label style="font-size:0.75rem;font-weight:600;color:#4b5563;">Global Language:</label>
+            <select onchange="window.location.href='?lang=' + this.value" style="font-size:0.75rem;padding:0.2rem 0.5rem;border:1px solid #d1d5db;border-radius:0.35rem;background:#f9fafb;outline:none;cursor:pointer;">
+                <option value="SL" {{ $lang == 'SL' ? 'selected' : '' }}>SL (Slovenian)</option>
+                <option value="HR" {{ $lang == 'HR' ? 'selected' : '' }}>HR (Croatian)</option>
+                <option value="EN" {{ $lang == 'EN' ? 'selected' : '' }}>EN (English)</option>
+            </select>
+        </div>
+        <a href="{{ route('admin.blog.create') }}?lang={{ $lang }}" style="display:inline-flex;align-items:center;gap:0.4rem;background:#4f46e5;color:#fff;font-size:0.82rem;font-weight:700;padding:0.55rem 1.1rem;border-radius:0.7rem;text-decoration:none;transition:background 0.15s;white-space:nowrap" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+            <svg style="width:0.9rem;height:0.9rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            New Post
+        </a>
+    </div>
 </div>
 
 {{-- Blog Page Header Settings Form --}}
@@ -37,6 +48,7 @@
     </div>
     <form action="{{ route('admin.blog.update-header') }}" method="POST">
         @csrf
+        <input type="hidden" name="lang" value="{{ $lang }}">
         @if(session('header_success'))
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:0.65rem 1rem;border-radius:0.6rem;font-size:0.8rem;font-weight:600;margin-bottom:0.85rem">
                 ✓ {{ session('header_success') }}
@@ -45,17 +57,17 @@
         <div style="display:grid;grid-template-columns:1fr 2fr;gap:0.85rem;margin-bottom:0.85rem">
             <div>
                 <label class="label">Header Badge</label>
-                <input type="text" name="blog_header_badge" class="input" value="{{ \App\Models\Setting::getVal('blog_header_badge', 'THE JOURNAL') }}">
+                <input type="text" name="blog_header_badge" class="input" value="{{ \App\Models\Setting::getVal('blog_header_badge_' . $lang, 'THE JOURNAL') }}">
             </div>
             <div>
                 <label class="label">Header Title</label>
-                <input type="text" name="blog_header_title" class="input" value="{{ \App\Models\Setting::getVal('blog_header_title', 'Stories, ideas, and quiet inspiration') }}">
+                <input type="text" name="blog_header_title" class="input" value="{{ \App\Models\Setting::getVal('blog_header_title_' . $lang, 'Stories, ideas, and quiet inspiration') }}">
             </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr auto;gap:0.85rem;align-items:flex-end">
             <div>
                 <label class="label">Header Subtitle</label>
-                <input type="text" name="blog_header_subtitle" class="input" value="{{ \App\Models\Setting::getVal('blog_header_subtitle', 'Thoughts on storytelling, parenting, and the small rituals that make childhood feel like magic.') }}">
+                <input type="text" name="blog_header_subtitle" class="input" value="{{ \App\Models\Setting::getVal('blog_header_subtitle_' . $lang, 'Thoughts on storytelling, parenting, and the small rituals that make childhood feel like magic.') }}">
             </div>
             <div>
                 <button type="submit" style="background:#4f46e5;color:#fff;padding:0.55rem 1.1rem;font-weight:700;font-size:0.8rem;border:none;border-radius:0.6rem;cursor:pointer;white-space:nowrap;transition:background 0.15s" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
@@ -146,7 +158,7 @@
                         </td>
                         <td class="tbl-td" style="text-align:right">
                             <div style="display:inline-flex;gap:0.35rem">
-                                <a href="{{ route('admin.blog.edit', $post) }}" class="act-btn" style="background:#eef2ff;color:#4f46e5" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#eef2ff'">
+                                <a href="{{ route('admin.blog.edit', $post) }}?lang={{ $lang }}" class="act-btn" style="background:#eef2ff;color:#4f46e5" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#eef2ff'">
                                     <svg style="width:0.72rem;height:0.72rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                     Edit
                                 </a>

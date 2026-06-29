@@ -46,7 +46,7 @@
 {{-- Basic Info --}}
 <div class="card">
     <div class="card-title"><span class="dot" style="background:#6366f1"></span> General Info</div>
-    <div class="grid-2" style="margin-bottom:0.75rem">
+    <div class="grid-3" style="margin-bottom:0.75rem">
         <div>
             <label class="label">Post Title</label>
             <input type="text" id="title" name="title" value="{{ old('title') }}" class="input" placeholder="e.g. The Quiet Magic of Personalized Stories" required>
@@ -55,8 +55,12 @@
             <label class="label">Slug (URL identifier)</label>
             <input type="text" id="slug" name="slug" value="{{ old('slug') }}" class="input" placeholder="e.g. the-quiet-magic-of-personalized-stories">
         </div>
+        <div>
+            <label class="label">Language</label>
+            <input type="text" value="{{ $lang }}" class="input" readonly style="background:#f3f4f6; color:#6b7280; font-weight:bold;">
+            <input type="hidden" name="language_type" value="{{ $lang }}">
+        </div>
     </div>
-    
     <div class="grid-3">
         <div>
             <label class="label">Category</label>

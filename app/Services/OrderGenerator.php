@@ -106,6 +106,7 @@ class OrderGenerator
                     'postal_code'              => $checkoutData['postal_code'],
                     'country'                  => $checkoutData['country'],
                     'phone'                    => $checkoutData['phone'],
+                    'source'                   => $checkoutData['source'] ?? 'Organic',
                     'items'                    => $cartItems,
                     'subtotal'                 => $subtotal,
                     'shipping_fee'             => $shippingFee,

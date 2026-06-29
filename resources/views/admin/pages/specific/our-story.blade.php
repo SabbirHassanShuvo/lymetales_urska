@@ -97,10 +97,20 @@
         <h2 class="text-2xl font-bold text-gray-900">Edit Our Story Page</h2>
         <p class="text-sm text-gray-400 mt-0.5">Manage all sections of the Our Story page</p>
     </div>
-    <a href="{{ route('admin.pages.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3.5 py-2 rounded-lg transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-        Back to Pages
-    </a>
+    <div class="flex items-center gap-3">
+        <div style="display:flex;align-items:center;gap:0.75rem;background:#fff;padding:0.4rem 0.8rem;border-radius:0.75rem;border:1.5px solid #f1f2f4;">
+            <label style="font-size:0.8rem;font-weight:600;color:#374151;">Language:</label>
+            <select onchange="window.location.href='?lang=' + this.value" style="font-size:0.8rem;padding:0.3rem 0.6rem;border:1px solid #e5e7eb;border-radius:0.5rem;background:#f9fafb;outline:none;cursor:pointer;">
+                <option value="SL" {{ ($page->language_type ?? 'SL') == 'SL' ? 'selected' : '' }}>SL (Slovenian)</option>
+                <option value="HR" {{ ($page->language_type ?? 'SL') == 'HR' ? 'selected' : '' }}>HR (Croatian)</option>
+                <option value="EN" {{ ($page->language_type ?? 'SL') == 'EN' ? 'selected' : '' }}>EN (English)</option>
+            </select>
+        </div>
+        <a href="{{ route('admin.pages.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3.5 py-2 rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Pages
+        </a>
+    </div>
 </div>
 
 <form action="{{ route('admin.pages.update', $page) }}" method="POST" enctype="multipart/form-data" x-data="ourStoryForm()">

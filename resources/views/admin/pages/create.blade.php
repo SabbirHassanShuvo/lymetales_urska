@@ -30,8 +30,8 @@
 
 {{-- Title & Slug --}}
 <div class="card">
-    <div class="card-title"><span class="dot" style="background:#6366f1"></span> Page Identity</div>
-    <div class="grid-2">
+    <div class="card-title"><span class="dot" style="background:#6366f1"></span> Page Identity & Language</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
         <div>
             <label class="field-label" for="title">Page Title</label>
             <input type="text" name="title" id="title" value="{{ old('title') }}" placeholder="e.g. Privacy Policy" class="field-input">
@@ -41,6 +41,11 @@
             <label class="field-label" for="slug">Slug / URL Path</label>
             <input type="text" name="slug" id="slug" value="{{ old('slug') }}" placeholder="e.g. privacy-policy" class="field-input">
             @error('slug')<p class="field-error">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="field-label" for="language_type">Language</label>
+            <input type="text" value="{{ $lang }}" class="field-input" readonly style="background:#f3f4f6; color:#6b7280; font-weight:bold;">
+            <input type="hidden" name="language_type" value="{{ $lang }}">
         </div>
     </div>
 </div>

@@ -194,6 +194,15 @@
                     <span class="flex-1">Gifts</span>
                 </a>
 
+                {{-- Subscribers --}}
+                <a href="{{ route('admin.subscribers.index') }}"
+                    class="flex items-center px-4 py-3 {{ request()->routeIs('admin.subscribers.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                    </svg>
+                    <span class="flex-1">Subscribers</span>
+                </a>
+
                 {{-- Messages --}}
                 <a href="{{ route('admin.contact-messages.index') }}"
                     class="flex items-center px-4 py-3 {{ request()->routeIs('admin.contact-messages.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">
@@ -216,6 +225,13 @@
                         </path>
                     </svg>
                     Settings
+                </a>
+                <a href="{{ route('admin.gdpr.index') }}"
+                    class="flex items-center px-4 py-3 {{ request()->routeIs('admin.gdpr.*') ? 'bg-rose-50 text-rose-700 font-semibold' : 'text-gray-600 hover:bg-gray-50' }} rounded-xl transition-all duration-200">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    GDPR Tools
                 </a>
             </nav>
 
@@ -463,6 +479,7 @@
     }
     </script>
     @stack('scripts')
+    @stack('modals')
 </body>
 
 </html>

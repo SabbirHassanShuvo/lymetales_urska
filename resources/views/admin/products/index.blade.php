@@ -253,7 +253,7 @@
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
         <!-- Large Modal Panel -->
-        <div class="inline-block align-middle bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full border border-gray-100">
+        <div class="inline-block align-middle bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-7xl sm:w-full border border-gray-100">
             <form action="{{ route('admin.products.store') }}" method="POST" id="productForm" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="_method" id="formMethod" value="POST">
@@ -302,6 +302,15 @@
                                     <option value="newborn">novorojenček</option>
                                     <option value="kids">otroci</option>
                                     <option value="adult">odrasli</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+                                <select name="language_type" id="prodLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
+                                    <option value="SL">SL (Slovenian)</option>
+                                    <option value="HR">HR (Croatian)</option>
+                                    <option value="EN">EN (English)</option>
                                 </select>
                             </div>
 
@@ -405,6 +414,7 @@
                                 <input type="hidden" name="name_font_family" id="prodNameFontFamily" value="PetitCochon">
                                 <input type="hidden" name="name_top" id="prodNameTop" value="2%">
                                 <input type="hidden" name="name_color" id="prodNameColor" value="#e591ae">
+                                <input type="hidden" name="name_color_boy" id="prodNameColorBoy" value="#3b82f6">
                                 <input type="hidden" name="name_font_size" id="prodNameFontSize" value="88px">
                                 <input type="hidden" name="name_right" id="prodNameRight" value="50%">
                             </div>
@@ -473,30 +483,51 @@
                         </div>
                     </div>
 
-                    <!-- Upsell Gifts -->
+                    <!-- Upsell Products -->
                     <div class="pt-6 border-t border-gray-100">
                         <div class="mb-4">
-                            <h4 class="text-md font-bold text-gray-800">Upsell Gifts</h4>
-                            <p class="text-xs text-gray-500 mt-1">Select specific products from the catalog to offer as upsell gifts when this book is in the cart.</p>
+                            <h4 class="text-md font-bold text-gray-800">Upsell Products</h4>
+                            <p class="text-xs text-gray-500 mt-1">Select specific gifts from the catalog to offer as upsell products when this book is in the cart.</p>
                         </div>
                         <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
-                            <div class="relative">
-                                <input type="text" id="upsellSearchInput" oninput="filterUpsellProducts()" placeholder="Search products..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <div id="selectedUpsellsContainer" class="flex flex-wrap gap-2 empty:hidden pb-2 border-b border-gray-200"></div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative flex-1">
+                                    <input type="text" id="upsellSearchInput" oninput="filterUpsellProducts()" placeholder="Search products..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <select id="upsellLangFilter" onchange="filterUpsellProducts()" class="px-3 py-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-gray-600">
+                                    <option value="">All Lang</option>
+                                    <option value="SL">🇸🇮 SL</option>
+                                    <option value="HR">🇭🇷 HR</option>
+                                    <option value="EN">🇬🇧 EN</option>
+                                </select>
                             </div>
                             <div class="max-h-60 overflow-y-auto space-y-1.5 pr-2" id="upsellProductsList">
-                                @foreach($products as $p)
-                                    <label class="flex items-center justify-between p-2 hover:bg-white rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100/50 upsell-product-item group" data-upsell-title="{{ strtolower($p->title) }}" data-product-id="{{ $p->id }}">
+                                @foreach($gifts as $p)
+                                    @php
+                                        $lang = $p->language_type ?? 'SL';
+                                        $langColors = [
+                                            'SL' => 'bg-blue-100 text-blue-700',
+                                            'HR' => 'bg-red-100 text-red-700',
+                                            'EN' => 'bg-green-100 text-green-700',
+                                        ];
+                                        $langClass = $langColors[$lang] ?? 'bg-gray-100 text-gray-600';
+                                    @endphp
+                                    <label class="flex items-center justify-between p-2 hover:bg-white rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100/50 upsell-product-item group" data-upsell-title="{{ strtolower($p->title) }}" data-product-id="{{ $p->id }}" data-language="{{ $lang }}">
                                         <div class="flex items-center space-x-3">
                                             <div class="w-8 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
-                                                <img src="{{ $p->imageUrl ?: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=80' }}" class="w-full h-full object-cover">
+                                                <img src="{{ $p->image_path ? asset($p->image_path) : 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=80' }}" class="w-full h-full object-cover">
                                             </div>
                                             <div>
-                                                <span class="text-xs font-bold text-gray-700 block group-hover:text-indigo-600 transition-colors">{{ $p->title }}</span>
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-xs font-bold text-gray-700 group-hover:text-indigo-600 transition-colors">{{ $p->title }}</span>
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold {{ $langClass }}">{{ $lang }}</span>
+                                                </div>
                                                 <span class="text-[10px] text-gray-400 font-semibold">${{ number_format($p->price, 2) }}</span>
                                             </div>
                                         </div>
-                                        <input type="checkbox" name="upsell_ids[]" value="{{ $p->id }}" class="w-4.5 h-4.5 text-indigo-600 border-gray-300 rounded-md focus:ring-indigo-500 cursor-pointer upsell-checkbox">
+                                        <input type="checkbox" name="upsell_ids[]" value="{{ $p->id }}" data-title="{{ $p->title }}" class="w-4.5 h-4.5 text-indigo-600 border-gray-300 rounded-md focus:ring-indigo-500 cursor-pointer upsell-checkbox" onchange="updateSelectedUpsells()">
                                     </label>
                                 @endforeach
                             </div>
@@ -864,10 +895,33 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Text Color</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Girl Text Color</label>
                             <div class="flex items-center space-x-3">
                                 <input type="color" id="configNameColor" value="#e591ae" class="h-10 w-16 p-1 bg-white border border-gray-200 rounded-lg cursor-pointer" oninput="updateOverlayPreview()">
                                 <span class="text-xs text-gray-500 font-mono" id="colorHexDisplay">#e591ae</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Boy Text Color</label>
+                            <div class="flex items-center space-x-3">
+                                <input type="color" id="configNameColorBoy" value="#3b82f6" class="h-10 w-16 p-1 bg-white border border-gray-200 rounded-lg cursor-pointer" oninput="updateOverlayPreview()">
+                                <span class="text-xs text-gray-500 font-mono" id="colorHexDisplayBoy">#3b82f6</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Preview Gender</label>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="radio" name="preview_gender" value="girl" checked class="w-4 h-4 text-pink-500 border-gray-300 focus:ring-pink-500" onchange="updateOverlayPreview()">
+                                    <span class="ml-2 text-sm text-gray-700 font-medium">Girl</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="radio" name="preview_gender" value="boy" class="w-4 h-4 text-blue-500 border-gray-300 focus:ring-blue-500" onchange="updateOverlayPreview()">
+                                    <span class="ml-2 text-sm text-gray-700 font-medium">Boy</span>
+                                </label>
                             </div>
                         </div>
                         <div>
@@ -1075,6 +1129,7 @@
         document.getElementById('prodNameFontFamily').value = "PetitCochon";
         document.getElementById('prodNameTop').value = "2%";
         document.getElementById('prodNameColor').value = "#e591ae";
+        document.getElementById('prodNameColorBoy').value = "#3b82f6";
         document.getElementById('prodNameFontSize').value = "88px";
         document.getElementById('prodNameRight').value = "50%";
 
@@ -1125,8 +1180,11 @@
         document.querySelectorAll('.upsell-product-item').forEach(item => {
             item.style.display = 'flex';
         });
+        updateSelectedUpsells();
         const upsellSearch = document.getElementById('upsellSearchInput');
         if (upsellSearch) upsellSearch.value = '';
+        const upsellLangFilter = document.getElementById('upsellLangFilter');
+        if (upsellLangFilter) upsellLangFilter.value = '';
     }
 
     function openCreateProductModal() {
@@ -1146,6 +1204,7 @@
         document.getElementById('prodTitle').value = product.title;
         if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = product.domain || "";
         if (document.getElementById('prodType')) document.getElementById('prodType').value = product.type || "";
+        if (document.getElementById('prodLanguage')) document.getElementById('prodLanguage').value = product.language_type || "SL";
 
         // Populate Site Category
         if (document.getElementById('prodCategory')) {
@@ -1194,6 +1253,7 @@
         document.getElementById('prodNameFontFamily').value = product.name_font_family || "PetitCochon";
         document.getElementById('prodNameTop').value = product.name_top || "2%";
         document.getElementById('prodNameColor').value = product.name_color || "#e591ae";
+        document.getElementById('prodNameColorBoy').value = product.name_color_boy || "#3b82f6";
         document.getElementById('prodNameFontSize').value = product.name_font_size || "88px";
         document.getElementById('prodNameRight').value = product.name_right || "50%";
         
@@ -1298,18 +1358,47 @@
             });
         }
         
-        // Exclude the current product from being selected as its own upsell
-        document.querySelectorAll('.upsell-product-item').forEach(item => {
-            if (String(item.getAttribute('data-product-id')) === String(product.id)) {
-                item.style.display = 'none';
-            } else {
-                item.style.display = 'flex';
-            }
-        });
+        updateSelectedUpsells();
+
         const upsellSearch = document.getElementById('upsellSearchInput');
         if (upsellSearch) upsellSearch.value = '';
 
         toggleModal('productModal');
+    }
+
+    function updateSelectedUpsells() {
+        const container = document.getElementById('selectedUpsellsContainer');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        document.querySelectorAll('.upsell-checkbox:checked').forEach(cb => {
+            const title = cb.getAttribute('data-title');
+            const val = cb.value;
+            const badge = document.createElement('div');
+            badge.className = 'inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-semibold rounded-full';
+            badge.innerHTML = `
+                <span>${title}</span>
+                <button type="button" onclick="removeUpsell('${val}')" class="ml-2 text-indigo-500 hover:text-indigo-700">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+            container.appendChild(badge);
+        });
+        
+        if(container.children.length > 0) {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+
+    function removeUpsell(val) {
+        const cb = document.querySelector(`.upsell-checkbox[value="${val}"]`);
+        if (cb) {
+            cb.checked = false;
+            updateSelectedUpsells();
+        }
     }
 
     function previewProduct(product) {
@@ -1413,6 +1502,7 @@
 
     function filterUpsellProducts() {
         const query = document.getElementById('upsellSearchInput').value.toLowerCase();
+        const langFilter = (document.getElementById('upsellLangFilter')?.value || '').toUpperCase();
         const items = document.querySelectorAll('.upsell-product-item');
         // Get currently active product ID if editing
         const isEdit = document.getElementById('formMethod').value === 'PUT';
@@ -1428,11 +1518,11 @@
             }
 
             const title = item.getAttribute('data-upsell-title');
-            if (title.includes(query)) {
-                item.style.display = 'flex';
-            } else {
-                item.style.display = 'none';
-            }
+            const itemLang = (item.getAttribute('data-language') || '').toUpperCase();
+            const matchesQuery = title.includes(query);
+            const matchesLang = !langFilter || itemLang === langFilter;
+
+            item.style.display = (matchesQuery && matchesLang) ? 'flex' : 'none';
         });
     }
 
@@ -1980,6 +2070,11 @@
         let colorVal = document.getElementById('prodNameColor').value || '#e591ae';
         document.getElementById('configNameColor').value = colorVal;
         
+        let colorBoyVal = document.getElementById('prodNameColorBoy') ? document.getElementById('prodNameColorBoy').value : '#3b82f6';
+        if (document.getElementById('configNameColorBoy')) {
+            document.getElementById('configNameColorBoy').value = colorBoyVal || '#3b82f6';
+        }
+        
         let fontSizeVal = (document.getElementById('prodNameFontSize').value || '88px').replace('px', '');
         document.getElementById('configNameFontSize').value = fontSizeVal;
         
@@ -2042,13 +2137,20 @@
         // Load font dynamically if it's a Google Font
         loadGoogleFont(font);
 
-        let color = document.getElementById('configNameColor').value;
+        let isBoy = document.querySelector('input[name="preview_gender"]:checked') && document.querySelector('input[name="preview_gender"]:checked').value === 'boy';
+        let colorGirl = document.getElementById('configNameColor').value;
+        let colorBoy = document.getElementById('configNameColorBoy') ? document.getElementById('configNameColorBoy').value : '#3b82f6';
+        let color = isBoy ? colorBoy : colorGirl;
+
         let fontSize = document.getElementById('configNameFontSize').value + 'px';
         let top = document.getElementById('configNameTop').value + '%';
         let right = document.getElementById('configNameRight').value + '%';
 
         // Update displays
-        document.getElementById('colorHexDisplay').textContent = color;
+        document.getElementById('colorHexDisplay').textContent = colorGirl;
+        if (document.getElementById('colorHexDisplayBoy')) {
+            document.getElementById('colorHexDisplayBoy').textContent = colorBoy;
+        }
         document.getElementById('fontSizeDisplay').textContent = fontSize;
         document.getElementById('topDisplay').textContent = top;
         document.getElementById('rightDisplay').textContent = right;
@@ -2068,6 +2170,9 @@
         document.getElementById('prodNameText').value = document.getElementById('configNameText').value;
         document.getElementById('prodNameFontFamily').value = document.getElementById('configNameFont').value;
         document.getElementById('prodNameColor').value = document.getElementById('configNameColor').value;
+        if (document.getElementById('configNameColorBoy') && document.getElementById('prodNameColorBoy')) {
+            document.getElementById('prodNameColorBoy').value = document.getElementById('configNameColorBoy').value;
+        }
         document.getElementById('prodNameFontSize').value = document.getElementById('configNameFontSize').value + 'px';
         document.getElementById('prodNameTop').value = document.getElementById('configNameTop').value + '%';
         document.getElementById('prodNameRight').value = document.getElementById('configNameRight').value + '%';

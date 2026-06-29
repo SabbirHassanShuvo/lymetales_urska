@@ -13,7 +13,8 @@ class PageController extends Controller
      */
     public function show($slug)
     {
-        $page = Page::where('slug', $slug)->where('is_active', true)->first();
+        $lang = strtoupper(request()->input('language_type', request()->input('lang', 'SL')));
+        $page = Page::where('slug', $slug)->where('language_type', $lang)->where('is_active', true)->first();
 
         if (!$page) {
             return response()->json(['message' => 'Page not found'], 404);

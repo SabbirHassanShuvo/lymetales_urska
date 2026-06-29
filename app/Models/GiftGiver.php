@@ -18,5 +18,6 @@ class GiftGiver extends Model
         'step_2_text',
         'step_3_image',
         'step_3_text',
+        'language_type',
     ];
 }

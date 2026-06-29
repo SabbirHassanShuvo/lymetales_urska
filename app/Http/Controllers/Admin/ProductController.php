@@ -12,6 +12,7 @@ use App\Models\ProductCustomizationStep;
 use App\Models\ProductCustomizationOption;
 use App\Models\ProductCustomizationSubstep;
 use App\Models\ProductCustomizationSuboption;
+use App\Models\Gift;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -34,11 +35,15 @@ class ProductController extends Controller
         $categories    = Category::with(['subcategories.children'])->orderBy('name')->get();
         $subcategories = Subcategory::with('children')->whereNull('parent_id')->orderBy('name')->get();
         $siteCategories = SiteCategory::with('subcategories')->where('status', true)->orderBy('name')->get();
+        $gifts = Gift::orderBy('title')->get();
 
-        return view('admin.products.index', compact(
-            'products', 'categories', 'subcategories', 'siteCategories',
-            'totalCount', 'bestsellersCount', 'recommendedCount', 'activeCount'
-        ));
+        return response()
+            ->view('admin.products.index', compact(
+                'products', 'categories', 'subcategories', 'siteCategories', 'gifts',
+                'totalCount', 'bestsellersCount', 'recommendedCount', 'activeCount'
+            ))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 
     public function show($id)
@@ -77,6 +82,7 @@ class ProductController extends Controller
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
             'type'               => 'nullable|string|max:255',
+            'language_type'      => 'nullable|string|in:HR,SL,EN',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
             'domain'             => 'nullable|in:https://lymetales.com/,https://beebook.si/',
             'featured_image_id'  => 'nullable|string',
@@ -89,10 +95,11 @@ class ProductController extends Controller
             'name_font_family' => 'nullable|string|max:100',
             'name_top'         => 'nullable|string|max:20',
             'name_color'       => 'nullable|string|max:20',
+            'name_color_boy'   => 'nullable|string|max:20',
             'name_font_size'   => 'nullable|string|max:20',
             'name_right'       => 'nullable|string|max:20',
             'upsell_ids'       => 'nullable|array',
-            'upsell_ids.*'     => 'exists:products,id',
+            'upsell_ids.*'     => 'exists:gifts,id',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -118,6 +125,7 @@ class ProductController extends Controller
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
                 'type'           => $request->type,
+                'language_type'  => $request->input('language_type', 'SL'),
                 'slug'           => Str::slug($request->title),
                 'domain'         => $request->filled('domain') ? $request->domain : null,
                 'featured_image_id' => is_numeric($request->featured_image_id) ? $request->featured_image_id : null,
@@ -125,6 +133,7 @@ class ProductController extends Controller
                 'name_font_family' => $request->name_font_family ?: 'PetitCochon',
                 'name_top'         => $request->name_top ?: '2%',
                 'name_color'       => $request->name_color ?: '#e591ae',
+                'name_color_boy'   => $request->name_color_boy ?: '#3b82f6',
                 'name_font_size'   => $request->name_font_size ?: '88px',
                 'name_right'       => $request->name_right ?: '50%',
             ]);
@@ -351,6 +360,7 @@ class ProductController extends Controller
             'is_recommended'     => 'nullable|boolean',
             'status'             => 'nullable|boolean',
             'type'               => 'nullable|string|max:255',
+            'language_type'      => 'nullable|string|in:HR,SL,EN',
             'subcategory_id'     => 'nullable|exists:subcategories,id',
             'domain'             => 'nullable|in:https://lymetales.com/,https://beebook.si/',
             'featured_image_id'  => 'nullable|string',
@@ -367,14 +377,15 @@ class ProductController extends Controller
             'name_font_family' => 'nullable|string|max:100',
             'name_top'         => 'nullable|string|max:20',
             'name_color'       => 'nullable|string|max:20',
+            'name_color_boy'   => 'nullable|string|max:20',
             'name_font_size'   => 'nullable|string|max:20',
             'name_right'       => 'nullable|string|max:20',
             'upsell_ids'       => 'nullable|array',
-            'upsell_ids.*'     => 'exists:products,id',
+            'upsell_ids.*'     => 'exists:gifts,id',
         ]);
 
         DB::transaction(function () use ($request, $product) {
-            $product->update([
+            $updateResult = $product->update([
                 'title'               => $request->title,
                 'category_id'         => $request->filled('category_id') ? $request->category_id : null,
                 'subcategory_id'      => $request->filled('subcategory_id') ? $request->subcategory_id : null,
@@ -396,6 +407,7 @@ class ProductController extends Controller
                 'is_recommended' => $request->boolean('is_recommended'),
                 'status'         => $request->boolean('status'),
                 'type'           => $request->type,
+                'language_type'  => $request->input('language_type', $product->language_type),
                 'slug'           => Str::slug($request->title),
                 'domain'         => $request->filled('domain') ? $request->domain : null,
                 'featured_image_id' => is_numeric($request->featured_image_id) ? $request->featured_image_id : null,
@@ -403,6 +415,7 @@ class ProductController extends Controller
                 'name_font_family' => $request->name_font_family ?: $product->name_font_family ?: 'PetitCochon',
                 'name_top'         => $request->name_top ?: $product->name_top ?: '2%',
                 'name_color'       => $request->name_color ?: $product->name_color ?: '#e591ae',
+                'name_color_boy'   => $request->name_color_boy ?: $product->name_color_boy ?: '#3b82f6',
                 'name_font_size'   => $request->name_font_size ?: $product->name_font_size ?: '88px',
                 'name_right'       => $request->name_right ?: $product->name_right ?: '50%',
             ]);

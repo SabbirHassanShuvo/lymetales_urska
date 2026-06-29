@@ -160,6 +160,15 @@
                     </div>
 
                     <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+                        <select name="language_type" id="giftLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
+                            <option value="SL">SL (Slovenian)</option>
+                            <option value="HR">HR (Croatian)</option>
+                            <option value="EN">EN (English)</option>
+                        </select>
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Gift Image</label>
                         <input type="file" name="image" id="giftImage" accept="image/*" onchange="previewImage(event)"
                             class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
@@ -211,6 +220,7 @@
         document.getElementById('giftTitle').value = '';
         document.getElementById('giftPrice').value = '';
         document.getElementById('giftDescription').value = '';
+        document.getElementById('giftLanguage').value = 'SL';
         document.getElementById('giftImage').value = '';
         document.getElementById('imagePreviewContainer').classList.add('hidden');
         document.getElementById('imagePreview').src = '';
@@ -239,6 +249,7 @@
         document.getElementById('giftTitle').value       = gift.title;
         document.getElementById('giftPrice').value       = gift.price;
         document.getElementById('giftDescription').value = gift.short_description || '';
+        document.getElementById('giftLanguage').value    = gift.language_type || 'SL';
 
         const previewContainer = document.getElementById('imagePreviewContainer');
         const previewImg       = document.getElementById('imagePreview');

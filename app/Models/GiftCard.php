@@ -14,5 +14,6 @@ class GiftCard extends Model
         'subtitle',
         'image_path',
         'link',
+        'language_type',
     ];
 }

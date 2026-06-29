@@ -22,6 +22,7 @@ class Product extends Model
         'name_font_family',
         'name_top',
         'name_color',
+        'name_color_boy',
         'name_font_size',
         'name_right',
         'price',
@@ -41,6 +42,7 @@ class Product extends Model
         'type',
         'domain',
         'featured_image_id',
+        'language_type',
     ];
 
     protected $casts = [
@@ -185,7 +187,7 @@ class Product extends Model
      */
     public function upsells()
     {
-        return $this->belongsToMany(Product::class, 'product_upsells', 'product_id', 'upsell_product_id')
+        return $this->belongsToMany(Gift::class, 'product_upsells', 'product_id', 'upsell_product_id')
                     ->withTimestamps();
     }
 }

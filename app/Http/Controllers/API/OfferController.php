@@ -22,6 +22,7 @@ class OfferController extends Controller
                 'short_description' => $offer->short_description,
                 'min_quantity' => $offer->min_quantity,
                 'discount_percentage' => (float) $offer->discount_percentage,
+                'language_type' => $offer->language_type,
                 'created_at' => $offer->created_at,
                 'updated_at' => $offer->updated_at,
             ];

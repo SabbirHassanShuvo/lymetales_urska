@@ -28,9 +28,11 @@ class GiftController extends Controller
             'short_description' => 'nullable|string',
             'price'             => 'required|numeric|min:0',
             'image'             => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'language_type'     => 'nullable|string|in:HR,SL,EN',
         ]);
 
         $data = $request->only(['title', 'short_description', 'price']);
+        $data['language_type'] = $request->input('language_type', 'SL');
 
         if ($request->hasFile('image')) {
             $image = $request->file('image');
@@ -63,9 +65,11 @@ class GiftController extends Controller
             'short_description' => 'nullable|string',
             'price'             => 'required|numeric|min:0',
             'image'             => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'language_type'     => 'nullable|string|in:HR,SL,EN',
         ]);
 
         $data = $request->only(['title', 'short_description', 'price']);
+        $data['language_type'] = $request->input('language_type', $gift->language_type);
 
         if ($request->hasFile('image')) {
             // Delete old image if exists

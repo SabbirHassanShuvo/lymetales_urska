@@ -35,6 +35,7 @@ class CategoryController extends Controller
             'description' => $request->description,
             'is_special'  => $request->boolean('is_special'),
             'status'      => $request->boolean('status'),
+            'language_type' => $request->input('language_type', 'SL'),
         ]);
 
         return redirect()
@@ -59,6 +60,7 @@ class CategoryController extends Controller
             'description' => $request->description,
             'is_special'  => $request->boolean('is_special'),
             'status'      => $request->boolean('status'),
+            'language_type' => $request->input('language_type', $category->language_type),
         ]);
 
         return redirect()

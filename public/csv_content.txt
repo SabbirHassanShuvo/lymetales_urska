@@ -1,0 +1,6 @@
+VrstaPosiljke;CrtnaKoda;Naziv;DodatniNaziv;Naslov;PostnaSt;NazivPoste;Drzava;TelSt;EMail;IdNaslovnika;Opomba;Masa;DodatneStoritve;Odkupnina;Vrednost;VrstaVplDok;RefX;Model;Sklic;Namen;OdkupninaVValuti;Valuta;Navodilo
+138;;Jasmina Deu;;Mokrška Ulica 51 d;1000;Ljubljana;705;041353438;jasmina.deu@telemach.net;;;;ODKBN;44,93;;;;;22484;;;;;
+138;;Sergeja Pliberšek;;Vinarje 81a;2316;Zgornja Ložnica;705;040 745 655;sergejch95@gmail.com;;;;ODKBN;45,92;;;;;22483;;;;;
+138;;Aleksandra Kramer;;Otroška Ulica 21;9232;Èrenšovci;705;031885259;kramer.aleksandra95@gmail.com;;;;ODKBN;53,93;;;;;22482;;;;;
+138;;Nina Golub;;Mariborska Ulica 13;2314;Zgornja Polskava;705;031262850;nina.golub225@gmail.com;;;;ODKBN;33,64;;;;;22481;;;;;
+138;;Jelena Berk;;Zg. Secovo 6a;3250;Rogaška Slatina;705;040373953;jelenaberk@gmail.com;;;;;;;;;;22480;;;;;

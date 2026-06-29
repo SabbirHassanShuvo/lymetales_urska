@@ -43,6 +43,11 @@ Route::get('/clear-cache', function() {
         $res['invalidated_seeders'] = $invalidatedSeeders;
     }
     
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(app_path('Http/Controllers/Admin/ProductController.php'), true);
+        $res['invalidated_product_controller'] = true;
+    }
+
     try {
         \Illuminate\Support\Facades\Artisan::call('optimize:clear');
         $res['optimize_clear'] = \Illuminate\Support\Facades\Artisan::output();
@@ -68,6 +73,24 @@ Route::get('/run-migrations', function () {
             'error'   => $e->getMessage(),
         ], 500);
     }
+});
+
+// --- Get BOM Route ---
+Route::get('/get-bom', function () {
+    try {
+        $sqlPath = base_path('urska (2).sql');
+        $bytes = file_get_contents($sqlPath, false, null, 0, 20);
+        return response()->json([
+            'hex' => bin2hex($bytes),
+            'length' => strlen($bytes)
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+
+Route::get('/dump-csv', function () {
+    return view('dump-csv');
 });
 
 
@@ -232,6 +255,11 @@ Route::get('/lang/{locale}', function ($locale) {
     return back();
 })->name('lang.switch');
 
+// Guest Invoice Download (signed URL - no auth needed, accessed from email)
+Route::get('/orders/{order}/invoice/download', [\App\Http\Controllers\Admin\OrderController::class, 'downloadInvoiceGuest'])
+    ->name('orders.invoice.download')
+    ->middleware('signed');
+
 // Fallback login route for Laravel Authenticate Middleware redirection
 Route::get('/login', function () {
     return redirect()->route('admin.login');
@@ -286,16 +314,29 @@ Route::prefix('admin')->group(function () {
 
         // Orders & Reports
         Route::get('/orders', [\App\Http\Controllers\Admin\OrderController::class, 'index'])->name('admin.orders.index');
+        Route::get('/orders/export-espremnica', [\App\Http\Controllers\Admin\OrderController::class, 'exportESpremnica'])->name('admin.orders.export-espremnica');
+        Route::post('/orders/export-selected', [\App\Http\Controllers\Admin\OrderController::class, 'exportSelected'])->name('admin.orders.export-selected');
         Route::delete('/orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'destroy'])->name('admin.orders.destroy');
         Route::patch('/orders/{order}/order-status', [\App\Http\Controllers\Admin\OrderController::class, 'updateOrderStatus'])->name('admin.orders.order-status');
         Route::patch('/orders/{order}/payment-status', [\App\Http\Controllers\Admin\OrderController::class, 'updatePaymentStatus'])->name('admin.orders.payment-status');
+        Route::patch('/orders/{order}/update-details', [\App\Http\Controllers\Admin\OrderController::class, 'updateDetails'])->name('admin.orders.update-details');
+        Route::patch('/orders/{order}/update-items', [\App\Http\Controllers\Admin\OrderController::class, 'updateItems'])->name('admin.orders.update-items');
         Route::get('/orders/{order}/receipt', [\App\Http\Controllers\Admin\OrderController::class, 'receipt'])->name('admin.orders.receipt');
+        Route::get('/orders/{order}/preview', [\App\Http\Controllers\Admin\OrderController::class, 'preview'])->name('admin.orders.preview');
         
         Route::get('/reports/revenue', [\App\Http\Controllers\Admin\RevenueReportController::class, 'index'])->name('admin.reports.revenue');
 
-        // Settings
+        // Settings & GDPR
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings.index');
         Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
+        Route::get('/gdpr', [\App\Http\Controllers\Admin\GDPRController::class, 'index'])->name('admin.gdpr.index');
+        Route::post('/gdpr/export', [\App\Http\Controllers\Admin\GDPRController::class, 'export'])->name('admin.gdpr.export');
+        Route::post('/gdpr/anonymize', [\App\Http\Controllers\Admin\GDPRController::class, 'anonymize'])->name('admin.gdpr.anonymize');
+
+        // Newsletter Subscriptions
+        Route::get('/subscribers', [\App\Http\Controllers\Admin\SubscriberController::class, 'index'])->name('admin.subscribers.index');
+        Route::delete('/subscribers/{subscriber}', [\App\Http\Controllers\Admin\SubscriberController::class, 'destroy'])->name('admin.subscribers.destroy');
+
 
         // Dynamic Pages
         Route::resource('pages', \App\Http\Controllers\Admin\PageController::class)->names('admin.pages');
@@ -354,5 +395,15 @@ Route::prefix('admin')->group(function () {
         Route::resource('contact-messages', \App\Http\Controllers\Admin\ContactMessageController::class)->only(['index', 'show', 'destroy'])->names('admin.contact-messages');
     });
 });
+
+Route::get('/temp-debug-gifts-upsells', function() {
+    return response()->json([
+        'gifts' => \App\Models\Gift::all(['id', 'title', 'language_type']),
+        'product_upsells' => \Illuminate\Support\Facades\DB::table('product_upsells')->get(),
+    ]);
+});
+
+
+
 
 

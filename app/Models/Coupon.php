@@ -18,6 +18,7 @@ class Coupon extends Model
         'usage_limit',
         'used_count',
         'status',
+        'language_type',
     ];
 
     protected $casts = [
@@ -57,4 +58,13 @@ class Coupon extends Model
 
         return true;
     }
+
+    /**
+     * Get the orders where this coupon was used.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'coupon_code', 'code');
+    }
 }
+

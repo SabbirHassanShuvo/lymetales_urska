@@ -12,5 +12,6 @@ class Faq extends Model
     protected $fillable = [
         'question',
         'answer',
+        'language_type',
     ];
 }

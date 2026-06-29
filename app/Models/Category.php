@@ -16,6 +16,7 @@ class Category extends Model
         'description',
         'is_special',
         'status',
+        'language_type',
     ];
 
     protected $casts = [

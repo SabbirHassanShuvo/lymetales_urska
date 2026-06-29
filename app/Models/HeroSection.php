@@ -17,5 +17,6 @@ class HeroSection extends Model
         'button_two_text',
         'button_two_link',
         'image_path',
+        'language_type',
     ];
 }

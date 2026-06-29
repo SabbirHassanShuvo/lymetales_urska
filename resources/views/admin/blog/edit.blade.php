@@ -23,10 +23,20 @@
         <h2 style="font-size:1.5rem;font-weight:800;color:#111827;margin:0">Edit Blog Post</h2>
         <p style="font-size:0.85rem;color:#9ca3af;margin-top:0.25rem">Update article details and publishing parameters</p>
     </div>
-    <a href="{{ route('admin.blog.index') }}" style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:600;color:#6b7280;background:#f3f4f6;padding:0.5rem 1rem;border-radius:0.65rem;text-decoration:none" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-        <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-        Back to Articles
-    </a>
+    <div style="display:flex;align-items:center;gap:1rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;background:#fff;padding:0.35rem 0.75rem;border-radius:0.5rem;border:1.5px solid #e5e7eb;">
+            <label style="font-size:0.75rem;font-weight:600;color:#4b5563;">Language:</label>
+            <select onchange="window.location.href='?lang=' + this.value" style="font-size:0.75rem;padding:0.2rem 0.5rem;border:1px solid #d1d5db;border-radius:0.35rem;background:#f9fafb;outline:none;cursor:pointer;">
+                <option value="SL" {{ $lang == 'SL' ? 'selected' : '' }}>SL (Slovenian)</option>
+                <option value="HR" {{ $lang == 'HR' ? 'selected' : '' }}>HR (Croatian)</option>
+                <option value="EN" {{ $lang == 'EN' ? 'selected' : '' }}>EN (English)</option>
+            </select>
+        </div>
+        <a href="{{ route('admin.blog.index') }}?lang={{ $lang }}" style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:600;color:#6b7280;background:#f3f4f6;padding:0.5rem 1rem;border-radius:0.65rem;text-decoration:none" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+            <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Articles
+        </a>
+    </div>
 </div>
 
 @if ($errors->any())
@@ -47,7 +57,7 @@
 {{-- Basic Info --}}
 <div class="card">
     <div class="card-title"><span class="dot" style="background:#6366f1"></span> General Info</div>
-    <div class="grid-2" style="margin-bottom:0.75rem">
+    <div class="grid-3" style="margin-bottom:0.75rem">
         <div>
             <label class="label">Post Title</label>
             <input type="text" id="title" name="title" value="{{ old('title', $blogPost->title) }}" class="input" required>
@@ -55,6 +65,11 @@
         <div>
             <label class="label">Slug (URL identifier)</label>
             <input type="text" id="slug" name="slug" value="{{ old('slug', $blogPost->slug) }}" class="input">
+        </div>
+        <div>
+            <label class="label">Language</label>
+            <input type="text" value="{{ $lang }}" class="input" readonly style="background:#f3f4f6; color:#6b7280; font-weight:bold;">
+            <input type="hidden" name="language_type" value="{{ $lang }}">
         </div>
     </div>
     

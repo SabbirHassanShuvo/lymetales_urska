@@ -9,7 +9,7 @@ class FooterItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['footer_section_id', 'label', 'url', 'sort_order'];
+    protected $fillable = ['footer_section_id', 'label', 'url', 'sort_order', 'language_type'];
 
     public function section()
     {

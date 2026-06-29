@@ -57,6 +57,7 @@ class CategoryController extends Controller
             'slug'        => $c->slug,
             'description' => $c->description,
             'is_special'  => $c->is_special,
+            'language_type' => $c->language_type,
         ];
 
         if ($withChildren) {
@@ -66,6 +67,7 @@ class CategoryController extends Controller
                     'name'        => $sub->name,
                     'slug'        => $sub->slug,
                     'description' => $sub->description,
+                    'language_type' => $sub->language_type,
                 ])
                 ->values();
         }

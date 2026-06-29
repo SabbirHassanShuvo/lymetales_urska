@@ -31,6 +31,7 @@ class SettingController extends Controller
             'paypal_sandbox_client_secret'=> 'PAYPAL_SANDBOX_CLIENT_SECRET',
             'paypal_live_client_id'       => 'PAYPAL_LIVE_CLIENT_ID',
             'paypal_live_client_secret'   => 'PAYPAL_LIVE_CLIENT_SECRET',
+            'shop_vat_rate'               => 'SHOP_VAT_RATE',
         ];
         foreach ($envOverrideKeys as $dbKey => $envKey) {
             if (isset($envData[$envKey])) {
@@ -49,6 +50,7 @@ class SettingController extends Controller
             'global_discount_type' => 'required|in:fixed,percentage',
             'global_discount_value' => 'required|numeric|min:0',
             'whatsapp_url' => 'nullable|url|max:255',
+            'shop_vat_rate' => 'required|numeric|min:0|max:100',
             'admin_logo_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'admin_site_name' => 'nullable|string|max:100',
             'admin_tagline' => 'nullable|string|max:200',
@@ -101,7 +103,7 @@ class SettingController extends Controller
 
         $keys = [
             'shipping_charge', 'fast_production_fee', 'global_discount_type', 'global_discount_value',
-            'whatsapp_url',
+            'whatsapp_url', 'shop_vat_rate',
             'admin_site_name', 'admin_tagline', 'admin_login_bg',
             'stripe_key', 'stripe_secret', 'stripe_webhook_secret',
             'mail_mailer', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption', 'mail_from_address', 'mail_from_name',
@@ -126,6 +128,7 @@ class SettingController extends Controller
             'paypal_sandbox_client_secret' => 'PAYPAL_SANDBOX_CLIENT_SECRET',
             'paypal_live_client_id'        => 'PAYPAL_LIVE_CLIENT_ID',
             'paypal_live_client_secret'    => 'PAYPAL_LIVE_CLIENT_SECRET',
+            'shop_vat_rate'                => 'SHOP_VAT_RATE',
         ];
 
         foreach ($keys as $key) {

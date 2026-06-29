@@ -32,6 +32,7 @@ class CouponController extends Controller
             'expiry_date' => 'nullable|date',
             'usage_limit' => 'nullable|integer|min:1',
             'status'      => 'boolean',
+            'language_type'=> 'nullable|string|in:HR,SL,EN',
         ]);
 
         // For free_shipping, value is 0
@@ -40,6 +41,7 @@ class CouponController extends Controller
         }
 
         $validated['status'] = $request->boolean('status');
+        $validated['language_type'] = $request->input('language_type', 'SL');
 
         Coupon::create($validated);
 
@@ -62,6 +64,7 @@ class CouponController extends Controller
             'expiry_date' => 'nullable|date',
             'usage_limit' => 'nullable|integer|min:1',
             'status'      => 'boolean',
+            'language_type'=> 'nullable|string|in:HR,SL,EN',
         ]);
 
         if ($isFreeShipping) {
@@ -69,6 +72,7 @@ class CouponController extends Controller
         }
 
         $validated['status'] = $request->boolean('status');
+        $validated['language_type'] = $request->input('language_type', $coupon->language_type);
 
         $coupon->update($validated);
 

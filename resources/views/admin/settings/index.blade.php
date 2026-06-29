@@ -183,6 +183,13 @@
                         class="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-semibold text-sm"
                         value="{{ old('whatsapp_url', $settings['whatsapp_url'] ?? '') }}" placeholder="https://wa.me/...">
                 </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">VAT Rate (%)</label>
+                    <input type="number" step="0.01" min="0" max="100" name="shop_vat_rate" 
+                        class="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-semibold text-sm"
+                        value="{{ old('shop_vat_rate', $settings['shop_vat_rate'] ?? '22.00') }}" required>
+                </div>
             </div>
         </div>
 

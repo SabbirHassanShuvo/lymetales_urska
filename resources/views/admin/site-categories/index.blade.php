@@ -126,6 +126,14 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                         <textarea name="description" id="catDesc" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"></textarea>
                     </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+                        <select name="language_type" id="catLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all font-semibold text-sm">
+                            <option value="SL">SL (Slovenian)</option>
+                            <option value="HR">HR (Croatian)</option>
+                            <option value="EN">EN (English)</option>
+                        </select>
+                    </div>
                     <div class="flex items-center space-x-6">
                         <label class="flex items-center space-x-2 cursor-pointer">
                             <input type="checkbox" name="is_special" id="catIsSpecial" value="1" class="w-4 h-4 text-amber-500 border-gray-300 rounded">
@@ -171,6 +179,7 @@ function openCatModal() {
     document.getElementById('catModalTitle').textContent = 'Create Category';
     document.getElementById('catName').value = '';
     document.getElementById('catDesc').value = '';
+    document.getElementById('catLanguage').value = 'SL';
     document.getElementById('catIsSpecial').checked = false;
     document.getElementById('catStatus').checked = true;
     document.getElementById('catModal').classList.remove('hidden');
@@ -182,6 +191,7 @@ function openEditCatModal(data) {
     document.getElementById('catModalTitle').textContent = 'Edit Category';
     document.getElementById('catName').value = data.name;
     document.getElementById('catDesc').value = data.description || '';
+    document.getElementById('catLanguage').value = data.language_type || 'SL';
     document.getElementById('catIsSpecial').checked = !!data.is_special;
     document.getElementById('catStatus').checked = !!data.status;
     document.getElementById('catModal').classList.remove('hidden');

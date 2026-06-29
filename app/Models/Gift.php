@@ -14,5 +14,6 @@ class Gift extends Model
         'short_description',
         'price',
         'image_path',
+        'language_type',
     ];
 }

@@ -18,34 +18,33 @@ use Illuminate\Support\Facades\File;
 
 class HomeContentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $heroSections = HeroSection::all();
-        $giftCards = GiftCard::all();
-        $faqs = Faq::all();
-        
-        $features = HomeFeature::all();
-        
-        $promo = HomePromo::first();
-        if (!$promo) {
-            $promo = new HomePromo();
-        }
+        $lang = strtoupper($request->input('lang', 'SL'));
 
-        $giftGiver = GiftGiver::first();
-        if (!$giftGiver) {
-            $giftGiver = new GiftGiver();
-        }
+        // Filter all sections by selected language
+        $heroSections = HeroSection::where('language_type', $lang)->get();
+        $giftCards    = GiftCard::where('language_type', $lang)->get();
+        $faqs         = Faq::where('language_type', $lang)->get();
+        $features     = HomeFeature::where('language_type', $lang)->get();
 
-        $subscribers = Subscriber::orderBy('created_at', 'desc')->get();
-        $footerSections = FooterSection::with('items')->orderBy('sort_order')->get();
+        $promo      = HomePromo::firstOrNew(['language_type' => $lang]);
+        $giftGiver  = GiftGiver::firstOrNew(['language_type' => $lang]);
 
-        $newsletterTitle = Setting::getVal('newsletter_title', 'Get 10% off your first order');
-        $newsletterDescription = Setting::getVal('newsletter_description', 'Join our community and create magical moments for the children you love.');
+        $subscribers    = Subscriber::orderBy('created_at', 'desc')->get();
+        $footerSections = FooterSection::with(['items' => function($q) use ($lang) {
+            $q->where('language_type', $lang)->orderBy('sort_order');
+        }])->where('language_type', $lang)->orderBy('sort_order')->get();
 
-        $footerBrandDescription = Setting::getVal('footer_brand_description', 'Crafting personalized stories that celebrate the magic of childhood and the bonds of family.');
+        $suffix = $lang === 'SL' ? '' : '_' . $lang;
+        $newsletterTitle = Setting::getVal('newsletter_title' . $suffix, Setting::getVal('newsletter_title', 'Get 10% off your first order'));
+        $newsletterDescription = Setting::getVal('newsletter_description' . $suffix, Setting::getVal('newsletter_description', 'Join our community and create magical moments for the children you love.'));
+
+        $footerBrandDescription = Setting::getVal('footer_brand_description' . $suffix, Setting::getVal('footer_brand_description', 'Crafting personalized stories and magical moments for the children you love.'));
         $footerLogoPath = Setting::getVal('footer_logo_path', '');
-        $footerCopyright = Setting::getVal('footer_copyright', '© ' . date('Y') . ' Lymetales HQ, Inc. All Rights Reserved.');
-        $socialLinksJson = Setting::getVal('social_media_links', null);
+        $footerCopyright = Setting::getVal('footer_copyright' . $suffix, Setting::getVal('footer_copyright', '© 2026 Lymetales HQ, Inc. All Rights Reserved.'));
+        $socialLinksJson = Setting::getVal('social_media_links' . $suffix, Setting::getVal('social_media_links', '[]'));
+        
         if ($socialLinksJson) {
             $socialLinks = json_decode($socialLinksJson, true);
         } else {
@@ -59,20 +58,10 @@ class HomeContentController extends Controller
         }
 
         return view('admin.home-content.index', compact(
-            'heroSections', 
-            'giftCards', 
-            'faqs',
-            'features',
-            'promo',
-            'giftGiver',
-            'subscribers',
-            'footerSections',
-            'newsletterTitle',
-            'newsletterDescription',
-            'footerBrandDescription',
-            'footerLogoPath',
-            'footerCopyright',
-            'socialLinks'
+            'heroSections', 'features', 'promo', 'giftGiver', 
+            'giftCards', 'faqs', 'subscribers', 'footerSections', 'socialLinks',
+            'newsletterTitle', 'newsletterDescription',
+            'footerBrandDescription', 'footerLogoPath', 'footerCopyright', 'lang'
         ));
     }
 
@@ -90,6 +79,7 @@ class HomeContentController extends Controller
             'title' => $request->input('title'),
             'button_one_text' => $request->input('button_one_text'),
             'button_two_text' => $request->input('button_two_text'),
+            'language_type' => $request->input('language_type', 'SL'),
         ];
 
         if ($request->hasFile('image')) {
@@ -124,6 +114,7 @@ class HomeContentController extends Controller
         $data = [
             'title' => $request->input('title'),
             'subtitle' => $request->input('subtitle'),
+            'language_type' => $request->input('language_type', 'SL'),
         ];
 
         if ($request->hasFile('image')) {
@@ -149,11 +140,16 @@ class HomeContentController extends Controller
     public function storeFaq(Request $request)
     {
         $request->validate([
-            'question' => 'required|string',
-            'answer' => 'required|string',
+            'question'      => 'required|string',
+            'answer'        => 'required|string',
+            'language_type' => 'nullable|string|in:SL,EN,HR',
         ]);
 
-        Faq::create($request->all());
+        Faq::create([
+            'question'      => $request->input('question'),
+            'answer'        => $request->input('answer'),
+            'language_type' => strtoupper($request->input('language_type', 'SL')),
+        ]);
 
         return back()->with('success', 'FAQ added successfully.');
     }
@@ -168,11 +164,16 @@ class HomeContentController extends Controller
     public function storeFeature(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'title'         => 'required|string|max:255',
+            'description'   => 'required|string',
+            'language_type' => 'nullable|string|in:SL,EN,HR',
         ]);
 
-        HomeFeature::create($request->all());
+        HomeFeature::create([
+            'title'         => $request->input('title'),
+            'description'   => $request->input('description'),
+            'language_type' => strtoupper($request->input('language_type', 'SL')),
+        ]);
 
         return back()->with('success', 'Feature added successfully.');
     }
@@ -193,14 +194,13 @@ class HomeContentController extends Controller
             'image' => 'nullable|image',
         ]);
 
-        $promo = HomePromo::first();
-        if (!$promo) {
-            $promo = new HomePromo();
-        }
+        $lang = $request->input('language_type', 'SL');
+        $promo = HomePromo::firstOrNew(['language_type' => $lang]);
 
         $promo->title = $request->input('title');
         $promo->description = $request->input('description');
         $promo->button_text = $request->input('button_text');
+        $promo->language_type = $lang;
 
         if ($request->hasFile('image')) {
             // Delete old image
@@ -231,16 +231,15 @@ class HomeContentController extends Controller
             'step_3_image' => 'nullable|image',
         ]);
 
-        $giver = GiftGiver::first();
-        if (!$giver) {
-            $giver = new GiftGiver();
-        }
+        $lang = $request->input('language_type', 'SL');
+        $giver = GiftGiver::firstOrNew(['language_type' => $lang]);
 
         $giver->subtitle = $request->input('subtitle');
         $giver->title = $request->input('title');
         $giver->step_1_text = $request->input('step_1_text');
         $giver->step_2_text = $request->input('step_2_text');
         $giver->step_3_text = $request->input('step_3_text');
+        $giver->language_type = $lang;
 
         // Handle step 1 image
         if ($request->hasFile('step_1_image')) {
@@ -285,13 +284,16 @@ class HomeContentController extends Controller
             'newsletter_description' => 'required|string',
         ]);
 
+        $lang = $request->input('language_type', 'SL');
+        $suffix = $lang === 'SL' ? '' : '_' . $lang;
+
         Setting::updateOrCreate(
-            ['key' => 'newsletter_title'],
+            ['key' => 'newsletter_title' . $suffix],
             ['value' => $request->input('newsletter_title')]
         );
 
         Setting::updateOrCreate(
-            ['key' => 'newsletter_description'],
+            ['key' => 'newsletter_description' . $suffix],
             ['value' => $request->input('newsletter_description')]
         );
 
@@ -316,6 +318,7 @@ class HomeContentController extends Controller
         FooterSection::create([
             'title' => $request->input('title'),
             'sort_order' => $maxSort + 1,
+            'language_type' => $request->input('language_type', 'SL'),
         ]);
 
         return back()->with('success', 'Footer section added successfully.');
@@ -329,6 +332,7 @@ class HomeContentController extends Controller
 
         $section->update([
             'title' => $request->input('title'),
+            'language_type' => $request->input('language_type', $section->language_type),
         ]);
 
         return back()->with('success', 'Footer section updated successfully.');
@@ -369,6 +373,7 @@ class HomeContentController extends Controller
             'label' => $request->input('label'),
             'url' => $request->input('url'),
             'sort_order' => $maxSort + 1,
+            'language_type' => $request->input('language_type', 'SL'),
         ]);
 
         return back()->with('success', 'Footer item link added successfully.');
@@ -384,6 +389,7 @@ class HomeContentController extends Controller
         $item->update([
             'label' => $request->input('label'),
             'url' => $request->input('url'),
+            'language_type' => $request->input('language_type', $item->language_type),
         ]);
 
         return back()->with('success', 'Footer item link updated successfully.');
@@ -405,8 +411,11 @@ class HomeContentController extends Controller
             'social_media_links'       => 'nullable|string',
         ]);
 
-        Setting::updateOrCreate(['key' => 'footer_brand_description'], ['value' => $request->input('footer_brand_description', '')]);
-        Setting::updateOrCreate(['key' => 'footer_copyright'],         ['value' => $request->input('footer_copyright', '')]);
+        $lang = $request->input('language_type', 'SL');
+        $suffix = $lang === 'SL' ? '' : '_' . $lang;
+
+        Setting::updateOrCreate(['key' => 'footer_brand_description' . $suffix], ['value' => $request->input('footer_brand_description', '')]);
+        Setting::updateOrCreate(['key' => 'footer_copyright' . $suffix],         ['value' => $request->input('footer_copyright', '')]);
 
         // Process and sanitize dynamic social links
         $sanitizedLinks = [];
@@ -443,7 +452,7 @@ class HomeContentController extends Controller
                 }
             }
         }
-        Setting::updateOrCreate(['key' => 'social_media_links'], ['value' => json_encode($sanitizedLinks)]);
+        Setting::updateOrCreate(['key' => 'social_media_links' . $suffix], ['value' => json_encode($sanitizedLinks)]);
 
         // Handle logo upload
         if ($request->hasFile('footer_logo')) {
@@ -473,6 +482,7 @@ class HomeContentController extends Controller
             'title' => $request->input('title'),
             'button_one_text' => $request->input('button_one_text'),
             'button_two_text' => $request->input('button_two_text'),
+            'language_type' => $request->input('language_type', $hero->language_type),
         ];
 
         if ($request->hasFile('image')) {
@@ -492,11 +502,16 @@ class HomeContentController extends Controller
     public function updateFeature(Request $request, HomeFeature $feature)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'title'         => 'required|string|max:255',
+            'description'   => 'required|string',
+            'language_type' => 'nullable|string|in:SL,EN,HR',
         ]);
 
-        $feature->update($request->all());
+        $feature->update([
+            'title'         => $request->input('title'),
+            'description'   => $request->input('description'),
+            'language_type' => strtoupper($request->input('language_type', $feature->language_type ?? 'SL')),
+        ]);
 
         return back()->with('success', 'Feature updated successfully.');
     }
@@ -512,6 +527,7 @@ class HomeContentController extends Controller
         $data = [
             'title' => $request->input('title'),
             'subtitle' => $request->input('subtitle'),
+            'language_type' => $request->input('language_type', $gift->language_type),
         ];
 
         if ($request->hasFile('image')) {
@@ -531,11 +547,16 @@ class HomeContentController extends Controller
     public function updateFaq(Request $request, Faq $faq)
     {
         $request->validate([
-            'question' => 'required|string',
-            'answer' => 'required|string',
+            'question'      => 'required|string',
+            'answer'        => 'required|string',
+            'language_type' => 'nullable|string|in:SL,EN,HR',
         ]);
 
-        $faq->update($request->all());
+        $faq->update([
+            'question'      => $request->input('question'),
+            'answer'        => $request->input('answer'),
+            'language_type' => strtoupper($request->input('language_type', $faq->language_type ?? 'SL')),
+        ]);
 
         return back()->with('success', 'FAQ updated successfully.');
     }

@@ -231,6 +231,14 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                         <textarea name="description" id="parentDesc" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
                     </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+                        <select name="language_type" id="parentLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-semibold text-sm">
+                            <option value="SL">SL (Slovenian)</option>
+                            <option value="HR">HR (Croatian)</option>
+                            <option value="EN">EN (English)</option>
+                        </select>
+                    </div>
                     <div class="flex items-center space-x-6 pt-1">
                         <label class="flex items-center space-x-2 cursor-pointer">
                             <input type="checkbox" name="is_special" id="parentIsSpecial" value="1" class="w-4 h-4 text-indigo-600 border-gray-300 rounded">
@@ -510,6 +518,7 @@ function openEditModal(data, type) {
         document.getElementById('parentFormMethod').value = 'PUT';
         document.getElementById('parentName').value = data.name;
         document.getElementById('parentDesc').value = data.description || '';
+        document.getElementById('parentLanguage').value = data.language_type || 'SL';
         document.getElementById('parentIsSpecial').checked = !!data.is_special;
         document.getElementById('parentStatus').checked = !!data.status;
         openModal('parentModal');
@@ -535,6 +544,7 @@ function openParentModal() {
     document.getElementById('parentModalTitle').textContent = 'Create Category';
     document.getElementById('parentName').value = '';
     document.getElementById('parentDesc').value = '';
+    document.getElementById('parentLanguage').value = 'SL';
     document.getElementById('parentIsSpecial').checked = false;
     document.getElementById('parentStatus').checked = true;
     openModal('parentModal');

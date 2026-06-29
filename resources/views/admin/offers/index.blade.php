@@ -177,6 +177,14 @@
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-semibold">
                         </div>
                     </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+                        <select name="language_type" id="offLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
+                            <option value="SL">SL (Slovenian)</option>
+                            <option value="HR">HR (Croatian)</option>
+                            <option value="EN">EN (English)</option>
+                        </select>
+                    </div>
 
                     <label class="flex items-center space-x-3 cursor-pointer pt-1">
                         <input type="checkbox" name="is_active" id="offStatus" value="1" checked
@@ -225,6 +233,7 @@
         document.getElementById('offShortDesc').value = '';
         document.getElementById('offMinQty').value = '2';
         document.getElementById('offDiscount').value = '20.00';
+        document.getElementById('offLanguage').value = 'SL';
         document.getElementById('offStatus').checked = true;
     }
 
@@ -237,6 +246,7 @@
         document.getElementById('offShortDesc').value = offer.short_description || '';
         document.getElementById('offMinQty').value    = offer.min_quantity;
         document.getElementById('offDiscount').value  = offer.discount_percentage;
+        document.getElementById('offLanguage').value  = offer.language_type || 'SL';
         document.getElementById('offStatus').checked  = offer.is_active == 1;
 
         toggleModal('offerModal');

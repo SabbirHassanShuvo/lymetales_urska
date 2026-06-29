@@ -15,6 +15,7 @@ class Offer extends Model
         'min_quantity',
         'discount_percentage',
         'is_active',
+        'language_type',
     ];
 
     protected $casts = [

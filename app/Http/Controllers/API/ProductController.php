@@ -143,6 +143,7 @@ class ProductController extends Controller
             'id'             => $p->id,
             'title'          => $p->title,
             'slug'           => $p->slug,
+            'language_type'  => $p->language_type,
             'price'          => (float) $p->price,
             'compare_at_price' => $p->compare_at_price ? (float) $p->compare_at_price : null,
             'image'          => ($detailed && $p->primaryImage)
@@ -220,7 +221,10 @@ class ProductController extends Controller
                     'text'        => $p->name_text,
                     'font_family' => $p->name_font_family,
                     'font_size'   => $p->name_font_size,
-                    'color'       => $p->name_color,
+                    'color'       => [
+                        'girl' => $p->name_color,
+                        'boy'  => $p->name_color_boy,
+                    ],
                     'position'    => [
                         'top'   => $p->name_top,
                         'right' => $p->name_right,

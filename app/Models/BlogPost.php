@@ -20,6 +20,7 @@ class BlogPost extends Model
         'is_featured',
         'is_active',
         'published_at',
+        'language_type',
     ];
 
     protected $casts = [

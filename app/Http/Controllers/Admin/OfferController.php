@@ -28,9 +28,11 @@ class OfferController extends Controller
             'min_quantity'        => 'required|integer|min:1',
             'discount_percentage' => 'required|numeric|min:0|max:100',
             'is_active'           => 'boolean',
+            'language_type'       => 'nullable|string|in:HR,SL,EN',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['language_type'] = $request->input('language_type', 'SL');
 
         if ($validated['is_active']) {
             Offer::where('is_active', true)->update(['is_active' => false]);
@@ -54,9 +56,11 @@ class OfferController extends Controller
             'min_quantity'        => 'required|integer|min:1',
             'discount_percentage' => 'required|numeric|min:0|max:100',
             'is_active'           => 'boolean',
+            'language_type'       => 'nullable|string|in:HR,SL,EN',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['language_type'] = $request->input('language_type', $offer->language_type);
 
         if ($validated['is_active']) {
             Offer::where('id', '!=', $offer->id)->where('is_active', true)->update(['is_active' => false]);

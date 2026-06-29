@@ -40,6 +40,7 @@ class HomeContentControllerNew extends Controller
                 'id'              => $hero->id,
                 'title'           => $hero->title,
                 'image_url'       => $formatImage($hero->image_path),
+                'language_type'   => $hero->language_type,
                 'button_one_text' => $hero->button_one_text,
                 'button_two_text' => $hero->button_two_text,
                 'created_at'      => $hero->created_at,
@@ -53,6 +54,7 @@ class HomeContentControllerNew extends Controller
                 'id'          => $feat->id,
                 'title'       => $feat->title,
                 'description' => $feat->description,
+                'language_type' => $feat->language_type,
             ];
         });
 
@@ -67,6 +69,7 @@ class HomeContentControllerNew extends Controller
                     'id'            => $product->id,
                     'title'         => $product->title,
                     'slug'          => $product->slug,
+                    'language_type' => $product->language_type,
                     'price'         => (float) $product->price,
                     'compare_at_price' => $product->compare_at_price ? (float) $product->compare_at_price : null,
                     'rating'        => (float) $product->rating,
@@ -83,6 +86,7 @@ class HomeContentControllerNew extends Controller
                 'title'     => $gift->title,
                 'subtitle'  => $gift->subtitle,
                 'image_url' => $formatImage($gift->image_path),
+                'language_type' => $gift->language_type,
                 'created_at'=> $gift->created_at,
                 'updated_at'=> $gift->updated_at,
             ];
@@ -95,6 +99,7 @@ class HomeContentControllerNew extends Controller
             'description' => $promoModel->description,
             'button_text' => $promoModel->button_text,
             'image_url'   => $formatImage($promoModel->image_path),
+            'language_type' => $promoModel->language_type,
         ] : null;
 
         // 5. Legendary Gift-Giver section (Requirement 5)
@@ -149,13 +154,17 @@ class HomeContentControllerNew extends Controller
                 'id'       => $faq->id,
                 'question' => $faq->question,
                 'answer'   => $faq->answer,
+                'language_type' => $faq->language_type,
             ];
         });
 
         // 7. Newsletter Section Texts (Requirement 7)
+        $lang = request()->input('lang', 'SL');
+        $suffix = $lang === 'SL' ? '' : '_' . $lang;
+
         $newsletterSection = [
-            'title'       => Setting::getVal('newsletter_title', 'Get 10% off your first order'),
-            'description' => Setting::getVal('newsletter_description', 'Join our community and create magical moments for the children you love.'),
+            'title'       => Setting::getVal('newsletter_title' . $suffix, Setting::getVal('newsletter_title', 'Get 10% off your first order')),
+            'description' => Setting::getVal('newsletter_description' . $suffix, Setting::getVal('newsletter_description', 'Join our community and create magical moments for the children you love.')),
         ];
 
         // 8. Footer Section Links (Requirement 8)
@@ -174,12 +183,12 @@ class HomeContentControllerNew extends Controller
         // 9. Footer Brand Info & Social Links
         $footerLogoRaw = Setting::getVal('footer_logo_path', '');
         $footerBrand = [
-            'description' => Setting::getVal('footer_brand_description', 'Crafting personalized stories that celebrate the magic of childhood and the bonds of family.'),
+            'description' => Setting::getVal('footer_brand_description' . $suffix, Setting::getVal('footer_brand_description', 'Crafting personalized stories that celebrate the magic of childhood and the bonds of family.')),
             'logo_url'    => $footerLogoRaw ? $formatImage($footerLogoRaw) : null,
-            'copyright'   => Setting::getVal('footer_copyright', '© ' . date('Y') . ' Lymetales HQ, Inc. All Rights Reserved.'),
+            'copyright'   => Setting::getVal('footer_copyright' . $suffix, Setting::getVal('footer_copyright', '© ' . date('Y') . ' Lymetales HQ, Inc. All Rights Reserved.')),
         ];
 
-        $socialLinksJson = Setting::getVal('social_media_links', null);
+        $socialLinksJson = Setting::getVal('social_media_links' . $suffix, Setting::getVal('social_media_links', null));
         $socialLinks = [];
         if ($socialLinksJson) {
             $socialLinks = json_decode($socialLinksJson, true);
@@ -273,6 +282,7 @@ class HomeContentControllerNew extends Controller
                 'id'       => $faq->id,
                 'question' => $faq->question,
                 'answer'   => $faq->answer,
+                'language_type' => $faq->language_type,
             ];
         });
 

@@ -12,6 +12,7 @@ class PageController extends Controller
     private array $specificViews = [
         'our-story'           => 'admin.pages.specific.our-story',
         'privacy-policy'      => 'admin.pages.specific.privacy-policy',
+        'cookie-policy'       => 'admin.pages.specific.cookie-policy',
         'terms-and-conditions'=> 'admin.pages.specific.terms',
         'faq'                 => 'admin.pages.specific.faq',
         'contact-us'          => 'admin.pages.specific.contact-us',
@@ -52,26 +53,36 @@ class PageController extends Controller
         return $images;
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $lang = $request->input('lang', 'SL');
         $pages = Page::orderBy('id', 'asc')->get();
-        return view('admin.pages.index', compact('pages'));
+        return view('admin.pages.index', compact('pages', 'lang'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('admin.pages.create');
+        $lang = $request->query('lang', 'SL');
+        return view('admin.pages.create', compact('lang'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'slug'  => 'required|string|max:255|unique:pages,slug',
+            'slug'  => [
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('pages')->where(function ($query) use ($request) {
+                    return $query->where('language_type', $request->input('language_type', 'SL'));
+                })
+            ],
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
             'is_active' => 'boolean',
             'content' => 'nullable|string',
+            'language_type' => 'nullable|string|in:HR,SL,EN',
         ]);
 
         $content = $request->input('content');
@@ -89,13 +100,27 @@ class PageController extends Controller
             'meta_description' => $request->input('meta_description'),
             'is_active' => $request->boolean('is_active', true),
             'content'   => $content,
+            'language_type' => $request->input('language_type', 'SL'),
         ]);
 
         return redirect()->route('admin.pages.index')->with('success', 'Page created successfully.');
     }
 
-    public function edit(Page $page)
+    public function edit(Request $request, Page $page)
     {
+        $lang = $request->query('lang');
+        if ($lang && $lang !== $page->language_type) {
+            $translatedPage = Page::where('slug', $page->slug)->where('language_type', $lang)->first();
+            if ($translatedPage) {
+                return redirect()->route('admin.pages.edit', ['page' => $translatedPage->id]);
+            } else {
+                $newPage = $page->replicate();
+                $newPage->language_type = $lang;
+                $newPage->save();
+                return redirect()->route('admin.pages.edit', ['page' => $newPage->id]);
+            }
+        }
+
         $content = is_array($page->content) ? $page->content : (json_decode($page->content, true) ?? []);
 
         // Load slug-specific view if it exists
@@ -112,6 +137,7 @@ class PageController extends Controller
         return match ($page->slug) {
             'our-story'            => $this->updateOurStory($request, $page),
             'privacy-policy'       => $this->updateLegalPage($request, $page),
+            'cookie-policy'        => $this->updateLegalPage($request, $page),
             'terms-and-conditions' => $this->updateLegalPage($request, $page),
             'faq'                  => $this->updateFaq($request, $page),
             'contact-us'           => $this->updateContactUs($request, $page),
@@ -195,6 +221,7 @@ class PageController extends Controller
             'meta_description' => $request->input('meta_description'),
             'is_active'        => $request->boolean('is_active', true),
             'content'          => $content,
+            'language_type'    => $request->input('language_type', $page->language_type),
         ]);
 
         return redirect()->route('admin.pages.index')->with('success', 'Our Story page updated.');
@@ -226,6 +253,7 @@ class PageController extends Controller
             'meta_description' => $request->input('meta_description'),
             'is_active'        => $request->boolean('is_active', true),
             'content'          => $content,
+            'language_type'    => $request->input('language_type', $page->language_type),
         ]);
 
         return redirect()->route('admin.pages.index')->with('success', $page->title . ' page updated.');
@@ -276,6 +304,7 @@ class PageController extends Controller
             'meta_description' => $request->input('meta_description'),
             'is_active'        => $request->boolean('is_active', true),
             'content'          => $content,
+            'language_type'    => $request->input('language_type', $page->language_type),
         ]);
 
         return redirect()->route('admin.pages.index')->with('success', 'FAQ page updated.');
@@ -324,6 +353,7 @@ class PageController extends Controller
             'meta_description' => $request->input('meta_description'),
             'is_active'        => $request->boolean('is_active', true),
             'content'          => $content,
+            'language_type'    => $request->input('language_type', $page->language_type),
         ]);
 
         return redirect()->route('admin.pages.index')->with('success', 'Contact Us page updated.');
@@ -346,6 +376,7 @@ class PageController extends Controller
             'meta_description' => $request->input('meta_description'),
             'is_active'        => $request->boolean('is_active', true),
             'content'          => $content,
+            'language_type'    => $request->input('language_type', $page->language_type),
         ]);
 
         return redirect()->route('admin.pages.index')->with('success', 'Page updated successfully.');

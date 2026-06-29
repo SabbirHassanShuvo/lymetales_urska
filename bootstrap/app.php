@@ -14,10 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\LocaleMiddleware::class,
+            \App\Http\Middleware\TrackSourceMiddleware::class,
         ]);
         // API routes need session support for cart persistence
         $middleware->api(append: [
             \Illuminate\Session\Middleware\StartSession::class,
+            \App\Http\Middleware\TrackSourceMiddleware::class,
         ]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,

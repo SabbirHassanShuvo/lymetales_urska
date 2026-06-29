@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('product_upsells', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->foreignId('upsell_product_id')->constrained('products')->onDelete('cascade');
+            $table->foreignId('upsell_product_id')->constrained('gifts')->onDelete('cascade');
             $table->integer('sort_order')->default(0);
             $table->timestamps();
 

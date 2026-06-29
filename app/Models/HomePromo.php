@@ -9,5 +9,5 @@ class HomePromo extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'description', 'button_text', 'image_path'];
+    protected $fillable = ['title', 'description', 'button_text', 'image_path', 'language_type'];
 }

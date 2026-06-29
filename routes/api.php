@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('shop')->group(function () {
+Route::prefix('shop')->middleware([\App\Http\Middleware\FilterByLanguageType::class])->group(function () {
 
     // ── Products ───────────────────────────────────────────────────────────
     Route::get('/products', [ProductController::class, 'index']);
@@ -87,7 +87,7 @@ Route::prefix('shop')->group(function () {
     Route::get('/faqs', [HomeContentControllerNew::class, 'faqs']);
 
     // Gifts
-    Route::get('/gifts', [\App\Http\Controllers\API\GiftController::class, 'index']);
+    // Route::get('/gifts', [\App\Http\Controllers\API\GiftController::class, 'index']);
     Route::get('/offers', [\App\Http\Controllers\API\OfferController::class, 'index']);
 
     // Global Search 

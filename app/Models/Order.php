@@ -27,6 +27,9 @@ class Order extends Model
         'payment_method',
         'stripe_payment_intent_id',
         'paypal_order_id',
+        'source',
+        'tracking_number',
+        'tracking_link',
     ];
 
     protected $casts = [
@@ -37,4 +40,13 @@ class Order extends Model
         'discount'            => 'decimal:2',
         'total'               => 'decimal:2',
     ];
+
+    /**
+     * Get the coupon used for this order.
+     */
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class, 'coupon_code', 'code');
+    }
 }
+

@@ -25,15 +25,17 @@ class BlogPostController extends Controller
         return $oldImageUrl;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $posts = BlogPost::orderBy('published_at', 'desc')->get();
-        return view('admin.blog.index', compact('posts'));
+        $lang = $request->input('lang', 'SL');
+        $posts = BlogPost::where('language_type', $lang)->orderBy('published_at', 'desc')->get();
+        return view('admin.blog.index', compact('posts', 'lang'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('admin.blog.create');
+        $lang = $request->input('lang', 'SL');
+        return view('admin.blog.create', compact('lang'));
     }
 
     public function store(Request $request)
@@ -71,14 +73,29 @@ class BlogPostController extends Controller
             'is_featured' => $request->has('is_featured'),
             'is_active' => $request->has('is_active'),
             'published_at' => $request->input('published_at') ?: now(),
+            'language_type' => $request->input('language_type', 'SL'),
         ]);
 
-        return redirect()->route('admin.blog.index')->with('success', 'Blog post created successfully.');
+        return redirect()->route('admin.blog.index', ['lang' => $request->input('language_type', 'SL')])->with('success', 'Blog post created successfully.');
     }
 
-    public function edit(BlogPost $blogPost)
+    public function edit(Request $request, BlogPost $blogPost)
     {
-        return view('admin.blog.edit', compact('blogPost'));
+        $lang = $request->query('lang');
+        if ($lang && $lang !== $blogPost->language_type) {
+            $translatedPost = BlogPost::where('slug', $blogPost->slug)->where('language_type', $lang)->first();
+            if ($translatedPost) {
+                return redirect()->route('admin.blog.edit', ['blog_post' => $translatedPost->id]);
+            } else {
+                $newPost = $blogPost->replicate();
+                $newPost->language_type = $lang;
+                $newPost->save();
+                return redirect()->route('admin.blog.edit', ['blog_post' => $newPost->id]);
+            }
+        }
+
+        $lang = $blogPost->language_type;
+        return view('admin.blog.edit', compact('blogPost', 'lang'));
     }
 
     public function update(Request $request, BlogPost $blogPost)
@@ -107,7 +124,9 @@ class BlogPostController extends Controller
 
         // If featured is checked, we can optionally unfeature other posts (or keep it simple)
         if ($request->has('is_featured')) {
-            BlogPost::where('id', '!=', $blogPost->id)->update(['is_featured' => false]);
+            BlogPost::where('id', '!=', $blogPost->id)
+                ->where('language_type', $blogPost->language_type)
+                ->update(['is_featured' => false]);
         }
 
         $blogPost->update([
@@ -123,24 +142,29 @@ class BlogPostController extends Controller
             'published_at' => $request->input('published_at') ?: $blogPost->published_at,
         ]);
 
-        return redirect()->route('admin.blog.index')->with('success', 'Blog post updated successfully.');
+        return redirect()->route('admin.blog.index', ['lang' => $blogPost->language_type])->with('success', 'Blog post updated successfully.');
     }
 
     public function destroy(BlogPost $blogPost)
     {
+        $lang = $blogPost->language_type;
+        
         if ($blogPost->cover_image && file_exists(public_path($blogPost->cover_image))) {
             @unlink(public_path($blogPost->cover_image));
         }
 
         $blogPost->delete();
 
-        return redirect()->route('admin.blog.index')->with('success', 'Blog post deleted successfully.');
+        return redirect()->route('admin.blog.index', ['lang' => $lang])->with('success', 'Blog post deleted successfully.');
     }
 
     // ─── Guest Views ─────────────────────────────────────────────────────────
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
+        $lang = $request->input('lang', session('language', 'SL'));
+        
         $posts = BlogPost::where('is_active', true)
+            ->where('language_type', $lang)
             ->orderBy('is_featured', 'desc')
             ->orderBy('published_at', 'desc')
             ->get();
@@ -163,6 +187,8 @@ class BlogPostController extends Controller
 
     public function updateHeader(Request $request)
     {
+        $lang = $request->input('lang', 'SL');
+
         $request->validate([
             'blog_header_badge' => 'nullable|string|max:255',
             'blog_header_title' => 'nullable|string|max:255',
@@ -170,20 +196,20 @@ class BlogPostController extends Controller
         ]);
 
         \App\Models\Setting::updateOrCreate(
-            ['key' => 'blog_header_badge'],
+            ['key' => 'blog_header_badge_' . $lang],
             ['value' => $request->input('blog_header_badge')]
         );
 
         \App\Models\Setting::updateOrCreate(
-            ['key' => 'blog_header_title'],
+            ['key' => 'blog_header_title_' . $lang],
             ['value' => $request->input('blog_header_title')]
         );
 
         \App\Models\Setting::updateOrCreate(
-            ['key' => 'blog_header_subtitle'],
+            ['key' => 'blog_header_subtitle_' . $lang],
             ['value' => $request->input('blog_header_subtitle')]
         );
 
-        return redirect()->route('admin.blog.index')->with('header_success', 'Blog header settings updated successfully.');
+        return redirect()->route('admin.blog.index', ['lang' => $lang])->with('header_success', 'Blog header settings updated successfully.');
     }
 }

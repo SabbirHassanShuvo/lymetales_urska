@@ -38,7 +38,17 @@
         <h2 style="font-size:1.5rem;font-weight:800;color:#111827;margin:0">Content Pages</h2>
         <p style="font-size:0.85rem;color:#9ca3af;margin-top:0.25rem">Manage all frontend pages from one place</p>
     </div>
-    <a href="{{ route('admin.pages.create') }}" style="display:inline-flex;align-items:center;gap:0.4rem;background:#4f46e5;color:#fff;font-size:0.85rem;font-weight:700;padding:0.6rem 1.25rem;border-radius:0.75rem;text-decoration:none;transition:background 0.15s" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+    
+    <div style="display:flex;align-items:center;gap:0.75rem;background:#fff;padding:0.5rem 1rem;border-radius:0.75rem;border:1.5px solid #f1f2f4;margin-left:auto;">
+        <label style="font-size:0.85rem;font-weight:600;color:#374151;">Global Language (for saving data):</label>
+        <select onchange="window.location.href='?lang=' + this.value" style="font-size:0.85rem;padding:0.4rem 0.8rem;border:1px solid #e5e7eb;border-radius:0.5rem;background:#f9fafb;outline:none;cursor:pointer;">
+            <option value="SL" {{ $lang == 'SL' ? 'selected' : '' }}>SL (Slovenian)</option>
+            <option value="HR" {{ $lang == 'HR' ? 'selected' : '' }}>HR (Croatian)</option>
+            <option value="EN" {{ $lang == 'EN' ? 'selected' : '' }}>EN (English)</option>
+        </select>
+    </div>
+
+    <a href="{{ route('admin.pages.create') }}?lang={{ $lang }}" style="display:inline-flex;align-items:center;gap:0.4rem;background:#4f46e5;color:#fff;font-size:0.85rem;font-weight:700;padding:0.6rem 1.25rem;border-radius:0.75rem;text-decoration:none;transition:background 0.15s" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
         <svg style="width:1rem;height:1rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
         Add New Page
     </a>
@@ -59,7 +69,7 @@
     @foreach($knownPages as $slug => $meta)
         @php $pg = $pages->where('slug', $slug)->first() @endphp
         @if($pg)
-            <a href="{{ route('admin.pages.edit', $pg) }}" class="quick-card">
+            <a href="{{ route('admin.pages.edit', $pg) }}?lang={{ $lang }}" class="quick-card">
                 <div class="quick-card-icon">{{ $meta['icon'] }}</div>
                 <p class="quick-card-label">{{ $meta['label'] }}</p>
                 <p class="quick-card-desc">{{ $meta['desc'] }}</p>
@@ -99,6 +109,7 @@
             <thead style="background:#f9fafb;border-bottom:1.5px solid #f1f2f4">
                 <tr>
                     <th class="tbl-th">Page</th>
+                    <th class="tbl-th">Language</th>
                     <th class="tbl-th">API Endpoint</th>
                     <th class="tbl-th">Status</th>
                     <th class="tbl-th">Last Updated</th>
@@ -120,6 +131,9 @@
                         </div>
                     </td>
                     <td class="tbl-td">
+                        <span class="pill" style="background:#e0e7ff;color:#3730a3">{{ $page->language_type ?? 'SL' }}</span>
+                    </td>
+                    <td class="tbl-td">
                         <code style="font-size:0.75rem;background:#f3f4f6;color:#6b7280;padding:0.2rem 0.5rem;border-radius:0.4rem">/api/shop/pages/{{ $page->slug }}</code>
                     </td>
                     <td class="tbl-td">
@@ -132,7 +146,7 @@
                     <td class="tbl-td" style="font-size:0.78rem;color:#9ca3af">{{ $page->updated_at->diffForHumans() }}</td>
                     <td class="tbl-td" style="text-align:right">
                         <div class="row-actions">
-                            <a href="{{ route('admin.pages.edit', $page) }}" class="act-btn" style="background:#eef2ff;color:#4f46e5">
+                            <a href="{{ route('admin.pages.edit', $page) }}?lang={{ $lang }}" class="act-btn" style="background:#eef2ff;color:#4f46e5">
                                 <svg style="width:0.8rem;height:0.8rem" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 Edit
                             </a>

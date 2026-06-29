@@ -88,8 +88,51 @@ class CartController extends Controller
 
         $responseItems = $this->cart->items();
 
+        // Collect product IDs from the cart
+        $productIds = [];
+        foreach ($responseItems as $item) {
+            if (($item['type'] ?? 'product') === 'product') {
+                $productIds[] = $item['product_id'];
+            }
+        }
+        $productIds = array_unique($productIds);
+
+        $upsells = [];
+        if (!empty($productIds)) {
+            // Get all upsell gifts for these products
+            $upsells = \App\Models\Product::withoutGlobalScopes()
+                ->whereIn('id', $productIds)
+                ->with(['upsells' => function ($query) {
+                    $query->withoutGlobalScopes();
+                }])
+                ->get()
+                ->flatMap->upsells
+                ->unique('id')
+                ->map(function ($gift) {
+                    $image = $gift->image_path;
+                    if (!empty($image) && !str_starts_with($image, 'http://') && !str_starts_with($image, 'https://')) {
+                        $normalised = '/' . ltrim($image, '/');
+                        if (app()->runningInConsole() || !request()->getHost()) {
+                            $image = rtrim(config('app.url'), '/') . $normalised;
+                        } else {
+                            $image = request()->getSchemeAndHttpHost() . $normalised;
+                        }
+                    }
+                    return [
+                        'id'                => $gift->id,
+                        'title'             => $gift->title,
+                        'short_description' => $gift->short_description,
+                        'price'             => round((float) $gift->price, 2),
+                        'image'             => $image,
+                    ];
+                })
+                ->values()
+                ->toArray();
+        }
+
         return response()->json([
             'items'               => $responseItems,
+            'upsells'             => $upsells,
             'count'               => $this->cart->count(),
             'subtotal'            => number_format($subtotal, 2, '.', ''),
             'global_discount'     => $globalDiscount > 0 ? '-' . number_format($globalDiscount, 2, '.', '') : null,

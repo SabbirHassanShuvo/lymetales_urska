@@ -264,6 +264,14 @@
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
                         </div>
                     </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
+                        <select name="language_type" id="coupLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
+                            <option value="SL">SL (Slovenian)</option>
+                            <option value="HR">HR (Croatian)</option>
+                            <option value="EN">EN (English)</option>
+                        </select>
+                    </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
@@ -322,6 +330,7 @@
         document.getElementById('coupLimit').value = '';
         document.getElementById('coupExpiry').value = '';
         document.getElementById('coupDesc').value = '';
+        document.getElementById('coupLanguage').value = 'SL';
         document.getElementById('coupStatus').checked = true;
     }
 
@@ -360,6 +369,7 @@
         document.getElementById('coupType').value    = coupon.type;
         document.getElementById('coupLimit').value   = coupon.usage_limit || '';
         document.getElementById('coupDesc').value    = coupon.description || '';
+        document.getElementById('coupLanguage').value = coupon.language_type || 'SL';
         document.getElementById('coupStatus').checked = coupon.status == 1;
 
         if (coupon.expiry_date) {

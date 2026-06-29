@@ -153,6 +153,7 @@ class CheckoutController extends Controller
                 'payment_method'           => 'paypal',
                 'fast_production'          => $fastProd,
                 'stripe_payment_intent_id' => null,
+                'source'                   => $request->input('source', session('order_source', 'Organic')),
             ]);
 
             try {

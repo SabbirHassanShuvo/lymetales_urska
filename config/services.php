@@ -36,9 +36,16 @@ return [
     ],
 
     'stripe' => [
-        'key' => env('STRIPE_KEY'),
-        'secret' => env('STRIPE_SECRET'),
+        'key'            => env('STRIPE_KEY'),
+        'secret'         => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
+    'mailerlite' => [
+        'key'      => env('MAILERLITE_API_KEY'),
+        'group_en' => env('MAILERLITE_GROUP_EN'),
+        'group_si' => env('MAILERLITE_GROUP_SI'),
+        'group_hr' => env('MAILERLITE_GROUP_HR'),
     ],
 
 ];
