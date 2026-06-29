@@ -48,6 +48,16 @@
             <p class="text-sm text-gray-500">Manage campaign quantity-based offers and store-wide cart discount thresholds.</p>
         </div>
         <div class="flex items-center space-x-3">
+            {{-- Language Filter --}}
+            <div class="flex items-center space-x-2 bg-white px-3 py-2 border border-gray-200 rounded-xl">
+                <label class="text-xs font-semibold text-gray-500">Language:</label>
+                <select onchange="window.location.href='?lang=' + this.value" class="text-xs font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg py-1.5 px-2.5 outline-none cursor-pointer focus:ring-1 focus:ring-indigo-500">
+                    <option value="SL" {{ (isset($lang) && $lang === 'SL') ? 'selected' : '' }}>SL (Slovenian)</option>
+                    <option value="HR" {{ (isset($lang) && $lang === 'HR') ? 'selected' : '' }}>HR (Croatian)</option>
+                    <option value="EN" {{ (isset($lang) && $lang === 'EN') ? 'selected' : '' }}>EN (English)</option>
+                </select>
+            </div>
+
             <div class="relative">
                 <input type="text" id="searchInput" placeholder="Search offers..." class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -68,6 +78,7 @@
                 <thead>
                     <tr class="bg-gray-50 text-gray-500 text-xs font-semibold uppercase border-b border-gray-100">
                         <th class="px-6 py-4">Title</th>
+                        <th class="px-6 py-4">Language</th>
                         <th class="px-6 py-4">Min Quantity Threshold</th>
                         <th class="px-6 py-4">Discount Rate</th>
                         <th class="px-6 py-4">Status</th>
@@ -82,6 +93,11 @@
                                 @if($offer->short_description)
                                     <div class="text-xs text-gray-500 mt-1">{{ $offer->short_description }}</div>
                                 @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                                    {{ $offer->language_type ?? '—' }}
+                                </span>
                             </td>
                             <td class="px-6 py-4">
                                 Buy strictly more than <span class="font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md">{{ $offer->min_quantity }}</span> items
@@ -114,7 +130,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-12">
+                            <td colspan="6" class="text-center py-12">
                                 <div class="text-gray-300 mb-3">
                                     <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm-2 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -180,9 +196,9 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
                         <select name="language_type" id="offLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
-                            <option value="SL">SL (Slovenian)</option>
-                            <option value="HR">HR (Croatian)</option>
-                            <option value="EN">EN (English)</option>
+                            <option value="SL" {{ (isset($lang) && $lang === 'SL') ? 'selected' : '' }}>SL (Slovenian)</option>
+                            <option value="HR" {{ (isset($lang) && $lang === 'HR') ? 'selected' : '' }}>HR (Croatian)</option>
+                            <option value="EN" {{ (isset($lang) && $lang === 'EN') ? 'selected' : '' }}>EN (English)</option>
                         </select>
                     </div>
 

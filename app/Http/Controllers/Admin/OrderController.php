@@ -82,6 +82,9 @@ class OrderController extends Controller
 
         $order->update($updateData);
 
+        // Queue the email to notify the customer about status change
+        \Illuminate\Support\Facades\Mail::to($order->email)->queue(new \App\Mail\OrderStatusChangedMail($order, $validated['order_status']));
+
         return response()->json([
             'success'      => true,
             'order_status' => $order->order_status,

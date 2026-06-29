@@ -35,8 +35,11 @@ class SubcategoryController extends Controller
             $count++;
         }
 
+        $category = Category::find($request->parent_category_id);
+        $lang = $category ? ($category->language_type ?? 'SL') : 'SL';
+
         return redirect()
-            ->route('admin.categories.index', ['tab' => 'sub'])
+            ->route('admin.categories.index', ['tab' => 'sub', 'lang' => $lang])
             ->with('success', "$count subcategori(es) created successfully.");
     }
 
@@ -65,18 +68,23 @@ class SubcategoryController extends Controller
             'status'      => $request->boolean('status'),
         ]);
 
+        $category = Category::find($request->parent_category_id);
+        $lang = $category ? ($category->language_type ?? 'SL') : 'SL';
+
         return redirect()
-            ->route('admin.categories.index', ['tab' => 'sub'])
+            ->route('admin.categories.index', ['tab' => 'sub', 'lang' => $lang])
             ->with('success', 'Subcategory updated successfully.');
     }
 
     public function destroy(string $id)
     {
         $subcategory = Subcategory::findOrFail($id);
+        $category = Category::find($subcategory->category_id);
+        $lang = $category ? ($category->language_type ?? 'SL') : 'SL';
         $subcategory->delete();
 
         return redirect()
-            ->route('admin.categories.index', ['tab' => 'sub'])
+            ->route('admin.categories.index', ['tab' => 'sub', 'lang' => $lang])
             ->with('success', 'Subcategory deleted successfully.');
     }
 

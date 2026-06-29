@@ -10,11 +10,12 @@ use Illuminate\Support\Str;
 
 class SiteCategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = SiteCategory::orderBy('name')->get();
+        $lang = $request->input('lang', 'SL');
+        $categories = SiteCategory::where('language_type', $lang)->orderBy('name')->get();
 
-        return view('admin.site-categories.index', compact('categories'));
+        return view('admin.site-categories.index', compact('categories', 'lang'));
     }
 
     // ── Category CRUD ────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ class SiteCategoryController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.site-categories.index')
+            ->route('admin.site-categories.index', ['lang' => $request->input('language_type', 'SL')])
             ->with('success', 'Category created successfully.');
     }
 
@@ -63,17 +64,18 @@ class SiteCategoryController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.site-categories.index')
+            ->route('admin.site-categories.index', ['lang' => $request->input('language_type', $category->language_type)])
             ->with('success', 'Category updated successfully.');
     }
 
     public function destroy(string $id)
     {
         $category = SiteCategory::findOrFail($id);
+        $lang = $category->language_type ?? 'SL';
         $category->delete();
 
         return redirect()
-            ->route('admin.site-categories.index')
+            ->route('admin.site-categories.index', ['lang' => $lang])
             ->with('success', 'Category deleted successfully.');
     }
 

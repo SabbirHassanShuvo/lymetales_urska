@@ -240,13 +240,39 @@ class PagesSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'title' => 'Cookie Policy',
+                'slug' => 'cookie-policy',
+                'meta_title' => 'Cookie Policy - Lymetales',
+                'meta_description' => 'Read how Lymetales uses cookies to improve your experience.',
+                'is_active' => true,
+                'content' => json_encode([
+                    'header' => [
+                        'badge' => 'LEGAL',
+                        'title' => 'Cookie Policy',
+                        'last_updated' => 'April 2025',
+                    ],
+                    'sections' => [
+                        ['title' => '1. What are cookies', 'body' => 'Cookies are small text files that are stored on your browser or device when you visit our website. They help us provide a better experience, remember your preferences, and understand how you interact with our site.'],
+                        ['title' => '2. How we use cookies', 'body' => 'We use cookies to keep our website running securely, remember your language choices, analyze website traffic, and show you personalized content. Some cookies are essential for our site to work, while others are optional.'],
+                    ],
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
-        foreach ($pages as $page) {
-            DB::table('pages')->updateOrInsert(
-                ['slug' => $page['slug']],
-                $page
-            );
+        $languages = ['SL', 'HR', 'EN'];
+        foreach ($languages as $lang) {
+            foreach ($pages as $page) {
+                $pageData = $page;
+                $pageData['language_type'] = $lang;
+
+                DB::table('pages')->updateOrInsert(
+                    ['slug' => $page['slug'], 'language_type' => $lang],
+                    $pageData
+                );
+            }
         }
     }
 }

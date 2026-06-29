@@ -162,7 +162,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="padding:4rem;text-align:center">
+                    <td colspan="6" style="padding:4rem;text-align:center">
                         <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem">
                             <div style="width:3rem;height:3rem;background:#f3f4f6;border-radius:0.75rem;display:flex;align-items:center;justify-content:center;font-size:1.4rem">📄</div>
                             <p style="font-weight:700;color:#9ca3af;margin:0">No pages found</p>

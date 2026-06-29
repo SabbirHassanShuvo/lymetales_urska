@@ -12,10 +12,11 @@ class GiftController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $gifts = Gift::orderBy('created_at', 'desc')->get();
-        return view('admin.gifts.index', compact('gifts'));
+        $lang = $request->input('lang', 'SL');
+        $gifts = Gift::where('language_type', $lang)->orderBy('created_at', 'desc')->get();
+        return view('admin.gifts.index', compact('gifts', 'lang'));
     }
 
     /**
@@ -50,7 +51,7 @@ class GiftController extends Controller
 
         Gift::create($data);
 
-        return redirect()->route('admin.gifts.index')->with('success', 'Gift created successfully.');
+        return redirect()->route('admin.gifts.index', ['lang' => $request->input('language_type', 'SL')])->with('success', 'Gift created successfully.');
     }
 
     /**
@@ -91,7 +92,7 @@ class GiftController extends Controller
 
         $gift->update($data);
 
-        return redirect()->route('admin.gifts.index')->with('success', 'Gift updated successfully.');
+        return redirect()->route('admin.gifts.index', ['lang' => $request->input('language_type', $gift->language_type)])->with('success', 'Gift updated successfully.');
     }
 
     /**
@@ -100,6 +101,7 @@ class GiftController extends Controller
     public function destroy(string $id)
     {
         $gift = Gift::findOrFail($id);
+        $lang = $gift->language_type ?? 'SL';
 
         if ($gift->image_path && File::exists(public_path($gift->image_path))) {
             File::delete(public_path($gift->image_path));
@@ -107,6 +109,6 @@ class GiftController extends Controller
 
         $gift->delete();
 
-        return redirect()->route('admin.gifts.index')->with('success', 'Gift deleted successfully.');
+        return redirect()->route('admin.gifts.index', ['lang' => $lang])->with('success', 'Gift deleted successfully.');
     }
 }

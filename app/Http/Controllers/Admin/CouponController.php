@@ -11,10 +11,11 @@ class CouponController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $coupons = Coupon::orderBy('created_at', 'desc')->get();
-        return view('admin.coupons.index', compact('coupons'));
+        $lang = $request->input('lang', 'SL');
+        $coupons = Coupon::where('language_type', $lang)->orderBy('created_at', 'desc')->get();
+        return view('admin.coupons.index', compact('coupons', 'lang'));
     }
 
     /**
@@ -45,7 +46,7 @@ class CouponController extends Controller
 
         Coupon::create($validated);
 
-        return redirect()->route('admin.coupons.index')->with('success', __('admin.coupon_created_success'));
+        return redirect()->route('admin.coupons.index', ['lang' => $request->input('language_type', 'SL')])->with('success', __('admin.coupon_created_success'));
     }
 
     /**
@@ -76,7 +77,7 @@ class CouponController extends Controller
 
         $coupon->update($validated);
 
-        return redirect()->route('admin.coupons.index')->with('success', __('admin.coupon_updated_success'));
+        return redirect()->route('admin.coupons.index', ['lang' => $request->input('language_type', $coupon->language_type)])->with('success', __('admin.coupon_updated_success'));
     }
 
     /**
@@ -85,9 +86,10 @@ class CouponController extends Controller
     public function destroy(string $id)
     {
         $coupon = Coupon::findOrFail($id);
+        $lang = $coupon->language_type ?? 'SL';
         $coupon->delete();
 
-        return redirect()->route('admin.coupons.index')->with('success', __('admin.coupon_deleted_success'));
+        return redirect()->route('admin.coupons.index', ['lang' => $lang])->with('success', __('admin.coupon_deleted_success'));
     }
 
     /**

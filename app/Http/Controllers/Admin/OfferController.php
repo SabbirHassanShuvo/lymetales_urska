@@ -11,10 +11,11 @@ class OfferController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $offers = Offer::orderBy('created_at', 'desc')->get();
-        return view('admin.offers.index', compact('offers'));
+        $lang = $request->input('lang', 'SL');
+        $offers = Offer::where('language_type', $lang)->orderBy('created_at', 'desc')->get();
+        return view('admin.offers.index', compact('offers', 'lang'));
     }
 
     /**
@@ -40,7 +41,7 @@ class OfferController extends Controller
 
         Offer::create($validated);
 
-        return redirect()->route('admin.offers.index')->with('success', 'Offer created successfully.');
+        return redirect()->route('admin.offers.index', ['lang' => $request->input('language_type', 'SL')])->with('success', 'Offer created successfully.');
     }
 
     /**
@@ -68,7 +69,7 @@ class OfferController extends Controller
 
         $offer->update($validated);
 
-        return redirect()->route('admin.offers.index')->with('success', 'Offer updated successfully.');
+        return redirect()->route('admin.offers.index', ['lang' => $request->input('language_type', $offer->language_type)])->with('success', 'Offer updated successfully.');
     }
 
     /**
@@ -77,9 +78,10 @@ class OfferController extends Controller
     public function destroy(string $id)
     {
         $offer = Offer::findOrFail($id);
+        $lang = $offer->language_type ?? 'SL';
         $offer->delete();
 
-        return redirect()->route('admin.offers.index')->with('success', 'Offer deleted successfully.');
+        return redirect()->route('admin.offers.index', ['lang' => $lang])->with('success', 'Offer deleted successfully.');
     }
 
     /**

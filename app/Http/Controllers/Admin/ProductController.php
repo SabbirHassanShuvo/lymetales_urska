@@ -20,27 +20,31 @@ use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $lang = $request->input('lang', 'SL');
+
         $products = Product::with(['category', 'subcategory', 'siteCategory', 'siteSubcategory', 'primaryImage', 'images', 'bookImages', 'specialSections', 'categoryImages.category', 'categoryImages.subcategory', 'customizationSteps.options.subSteps.subOptions', 'upsells'])
+            ->where('language_type', $lang)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Totals for header cards (all products, not just current page)
-        $totalCount       = Product::count();
-        $bestsellersCount = Product::where('is_bestseller', true)->count();
-        $recommendedCount = Product::where('is_recommended', true)->count();
-        $activeCount      = Product::where('status', true)->count();
+        // Totals for header cards (filtered by selected language)
+        $totalCount       = Product::where('language_type', $lang)->count();
+        $bestsellersCount = Product::where('language_type', $lang)->where('is_bestseller', true)->count();
+        $recommendedCount = Product::where('language_type', $lang)->where('is_recommended', true)->count();
+        $activeCount      = Product::where('language_type', $lang)->where('status', true)->count();
 
-        $categories    = Category::with(['subcategories.children'])->orderBy('name')->get();
-        $subcategories = Subcategory::with('children')->whereNull('parent_id')->orderBy('name')->get();
-        $siteCategories = SiteCategory::with('subcategories')->where('status', true)->orderBy('name')->get();
-        $gifts = Gift::orderBy('title')->get();
+        $categories    = Category::with(['subcategories.children'])->where('language_type', $lang)->orderBy('name')->get();
+        $categoryIds   = $categories->pluck('id');
+        $subcategories = Subcategory::with('children')->whereNull('parent_id')->whereIn('category_id', $categoryIds)->orderBy('name')->get();
+        $siteCategories = SiteCategory::with('subcategories')->where('language_type', $lang)->where('status', true)->orderBy('name')->get();
+        $gifts = Gift::where('language_type', $lang)->orderBy('title')->get();
 
         return response()
             ->view('admin.products.index', compact(
                 'products', 'categories', 'subcategories', 'siteCategories', 'gifts',
-                'totalCount', 'bestsellersCount', 'recommendedCount', 'activeCount'
+                'totalCount', 'bestsellersCount', 'recommendedCount', 'activeCount', 'lang'
             ))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache');
@@ -322,7 +326,7 @@ class ProductController extends Controller
             $product->upsells()->sync($request->input('upsell_ids', []));
         });
 
-        return redirect()->route('admin.products.index')->with('success', 'Book created successfully.');
+        return redirect()->route('admin.products.index', ['lang' => $request->input('language_type', 'SL')])->with('success', 'Book created successfully.');
     }
 
     public function update(Request $request, string $id)
@@ -772,7 +776,7 @@ class ProductController extends Controller
             $product->upsells()->sync($request->input('upsell_ids', []));
         });
 
-        return redirect()->route('admin.products.index')->with('success', 'Book updated successfully.');
+        return redirect()->route('admin.products.index', ['lang' => $request->input('language_type', $product->language_type)])->with('success', 'Book updated successfully.');
     }
 
     /**
@@ -862,9 +866,10 @@ class ProductController extends Controller
             }
         }
 
+        $lang = $product->language_type ?? 'SL';
         $product->delete(); // cascade deletes product_images rows
 
-        return redirect()->route('admin.products.index')->with('success', 'Book deleted successfully.');
+        return redirect()->route('admin.products.index', ['lang' => $lang])->with('success', 'Book deleted successfully.');
     }
 
     public function toggleStatus(Request $request, string $id)

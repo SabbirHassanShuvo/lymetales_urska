@@ -1,7 +1,7 @@
 @php
     $accentColor = \App\Models\Setting::getVal('admin_accent_color', '#3b82f6');
     $logoPath = \App\Models\Setting::getVal('admin_logo_path');
-    $logoExists = $logoPath && file_exists(public_path($logoPath));
+    $logoExists = $logoPath && file_exists(public_path(ltrim($logoPath, '/\\')));
     $siteName = \App\Models\Setting::getVal('admin_site_name', config('app.name', 'Urška'));
     $tagline = \App\Models\Setting::getVal('admin_tagline', 'Personalised Books for Children');
 @endphp

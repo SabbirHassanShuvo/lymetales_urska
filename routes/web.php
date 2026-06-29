@@ -45,6 +45,8 @@ Route::get('/clear-cache', function() {
     
     if (function_exists('opcache_invalidate')) {
         @opcache_invalidate(app_path('Http/Controllers/Admin/ProductController.php'), true);
+        @opcache_invalidate(app_path('Http/Controllers/API/ProductController.php'), true);
+        @opcache_invalidate(base_path('routes/web.php'), true);
         $res['invalidated_product_controller'] = true;
     }
 
@@ -75,6 +77,7 @@ Route::get('/run-migrations', function () {
     }
 });
 
+
 // --- Get BOM Route ---
 Route::get('/get-bom', function () {
     try {
@@ -91,6 +94,27 @@ Route::get('/get-bom', function () {
 
 Route::get('/dump-csv', function () {
     return view('dump-csv');
+});
+
+Route::get('/read-csv', function () {
+    return file_exists(public_path('csv_content.txt')) ? file_get_contents(public_path('csv_content.txt')) : 'not found';
+});
+
+Route::get('/show-tables', function() {
+    $tables = ['products', 'categories', 'site_categories', 'pages', 'coupons', 'offers', 'gifts'];
+    $out = [];
+    foreach($tables as $t) {
+        if (Schema::hasTable($t)) {
+            $out[$t] = DB::table($t)->get()->toArray();
+        }
+    }
+    return response()->json($out);
+});
+
+Route::get('/git-run', function() {
+    $cmd = request('cmd', 'status');
+    $output = shell_exec("git $cmd 2>&1");
+    return response("<pre>$output</pre>");
 });
 
 

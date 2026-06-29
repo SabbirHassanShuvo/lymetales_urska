@@ -10,14 +10,16 @@ use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $parentCategories  = Category::with(['subcategories.children'])->orderBy('name')->get();
-        $specialCategories = Category::special()->orderBy('name')->get();
+        $lang = $request->input('lang', 'SL');
+        $parentCategories  = Category::with(['subcategories.children'])->where('language_type', $lang)->orderBy('name')->get();
+        $specialCategories = Category::special()->where('language_type', $lang)->orderBy('name')->get();
         // All level-1 subcategories for the "Add Sub-subcategory" parent selector
-        $allSubcategories  = Subcategory::whereNull('parent_id')->with('category')->orderBy('name')->get();
+        $categoryIds = Category::where('language_type', $lang)->pluck('id');
+        $allSubcategories  = Subcategory::whereNull('parent_id')->whereIn('category_id', $categoryIds)->with('category')->orderBy('name')->get();
 
-        return view('admin.categories.index', compact('parentCategories', 'specialCategories', 'allSubcategories'));
+        return view('admin.categories.index', compact('parentCategories', 'specialCategories', 'allSubcategories', 'lang'));
     }
 
     public function store(Request $request)
@@ -39,7 +41,7 @@ class CategoryController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.categories.index')
+            ->route('admin.categories.index', ['lang' => $request->input('language_type', 'SL')])
             ->with('success', 'Parent category created successfully.');
     }
 
@@ -64,17 +66,18 @@ class CategoryController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.categories.index')
+            ->route('admin.categories.index', ['lang' => $request->input('language_type', $category->language_type)])
             ->with('success', 'Category updated successfully.');
     }
 
     public function destroy(string $id)
     {
-        $category      = Category::findOrFail($id);
+        $category = Category::findOrFail($id);
+        $lang = $category->language_type ?? 'SL';
         $category->delete();
 
         return redirect()
-            ->route('admin.categories.index')
+            ->route('admin.categories.index', ['lang' => $lang])
             ->with('success', 'Category deleted successfully.');
     }
 

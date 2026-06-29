@@ -221,10 +221,25 @@ class ProductController extends Controller
                     'text'        => $p->name_text,
                     'font_family' => $p->name_font_family,
                     'font_size'   => $p->name_font_size,
-                    'color'       => [
-                        'girl' => $p->name_color,
-                        'boy'  => $p->name_color_boy,
-                    ],
+                    'color'       => (function() use ($p) {
+                        $lang = strtoupper($p->language_type ?? 'SL');
+                        if ($lang === 'SL') {
+                            return [
+                                'punčka'  => $p->name_color,
+                                'fantek'  => $p->name_color_boy,
+                            ];
+                        } elseif ($lang === 'HR') {
+                            return [
+                                'djevojčica' => $p->name_color,
+                                'dječak'     => $p->name_color_boy,
+                            ];
+                        } else {
+                            return [
+                                'girl' => $p->name_color,
+                                'boy'  => $p->name_color_boy,
+                            ];
+                        }
+                    })(),
                     'position'    => [
                         'top'   => $p->name_top,
                         'right' => $p->name_right,

@@ -98,6 +98,7 @@
                 <tr>
                     <th class="tbl-th" style="width:70px">Cover</th>
                     <th class="tbl-th">Title</th>
+                    <th class="tbl-th" style="width:80px">Language</th>
                     <th class="tbl-th" style="width:120px">Category</th>
                     <th class="tbl-th" style="width:100px">Read Time</th>
                     <th class="tbl-th" style="width:90px">Status</th>
@@ -125,6 +126,9 @@
                                 @endif
                                 <span style="font-size:0.7rem;color:#9ca3af">ID #{{ $post->id }}</span>
                             </div>
+                        </td>
+                        <td class="tbl-td">
+                            <span class="pill" style="background:#e0e7ff;color:#3730a3">{{ $post->language_type ?? 'SL' }}</span>
                         </td>
                         <td class="tbl-td">
                             <span style="font-size:0.72rem;background:#eef2ff;color:#4f46e5;font-weight:600;padding:0.2rem 0.55rem;border-radius:0.4rem">
@@ -175,7 +179,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="padding:3.5rem;text-align:center;color:#9ca3af;font-size:0.875rem">
+                        <td colspan="8" style="padding:3.5rem;text-align:center;color:#9ca3af;font-size:0.875rem">
                             <div style="font-size:2.5rem;margin-bottom:0.75rem">📝</div>
                             <div style="font-weight:700;color:#374151;margin-bottom:0.25rem">No articles yet</div>
                             <div style="font-size:0.8rem">Click "New Post" above to publish your first article.</div>

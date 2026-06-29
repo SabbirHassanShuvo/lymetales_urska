@@ -60,6 +60,16 @@
             <p class="text-sm text-gray-500">Create, edit, update, preview and manage personalised book offerings.</p>
         </div>
         <div class="flex items-center space-x-4">
+            {{-- Language Filter --}}
+            <div class="flex items-center space-x-2 bg-white px-3 py-2 border border-gray-200 rounded-xl">
+                <label class="text-xs font-semibold text-gray-500">Language:</label>
+                <select onchange="window.location.href='?lang=' + this.value" class="text-xs font-bold text-gray-700 bg-gray-50 border border-gray-200 rounded-lg py-1.5 px-2.5 outline-none cursor-pointer focus:ring-1 focus:ring-indigo-500">
+                    <option value="SL" {{ (isset($lang) && $lang === 'SL') ? 'selected' : '' }}>SL (Slovenian)</option>
+                    <option value="HR" {{ (isset($lang) && $lang === 'HR') ? 'selected' : '' }}>HR (Croatian)</option>
+                    <option value="EN" {{ (isset($lang) && $lang === 'EN') ? 'selected' : '' }}>EN (English)</option>
+                </select>
+            </div>
+
             <div class="relative">
                 <input type="text" id="searchInput" placeholder="Search books..." class="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                 <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -81,6 +91,7 @@
                     <tr class="bg-gray-50 text-gray-400 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
                         <th class="px-5 py-3.5">Book</th>
                         <th class="px-5 py-3.5">Domain</th>
+                        <th class="px-5 py-3.5">Language</th>
                         <th class="px-5 py-3.5">Price</th>
                         <th class="px-5 py-3.5">Specs</th>
                         <th class="px-5 py-3.5">Badges</th>
@@ -124,6 +135,13 @@
                                 @else
                                     <span class="text-gray-300 text-xs">—</span>
                                 @endif
+                            </td>
+
+                            {{-- Language --}}
+                            <td class="px-5 py-3.5">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                                    {{ $product->language_type ?? '—' }}
+                                </span>
                             </td>
 
                             {{-- Category --}}
@@ -308,9 +326,9 @@
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
                                 <select name="language_type" id="prodLanguage" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
-                                    <option value="SL">SL (Slovenian)</option>
-                                    <option value="HR">HR (Croatian)</option>
-                                    <option value="EN">EN (English)</option>
+                                    <option value="SL" {{ (isset($lang) && $lang === 'SL') ? 'selected' : '' }}>SL (Slovenian)</option>
+                                    <option value="HR" {{ (isset($lang) && $lang === 'HR') ? 'selected' : '' }}>HR (Croatian)</option>
+                                    <option value="EN" {{ (isset($lang) && $lang === 'EN') ? 'selected' : '' }}>EN (English)</option>
                                 </select>
                             </div>
 
