@@ -13,6 +13,7 @@ use App\Models\FooterSection;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\Setting;
+use App\Models\SiteTranslation;
 use Illuminate\Http\JsonResponse;
 
 class HomeContentControllerNew extends Controller
@@ -265,6 +266,7 @@ class HomeContentControllerNew extends Controller
                 'footer_brand'       => $footerBrand,
                 'social_links'       => $socialLinksObj,
                 'social_links_list'  => $socialLinksList,
+                'translations'       => SiteTranslation::getAllForLanguage(strtoupper($lang))['home'] ?? [],
             ],
             'message' => 'Home content retrieved successfully.',
         ], 200, [], JSON_UNESCAPED_SLASHES);

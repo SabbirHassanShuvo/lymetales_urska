@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Models\SiteTranslation;
 use Illuminate\Http\Request;
 
 class PageController extends Controller
@@ -59,9 +60,16 @@ class PageController extends Controller
             $page->content = $content;
         }
 
+        $responseData = $page->toArray();
+
+        // If this is the contact page, append the translations
+        if ($slug === 'contact' || str_contains($slug, 'contact')) {
+            $responseData['translations'] = SiteTranslation::getAllForLanguage($lang)['contact'] ?? [];
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $page
+            'data' => $responseData
         ], 200, [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Services\CartManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use App\Models\SiteTranslation;
 use Stripe\Checkout\Session as StripeSession;
 use Stripe\Stripe;
 

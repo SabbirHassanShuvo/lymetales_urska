@@ -11,6 +11,7 @@ use App\Http\Controllers\API\PageController;
 use App\Http\Controllers\API\ContactController;
 use App\Http\Controllers\API\HomeContentControllerNew;
 use App\Http\Controllers\API\SearchController;
+use App\Http\Controllers\API\SiteTranslationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -92,6 +93,10 @@ Route::prefix('shop')->middleware([\App\Http\Middleware\FilterByLanguageType::cl
 
     // Global Search 
     Route::get('/search', [SearchController::class, 'search']);
+
+    // Translations CMS (Frontend Texts)
+    Route::get('/translations', [SiteTranslationController::class, 'index']);
+    Route::get('/global-content', [SiteTranslationController::class, 'globalContent']);
 });
 
 // Stripe Webhook (no CSRF, no auth)

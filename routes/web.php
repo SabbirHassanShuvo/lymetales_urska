@@ -77,6 +77,60 @@ Route::get('/run-migrations', function () {
     }
 });
 
+// --- Run Translations Seeder (migrate + seed only translations) ---
+Route::get('/run-translations', function () {
+    $log = [];
+
+    // Invalidate OPCache for the new files
+    $filesToInvalidate = [
+        database_path('migrations/2026_07_06_000000_create_site_translations_table.php'),
+        database_path('seeders/SiteTranslationSeeder.php'),
+        app_path('Models/SiteTranslation.php'),
+        app_path('Http/Controllers/API/SiteTranslationController.php'),
+        app_path('Http/Controllers/Admin/SiteTranslationController.php'),
+    ];
+    foreach ($filesToInvalidate as $file) {
+        if (file_exists($file) && function_exists('opcache_invalidate')) {
+            opcache_invalidate($file, true);
+        }
+    }
+
+    // Run migration
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $log[] = 'Migration: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Exception $e) {
+        $log[] = 'Migration Error: ' . $e->getMessage();
+    }
+
+    // Seed translations only
+    try {
+        if (file_exists(database_path('seeders/SiteTranslationSeeder.php'))) {
+            require_once database_path('seeders/SiteTranslationSeeder.php');
+        }
+        \Illuminate\Support\Facades\Artisan::call('db:seed', [
+            '--class' => 'SiteTranslationSeeder',
+            '--force' => true,
+        ]);
+        $log[] = 'Seeder: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+    } catch (\Exception $e) {
+        $log[] = 'Seeder Error: ' . $e->getMessage();
+    }
+
+    // Clear cache
+    try {
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+        $log[] = 'Cache cleared.';
+    } catch (\Exception $e) {
+        $log[] = 'Cache clear error: ' . $e->getMessage();
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Translations migration and seeding complete.',
+        'log'     => $log,
+    ]);
+});
 
 // --- Get BOM Route ---
 Route::get('/get-bom', function () {
@@ -353,6 +407,11 @@ Route::prefix('admin')->group(function () {
         // Settings & GDPR
         Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings.index');
         Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
+
+        // Translations CMS
+        Route::get('/translations', [\App\Http\Controllers\Admin\SiteTranslationController::class, 'index'])->name('admin.translations.index');
+        Route::post('/translations/update', [\App\Http\Controllers\Admin\SiteTranslationController::class, 'update'])->name('admin.translations.update');
+
         Route::get('/gdpr', [\App\Http\Controllers\Admin\GDPRController::class, 'index'])->name('admin.gdpr.index');
         Route::post('/gdpr/export', [\App\Http\Controllers\Admin\GDPRController::class, 'export'])->name('admin.gdpr.export');
         Route::post('/gdpr/anonymize', [\App\Http\Controllers\Admin\GDPRController::class, 'anonymize'])->name('admin.gdpr.anonymize');
