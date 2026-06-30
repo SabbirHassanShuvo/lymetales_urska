@@ -133,11 +133,42 @@ class ProductController extends Controller
 
     private function formatProduct(Product $p, bool $detailed = false): array
     {
-        $typeTranslations = [
-            'newborn' => 'novorojenček',
-            'kids'    => 'otroci',
-            'adult'   => 'odrasli',
+        $lang = strtoupper($p->language_type ?? 'SL');
+        
+        $normalizedTypeMap = [
+            'newborn'      => 'newborn',
+            'novorojenček' => 'newborn',
+            'novorođenče'  => 'newborn',
+            
+            'kids'         => 'kids',
+            'otroci'       => 'kids',
+            'djeca'        => 'kids',
+            
+            'adult'        => 'adult',
+            'odrasli'      => 'adult',
         ];
+        
+        $langTranslations = [
+            'SL' => [
+                'newborn' => 'novorojenček',
+                'kids'    => 'otroci',
+                'adult'   => 'odrasli',
+            ],
+            'HR' => [
+                'newborn' => 'novorođenče',
+                'kids'    => 'djeca',
+                'adult'   => 'odrasli',
+            ],
+            'EN' => [
+                'newborn' => 'newborn',
+                'kids'    => 'kids',
+                'adult'   => 'adult',
+            ],
+        ];
+
+        $dbType = strtolower(trim($p->type));
+        $normalizedSlug = $normalizedTypeMap[$dbType] ?? \Illuminate\Support\Str::slug($p->type);
+        $translatedName = $langTranslations[$lang][$normalizedSlug] ?? $p->type;
 
         $base = [
             'id'             => $p->id,
@@ -155,8 +186,8 @@ class ProductController extends Controller
             'is_recommended' => (bool) $p->is_recommended,
             'status'         => (bool) $p->status,
             'type'           => $p->type ? [
-                'name' => $typeTranslations[$p->type] ?? $p->type,
-                'slug' => \Illuminate\Support\Str::slug($p->type),
+                'name' => $translatedName,
+                'slug' => $normalizedSlug,
             ] : null,
             'age_range'      => $p->age_range,
             'domain'         => $p->domain,

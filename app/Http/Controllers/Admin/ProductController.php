@@ -35,11 +35,11 @@ class ProductController extends Controller
         $recommendedCount = Product::where('language_type', $lang)->where('is_recommended', true)->count();
         $activeCount      = Product::where('language_type', $lang)->where('status', true)->count();
 
-        $categories    = Category::with(['subcategories.children'])->where('language_type', $lang)->orderBy('name')->get();
+        $categories    = Category::with(['subcategories.children'])->orderBy('name')->get();
         $categoryIds   = $categories->pluck('id');
         $subcategories = Subcategory::with('children')->whereNull('parent_id')->whereIn('category_id', $categoryIds)->orderBy('name')->get();
-        $siteCategories = SiteCategory::with('subcategories')->where('language_type', $lang)->where('status', true)->orderBy('name')->get();
-        $gifts = Gift::where('language_type', $lang)->orderBy('title')->get();
+        $siteCategories = SiteCategory::with('subcategories')->where('status', true)->orderBy('name')->get();
+        $gifts = Gift::orderBy('title')->get();
 
         return response()
             ->view('admin.products.index', compact(

@@ -336,9 +336,6 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
                                 <select name="site_category_id" id="prodCategory" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-semibold">
                                     <option value="">— No category —</option>
-                                    @foreach($siteCategories as $cat)
-                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    @endforeach
                                 </select>
                             </div>
 
@@ -996,6 +993,82 @@
     const subcategoriesData = @json($subcategories);  // L1 subcategories with children[]
     const siteCategoriesData = @json($siteCategories); // site_categories with subcategories[]
 
+    const typeOptionsData = {
+        'SL': [
+            { value: 'novorojenček', text: 'novorojenček' },
+            { value: 'otroci', text: 'otroci' },
+            { value: 'odrasli', text: 'odrasli' }
+        ],
+        'HR': [
+            { value: 'novorođenče', text: 'novorođenče' },
+            { value: 'djeca', text: 'djeca' },
+            { value: 'odrasli', text: 'odrasli' }
+        ],
+        'EN': [
+            { value: 'newborn', text: 'newborn' },
+            { value: 'kids', text: 'kids' },
+            { value: 'adult', text: 'adult' }
+        ]
+    };
+
+    const coverTypeOptionsData = {
+        'SL': [
+            { value: 'Premium trda vezava', text: 'Premium trda vezava' },
+            { value: 'Premium mehka vezava', text: 'Premium mehka vezava' },
+            { value: 'Trda in mehka vezava', text: 'Trda in mehka vezava' }
+        ],
+        'HR': [
+            { value: 'Premium tvrdi uvez', text: 'Premium tvrdi uvez' },
+            { value: 'Premium meki uvez', text: 'Premium meki uvez' },
+            { value: 'Tvrdi i meki uvez', text: 'Tvrdi i meki uvez' }
+        ],
+        'EN': [
+            { value: 'Premium Hardcover', text: 'Premium Hardcover' },
+            { value: 'Premium Softcover', text: 'Premium Softcover' },
+            { value: 'Hardcover & Softcover', text: 'Hardcover & Softcover' }
+        ]
+    };
+
+    function updateLanguageDependentFields(lang, selectedType = null, selectedCoverType = null) {
+        lang = (lang || 'SL').toUpperCase();
+        
+        // 1. Update Type options
+        const typeSelect = document.getElementById('prodType');
+        if (typeSelect) {
+            typeSelect.innerHTML = '<option value="">— No specific type —</option>';
+            const opts = typeOptionsData[lang] || typeOptionsData['SL'];
+            opts.forEach(opt => {
+                const selectedAttr = selectedType && selectedType.toLowerCase() === opt.value.toLowerCase() ? 'selected' : '';
+                typeSelect.innerHTML += `<option value="${opt.value}" ${selectedAttr}>${opt.text}</option>`;
+            });
+        }
+        
+        // 2. Update Cover Type options
+        const coverSelect = document.getElementById('prodCoverType');
+        if (coverSelect) {
+            coverSelect.innerHTML = '';
+            const opts = coverTypeOptionsData[lang] || coverTypeOptionsData['SL'];
+            opts.forEach(opt => {
+                const selectedAttr = selectedCoverType && selectedCoverType.toLowerCase() === opt.value.toLowerCase() ? 'selected' : '';
+                coverSelect.innerHTML += `<option value="${opt.value}" ${selectedAttr}>${opt.text}</option>`;
+            });
+        }
+    }
+
+    function loadProductCategories(lang, selectedCatId = null) {
+        const sel = document.getElementById('prodCategory');
+        if (!sel) return;
+        
+        sel.innerHTML = '<option value="">— No category —</option>';
+        
+        const filteredCats = siteCategoriesData.filter(c => !c.language_type || c.language_type.toUpperCase() === lang.toUpperCase());
+        
+        filteredCats.forEach(cat => {
+            const sel_attr = selectedCatId && String(cat.id) === String(selectedCatId) ? 'selected' : '';
+            sel.innerHTML += `<option value="${cat.id}" ${sel_attr}>${cat.name}</option>`;
+        });
+    }
+
     /**
      * Build <option> HTML for subcategory select.
      * L1 shown normally, L2 children indented under their parent.
@@ -1117,15 +1190,34 @@
         
         document.getElementById('prodTitle').value = "";
         if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = "";
-        if (document.getElementById('prodParentCategory')) document.getElementById('prodParentCategory').value = "";
-        if (document.getElementById('prodSubCategory')) document.getElementById('prodSubCategory').value = "";
-        if (document.getElementById('subCategoryContainer')) document.getElementById('subCategoryContainer').classList.add('hidden');
-        // Reset product category/subcategory
-        if (document.getElementById('prodCategory')) document.getElementById('prodCategory').value = '';
-        if (document.getElementById('prodSubcategoryWrapper')) {
-            document.getElementById('prodSubcategoryWrapper').classList.add('hidden');
-            document.getElementById('prodSubcategory').innerHTML = '<option value="">— No subcategory —</option>';
+        
+        const activeLang = "{{ $lang ?? 'SL' }}";
+        if (document.getElementById('prodLanguage')) {
+            document.getElementById('prodLanguage').value = activeLang;
         }
+        
+        // Reset Type and Cover Type dropdowns based on language
+        updateLanguageDependentFields(activeLang, null, null);
+        
+        // Reset product category/subcategory
+        loadProductCategories(activeLang);
+        
+        // Reset upsell language filter
+        const upsellLangFilterSelect = document.getElementById('upsellLangFilter');
+        if (upsellLangFilterSelect) {
+            upsellLangFilterSelect.value = activeLang;
+        }
+        
+        // Reset upsell checkboxes
+        document.querySelectorAll('.upsell-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        document.querySelectorAll('.upsell-product-item').forEach(item => {
+            item.classList.remove('hidden-by-lang');
+        });
+        updateSelectedUpsells();
+        filterUpsellProducts();
+        
         // Reset featured image
         document.getElementById('featuredImageId').value = '';
         document.getElementById('featuredHint').classList.add('hidden');
@@ -1201,8 +1293,6 @@
         updateSelectedUpsells();
         const upsellSearch = document.getElementById('upsellSearchInput');
         if (upsellSearch) upsellSearch.value = '';
-        const upsellLangFilter = document.getElementById('upsellLangFilter');
-        if (upsellLangFilter) upsellLangFilter.value = '';
     }
 
     function openCreateProductModal() {
@@ -1221,13 +1311,24 @@
 
         document.getElementById('prodTitle').value = product.title;
         if (document.getElementById('prodDomain')) document.getElementById('prodDomain').value = product.domain || "";
-        if (document.getElementById('prodType')) document.getElementById('prodType').value = product.type || "";
-        if (document.getElementById('prodLanguage')) document.getElementById('prodLanguage').value = product.language_type || "SL";
+        
+        const lang = product.language_type || "SL";
+        if (document.getElementById('prodLanguage')) {
+            document.getElementById('prodLanguage').value = lang;
+        }
+
+        // Populate Type and Cover Type options dynamically based on language
+        updateLanguageDependentFields(lang, product.type, product.cover_type);
 
         // Populate Site Category
-        if (document.getElementById('prodCategory')) {
-            document.getElementById('prodCategory').value = product.site_category_id || '';
+        loadProductCategories(lang, product.site_category_id);
+
+        // Update upsell language filter select value to match the book language
+        const upsellLangFilterSelect = document.getElementById('upsellLangFilter');
+        if (upsellLangFilterSelect) {
+            upsellLangFilterSelect.value = lang;
         }
+        filterUpsellProducts();
 
         // Populate featured image
         document.getElementById('featuredImageId').value = product.featured_image_id || '';
@@ -1834,7 +1935,9 @@
 
         // Build Category Options
         let categoryOptions = '<option value="">-- Select Category --</option>';
+        const bookLang = (document.getElementById('prodLanguage')?.value || 'SL').toUpperCase();
         categoriesData.forEach(cat => {
+            if (cat.language_type && cat.language_type.toUpperCase() !== bookLang) return;
             const isSelected = data && data.category_id == cat.id ? 'selected' : '';
             categoryOptions += `<option value="${cat.id}" data-has-sub="${cat.subcategories && cat.subcategories.length > 0 ? 'true' : 'false'}" ${isSelected}>${cat.name}</option>`;
         });
@@ -1901,6 +2004,25 @@
 
     function removeCategoryImageSection(idx) {
         document.getElementById(`category_image_row_${idx}`).remove();
+     }
+
+    function updateCategoryImageDropdowns() {
+        const bookLang = (document.getElementById('prodLanguage')?.value || 'SL').toUpperCase();
+        
+        document.querySelectorAll('[id^="catImgCategory_"]').forEach(selectEl => {
+            const idx = selectEl.id.split('_')[1];
+            const currentValue = selectEl.value;
+            
+            let categoryOptions = '<option value="">-- Select Category --</option>';
+            categoriesData.forEach(cat => {
+                if (cat.language_type && cat.language_type.toUpperCase() !== bookLang) return;
+                const isSelected = String(cat.id) === String(currentValue) ? 'selected' : '';
+                categoryOptions += `<option value="${cat.id}" data-has-sub="${cat.subcategories && cat.subcategories.length > 0 ? 'true' : 'false'}" ${isSelected}>${cat.name}</option>`;
+            });
+            
+            selectEl.innerHTML = categoryOptions;
+            handleCategoryRowChange(idx);
+        });
     }
 
     function handleOptionTypeChange(idx) {
@@ -2641,6 +2763,41 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         new TableHelper('#productsTable', '#searchInput', '#tablePagination', 10);
+
+        // Initial setup for Create New Book modal based on active language tab
+        const activeLang = "{{ $lang ?? 'SL' }}";
+        updateLanguageDependentFields(activeLang);
+        loadProductCategories(activeLang);
+        filterUpsellProducts();
+
+        // Bind language select change listener
+        const prodLanguage = document.getElementById('prodLanguage');
+        if (prodLanguage) {
+            prodLanguage.addEventListener('change', function() {
+                const lang = this.value;
+                const currentType = document.getElementById('prodType').value;
+                const currentCover = document.getElementById('prodCoverType').value;
+                const currentCat = document.getElementById('prodCategory').value;
+
+                // Update Type and Cover Type dropdowns
+                updateLanguageDependentFields(lang, currentType, currentCover);
+
+                // Update Category dropdown
+                loadProductCategories(lang, currentCat);
+
+                // Update Category Images dropdowns
+                updateCategoryImageDropdowns();
+
+                // Update upsell language filter select value to match the book language
+                const upsellLangFilterSelect = document.getElementById('upsellLangFilter');
+                if (upsellLangFilterSelect) {
+                    upsellLangFilterSelect.value = lang;
+                }
+
+                // Filter Upsell list
+                filterUpsellProducts();
+            });
+        }
     });
 </script>
 
