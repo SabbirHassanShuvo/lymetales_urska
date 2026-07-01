@@ -26,6 +26,10 @@ class HomeContentControllerNew extends Controller
      */
     public function index(): JsonResponse
     {
+        // Get the language from the request, prioritizing 'language_type', then 'lang', defaulting to 'SL'
+        $lang = strtoupper(request()->input('language_type', request()->input('lang', 'SL')));
+        $suffix = $lang === 'SL' ? '' : '_' . $lang;
+
         // Helper to format image URLs
         $formatImage = function ($path) {
             if (!$path) return null;
@@ -60,7 +64,8 @@ class HomeContentControllerNew extends Controller
         });
 
         // 2b. Latest 6 published products (after features section)
-        $latestProducts = Product::where('status', true)
+        $latestProducts = Product::withoutGlobalScope('language_type')
+            ->where('status', true)
             ->with(['images', 'galleryImages', 'primaryImage'])
             ->latest()
             ->take(6)
@@ -160,8 +165,6 @@ class HomeContentControllerNew extends Controller
         });
 
         // 7. Newsletter Section Texts (Requirement 7)
-        $lang = request()->input('lang', 'SL');
-        $suffix = $lang === 'SL' ? '' : '_' . $lang;
 
         $newsletterSection = [
             'title'       => Setting::getVal('newsletter_title' . $suffix, Setting::getVal('newsletter_title', 'Get 10% off your first order')),

@@ -39,6 +39,20 @@ class SiteTranslationSeeder extends Seeder
 
             // ─────────────────── HOME PAGE ───────────────────
             [
+                'key'          => 'home.story_title',
+                'group'        => 'home',
+                'display_name' => 'Home: Story Title',
+                'input_type'   => 'text',
+                'value'        => 'Gifts for all your favourite people',
+            ],
+            [
+                'key'          => 'home.error_text',
+                'group'        => 'home',
+                'display_name' => 'Home: Error Text',
+                'input_type'   => 'textarea',
+                'value'        => 'This section data could not be loaded. Please try again later.',
+            ],
+            [
                 'key'          => 'home.feature_title',
                 'group'        => 'home',
                 'display_name' => 'Home: Feature Section Title',
@@ -195,8 +209,12 @@ class SiteTranslationSeeder extends Seeder
                 'key'          => 'book_details.trust_badge',
                 'group'        => 'book_details',
                 'display_name' => 'Book Details: Trust Badge Text',
-                'input_type'   => 'text',
-                'value'        => 'Secure Payment, Delivery in 3-5 days, 100% Satisfaction',
+                'input_type'   => 'json',
+                'value'        => json_encode([
+                    'secure'       => 'Secure Payment',
+                    'delivery'     => 'Delivery in 3-5 days',
+                    'satisfaction' => '100% Satisfaction',
+                ]),
             ],
             [
                 'key'          => 'book_details.features',

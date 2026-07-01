@@ -104,7 +104,8 @@ class ProductController extends Controller
             'customizationSteps.options.subSteps.subOptions',
         ])->where('id', $id)->where('status', true)->firstOrFail();
 
-        $latestProducts = Product::where('status', true)
+        $latestProducts = Product::withoutGlobalScope('language_type')
+            ->where('status', true)
             ->where('id', '!=', $id)
             ->latest()
             ->take(6)

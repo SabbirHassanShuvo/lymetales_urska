@@ -15,7 +15,7 @@ class SiteTranslationController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $lang = strtoupper($request->input('lang', 'SL'));
+        $lang = strtoupper($request->input('language_type', $request->input('lang', 'SL')));
 
         $data = SiteTranslation::getAllForLanguage($lang);
 
@@ -33,7 +33,7 @@ class SiteTranslationController extends Controller
      */
     public function globalContent(Request $request): JsonResponse
     {
-        $lang = strtoupper($request->input('lang', 'SL'));
+        $lang = strtoupper($request->input('language_type', $request->input('lang', 'SL')));
         $data = SiteTranslation::getAllForLanguage($lang);
 
         // Filter the requested groups (if you only want specific groups)
